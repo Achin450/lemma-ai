@@ -1,0 +1,65 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python Cache & Compiled Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Databases
+*.db
+*.sqlite3
+*.index
+lemma.db
+
+# Ingestion / Upload folders
+uploads/
+backend/uploads/
+backend/app/uploads/
+
+# AI Agent Context Files
+lemma/Project Context/
+Project Context
+
+# Hugging Face files for Backend config
+lemma/Hugging Face/
+Hugging Face
+
+# Local LLM Cache (Ollama & LM Studio)
+.ollama/
+.lmstudio/
+
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables & Local configuration
+.env
+.env.*
+!.env.example
+
+# Node / React (for future phases / build residue)
+node_modules/
+dist/
+build/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
