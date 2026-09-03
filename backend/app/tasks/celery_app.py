@@ -13,7 +13,10 @@ celery_app = Celery(
     "lemma_tasks",
     broker=broker_url,
     backend=result_backend,
-    include=["app.tasks.analysis"]
+    include=[
+        "app.tasks.analysis",
+        "app.tasks.research_tasks"
+    ]
 )
 
 celery_app.conf.update(
@@ -25,3 +28,8 @@ celery_app.conf.update(
     task_always_eager=settings.CELERY_ALWAYS_EAGER,
     task_store_eager_result=True,
 )
+
+# Ensure all task modules are imported and registered
+import app.tasks.analysis  # noqa: F401
+import app.tasks.research_tasks  # noqa: F401
+

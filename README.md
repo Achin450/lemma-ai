@@ -90,6 +90,10 @@ lemma/
 
 * **Python**: Version `3.10` or higher (successfully tested up to `3.13` and `3.14.3`).
 * **Ollama**: Download and install Ollama from [ollama.com](https://ollama.com).
+* **System Libraries (Windows)**:
+  * **GTK3 Runtime**: Required for `WeasyPrint` (PDF Generation). Install it and ensure `bin` is in your system PATH.
+  * **Tesseract-OCR**: Required for OCR fallback in PDF parsing. Install and add to PATH.
+  * **Poppler**: Required for `pdf2image` OCR fallback. Install and add to PATH.
 
 ### 1. Build the Optimized Ollama Model
 To avoid CUDA Out-of-Memory (OOM) errors on local GPUs/CPUs, a custom `Modelfile` is provided to set the context size to `1024` tokens and limit the prediction output window.

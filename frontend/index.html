@@ -27,7 +27,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=43">
 </head>
 <body class="landing-body">
     <!-- Background Atmospheric Fog Overlays -->
@@ -72,7 +72,10 @@
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </button>
-            <a href="dashboard.html" class="btn btn-secondary nav-cta-btn">
+            <a href="login.html" class="btn btn-outline nav-auth-btn" id="nav-auth-btn">
+                <i class="fa-solid fa-user"></i> Log In / Sign Up
+            </a>
+            <a href="javascript:void(0)" onclick="handleLaunchWorkspace()" class="btn btn-secondary nav-cta-btn">
                 Launch Workspace <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
@@ -91,9 +94,12 @@
                 A high-performance, local-first academic plagiarism engine. Map lexical and semantic matches directly to character coordinates and compile publication-ready reports.
             </p>
 
-            <div class="hero-actions">
-                <a href="dashboard.html" class="btn btn-primary hero-btn-main">
+            <div class="hero-actions" style="display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                <a href="javascript:void(0)" onclick="handleLaunchWorkspace()" class="btn btn-primary hero-btn-main">
                     Launch Workspace <i class="fa-solid fa-arrow-right btn-arrow"></i>
+                </a>
+                <a href="login.html" class="btn btn-secondary hero-btn-auth" id="hero-auth-btn">
+                    <i class="fa-solid fa-user-lock"></i> Log In / Sign Up
                 </a>
                 <a href="#features" class="btn btn-outline hero-btn-sub">
                     Explore Features
@@ -117,6 +123,9 @@
             </div>
         </div>
     </section>
+
+    <!-- Sponsored Spotlight Strip (Customizable via assets/js/ads-config.js) -->
+    <div class="landing-ad-container" id="landing-ad-container"></div>
 
     <!-- Partners Row (Academic / ML Stack) -->
     <section class="partners-section">
@@ -166,5 +175,36 @@
 
     <!-- Landing page specific animations and particle sphere -->
     <script src="assets/js/landing.js"></script>
+    <script>
+        function handleLaunchWorkspace() {
+            const token = localStorage.getItem("lemma_access_token");
+            if (!token) {
+                window.location.href = "login.html";
+            } else {
+                window.location.href = "dashboard.html";
+            }
+        }
+
+        // Dynamically update buttons if user is already logged in
+        (function() {
+            const token = localStorage.getItem("lemma_access_token");
+            const user = JSON.parse(localStorage.getItem("lemma_user") || "null");
+            if (token && user) {
+                const navAuthBtn = document.getElementById("nav-auth-btn");
+                const heroAuthBtn = document.getElementById("hero-auth-btn");
+                const firstName = (user.full_name || "Researcher").split(" ")[0];
+                if (navAuthBtn) {
+                    navAuthBtn.innerHTML = `<i class="fa-solid fa-circle-user"></i> ${firstName}`;
+                    navAuthBtn.href = "dashboard.html";
+                }
+                if (heroAuthBtn) {
+                    heroAuthBtn.innerHTML = `<i class="fa-solid fa-circle-user"></i> Signed in as ${firstName}`;
+                    heroAuthBtn.href = "dashboard.html";
+                }
+            }
+        })();
+    </script>
+    <!-- Configurable Ads Engine -->
+    <script src="assets/js/ads-config.js?v=1"></script>
 </body>
 </html>

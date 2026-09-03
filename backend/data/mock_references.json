@@ -7,6 +7,55 @@
     "text": "Deep learning is a subset of machine learning that is based on artificial neural networks with representation learning. The adjective deep in deep learning refers to the use of multiple layers in the network. Historically, neural networks were limited in depth due to computational constraints and training difficulties. Today, modern deep learning architectures utilize convolutional neural networks and transformer architectures to process vast datasets. These models have revolutionized fields like computer vision, natural language processing, and robotics."
   },
   {
+    "id": "ref_attention_is_all_you_need",
+    "title": "Attention Is All You Need: The Transformer Architecture",
+    "author": "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones et al.",
+    "source": "Advances in Neural Information Processing Systems (NeurIPS), 2017",
+    "text": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks that include an encoder and a decoder. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train."
+  },
+  {
+    "id": "ref_medical_image_segmentation",
+    "title": "Deep Learning for Medical Image Segmentation: A Comprehensive Survey",
+    "author": "Dr. Haocheng Liu, Elena Vance, and Michael Zhang",
+    "source": "IEEE Transactions on Medical Imaging, 2024",
+    "text": "Medical image segmentation is a crucial step in computer-assisted diagnosis, radiotherapy planning, and anatomical modeling. Traditional thresholding and edge-detection methods fail when faced with low contrast, complex geometries, and biological noise in MRI and CT scans. The emergence of convolutional neural networks, particularly U-Net and its attention-gated extensions, has set a new benchmark for pixel-level semantic segmentation of organs, tissues, and cancerous lesions. This review explores loss functions, hybrid transformer-CNN backbones, and spatial preservation techniques."
+  },
+  {
+    "id": "ref_realtime_sentiment_analysis",
+    "title": "Real-Time Sentiment Analysis on Social Media Streaming Data Using Deep Neural Networks",
+    "author": "Prof. Rajesh Kumar and Alistair Campbell",
+    "source": "ACM Transactions on Knowledge Discovery from Data, 2023",
+    "text": "Social media platforms generate millions of microblogs and text messages every second, reflecting public sentiment, market dynamics, and breaking societal trends. Real-time sentiment analysis requires ultra-low latency inference, high throughput tokenization, and resilience against informal slang, emojis, and noisy syntax. Deep neural architectures such as Bidirectional LSTMs and lightweight RoBERTa distillations demonstrate state-of-the-art accuracy when evaluating streaming emotional valence and polarity across heterogeneous topics."
+  },
+  {
+    "id": "ref_bert_language_representation",
+    "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    "author": "Jacob Devlin, Ming-Wei Chang, Kenton Lee, Kristina Toutanova",
+    "source": "NAACL-HLT, 2019",
+    "text": "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models, BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference."
+  },
+  {
+    "id": "ref_resnet_deep_residual_learning",
+    "title": "Deep Residual Learning for Image Recognition",
+    "author": "Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun",
+    "source": "IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016",
+    "text": "Deeper neural networks are more difficult to train. We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously. We explicitly reformulate the layers as learning residual functions with reference to the layer inputs, instead of learning unreferenced functions. We provide comprehensive empirical evidence showing that these residual networks are easier to optimize and can gain accuracy from considerably increased depth."
+  },
+  {
+    "id": "ref_reinforcement_learning_robotics",
+    "title": "Deep Reinforcement Learning in Autonomous Robotics: Methods and Benchmarks",
+    "author": "Dr. Sarah Chen, David Miller, and Robert Taylor",
+    "source": "IEEE Transactions on Robotics, 2023",
+    "text": "Deep reinforcement learning methods have emerged as a pivotal approach for addressing complex decision-making problems in autonomous robotics. By learning continuous control policies directly from high-dimensional sensor observations, agents can master manipulation, locomotion, and obstacle avoidance tasks. However, sample complexity and the simulation-to-reality gap remain central engineering challenges. We evaluate algorithmic benchmarks including Proximal Policy Optimization and Soft Actor-Critic across continuous motor control environments."
+  },
+  {
+    "id": "ref_blockchain_decentralized_systems",
+    "title": "Blockchain Architecture and Consensus Mechanisms: A Systematic Review",
+    "author": "Satoshi Nakamoto et al. (Survey Edition)",
+    "source": "Journal of Network and Computer Applications, 2024",
+    "text": "A blockchain is a decentralized, distributed, and public digital ledger that is used to record transactions across many computers so that the record cannot be altered retroactively without the alteration of all subsequent blocks. Consensus protocols like Proof of Work and Proof of Stake ensure fault tolerance and cryptographic security in trustless peer-to-peer networks. Smart contracts allow automated execution of legal and business agreements without centralized intermediaries."
+  },
+  {
     "id": "ref_climate_change",
     "title": "The Decisive Decade: Climate Action and Clean Energy",
     "author": "Marcus Thorne",
@@ -26,5 +75,12 @@
     "author": "Dr. Elena Rostova",
     "source": "Biotech Today, 2024",
     "text": "Gene editing technologies have advanced rapidly, driven by the discovery and development of the CRISPR-Cas9 system. This molecular tool allows researchers to make precise changes to DNA sequences in a wide variety of organisms. By targeting specific genes, scientists can potentially correct genetic mutations responsible for inherited disorders. However, the prospect of germline gene editing raises profound ethical questions regarding consent and human enhancement. The international scientific community continues to debate the boundaries of responsible genomic intervention."
+  },
+  {
+    "id": "ref_cybersecurity_zero_trust",
+    "title": "Zero Trust Architecture in Modern Cloud Computing",
+    "author": "Alexander Wright, Kevin Patel",
+    "source": "IEEE Security & Privacy, 2024",
+    "text": "The traditional perimeter-based security model is inadequate in protecting distributed microservice architectures and remote workforce environments. Zero Trust security enforces the principle of never trust, always verify, requiring continuous authentication, role-based authorization, and least-privilege access controls across every network transaction. Implementing cryptographic identity verification and micro-segmentation substantially mitigates lateral threat movements and data exfiltration vectors."
   }
 ]

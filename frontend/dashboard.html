@@ -5,6 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <script>
+        // Strict Authentication Guard — nobody can access dashboard without logging in
+        (function () {
+            const token = localStorage.getItem("lemma_access_token");
+            if (!token) {
+                window.location.replace("login.html");
+            }
+        })();
+    </script>
+    <script>
         (function () {
             let theme = "dark"; // Default fallback
             const hasManualTheme = localStorage.getItem("lemma-theme-manual");
@@ -29,9 +38,9 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="assets/css/mobile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=45">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=35">
 </head>
 
 <body>
@@ -66,6 +75,52 @@
             </div>
 
             <nav class="sidebar-nav">
+                <div class="nav-section-title">Research Tools</div>
+                <ul>
+                    <li class="nav-item" id="nav-generate">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            <span>Generate Paper</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" id="nav-restructure">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="17 1 21 5 17 9"></polyline>
+                                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                                <polyline points="7 23 3 19 7 15"></polyline>
+                                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                            </svg>
+                            <span>Restructure to IEEE</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" id="nav-simcheck">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <polyline points="9 12 11 14 15 10"></polyline>
+                            </svg>
+                            <span>Similarity Check</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" id="nav-mypapers">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span>My Papers</span>
+                        </a>
+                    </li>
+                </ul>
+
                 <div class="nav-section-title">Core Items</div>
                 <ul>
                     <li class="nav-item active" id="nav-dashboard">
@@ -78,33 +133,33 @@
                             <span>Dashboard</span>
                         </a>
                     </li>
+                    <li class="nav-item" id="nav-plagiarism">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            </svg>
+                            <span>Plagiarism Check</span>
+                        </a>
+                    </li>
                     <li class="nav-item" id="nav-aichat">
                         <a href="#">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                             </svg>
-                            <span>AI Chat</span>
+                            <span>AI Paraphraser</span>
                         </a>
                     </li>
-                    <li class="nav-item" id="nav-projects">
+                    <li class="nav-item" id="nav-humanizer">
                         <a href="#">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
-                                </path>
+                                <path d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5z"></path>
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
-                            <span>My Projects</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" id="nav-litreview">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                            </svg>
-                            <span>Literature Review</span>
+                            <span>AI Humanizer</span>
                         </a>
                     </li>
                     <li class="nav-item" id="nav-citations">
@@ -116,66 +171,6 @@
                                 </path>
                             </svg>
                             <span>Citations</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" id="nav-plagiarism">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                            </svg>
-                            <span>Plagiarism Check</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" id="nav-notes">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
-                            </svg>
-                            <span>Notes</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" id="nav-kb">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                                <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"></path>
-                            </svg>
-                            <span>Knowledge Base</span>
-                        </a>
-                    </li>
-                </ul>
-
-                <div class="nav-section-title">Tools</div>
-                <ul>
-                    <li class="nav-item" id="nav-pdfsummary">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                            </svg>
-                            <span>PDF to Summary</span>
-                        </a>
-                    </li>
-                    <li class="nav-item" id="nav-export">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                                <polyline points="16 6 12 2 8 6"></polyline>
-                                <line x1="12" y1="2" x2="12" y2="15"></line>
-                            </svg>
-                            <span>Export</span>
                         </a>
                     </li>
                 </ul>
@@ -202,14 +197,14 @@
                                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                                 <line x1="12" y1="17" x2="12.01" y2="17"></line>
                             </svg>
-                            <span>Help & Support</span>
+                            <span>Help &amp; Support</span>
                         </a>
                     </li>
                 </ul>
             </nav>
 
             <div class="sidebar-footer">
-                <div class="version">v1.0.0-beta</div>
+                <div class="version">v3.0.0 — Research Edition</div>
             </div>
         </aside>
 
@@ -284,28 +279,75 @@
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
-                    <div class="header-profile" id="header-profile-menu">
-                        <div class="profile-avatar">R</div>
-                        <span class="profile-name">Researcher</span>
+                    <div class="header-profile-wrapper" style="position: relative;">
+                        <div class="header-profile" id="header-profile-menu" onclick="toggleProfileDropdown()" style="cursor: pointer; user-select: none;">
+                            <div class="profile-avatar" id="nav-user-avatar">R</div>
+                            <span class="profile-name" id="nav-user-name">Researcher</span>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 2px; opacity: 0.7;"><path d="M6 9l6 6 6-6"/></svg>
+                        </div>
+                        <!-- Profile Popover Dropdown -->
+                        <div class="profile-dropdown-menu" id="profile-dropdown" style="display: none;">
+                            <div class="dropdown-user-header">
+                                <div class="dropdown-avatar" id="dropdown-user-avatar">R</div>
+                                <div class="dropdown-user-info">
+                                    <h4 id="dropdown-user-name">Lead Researcher</h4>
+                                    <span id="dropdown-user-email">researcher@lemma.ai</span>
+                                    <div class="user-role-badge" id="dropdown-user-role">Student</div>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-links">
+                                <button class="dropdown-item" onclick="showView('mypapers-view'); toggleProfileDropdown(false);">
+                                    <i class="fa-solid fa-folder-open"></i> My Research Library
+                                </button>
+                                <button class="dropdown-item" onclick="window.location.href='/login.html';">
+                                    <i class="fa-solid fa-users-gear"></i> Switch Account
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <button class="dropdown-item logout-item" onclick="handleLogout()">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
-
             <div class="workspace-view" id="dashboard-home-view">
-                <div class="blank-start-content">
-                    <h2 class="blank-start-title">What's next, Researcher?</h2>
-                    <div class="blank-start-bar">
-                        <button class="bar-plus-btn" id="btn-blank-new" title="New Workspace">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-                                stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                <div class="blank-start-content" style="max-width: 850px; margin: 0 auto; width: 100%; text-align: center; padding-top: 3rem;">
+                    <h2 class="blank-start-title" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 2rem; background: linear-gradient(135deg, var(--text-primary), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What's next, Researcher?</h2>
+                    
+                    <div class="blank-start-bar" style="margin-bottom: 1.5rem; display: flex; align-items: center; background: var(--bg-secondary); border: 1.5px solid var(--border-color); border-radius: 14px; padding: 0.4rem 0.6rem; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: var(--transition-fast);">
+                        <button class="bar-plus-btn" id="btn-blank-new" title="Upload & Restructure Paper into IEEE Format (PDF, DOCX, TXT)" style="width: 38px; height: 38px; border-radius: 9px; border: none; background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: var(--transition-fast);">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <input type="text" id="blank-prompt-input" placeholder="Ask Lemma..." autocomplete="off">
+                        <input type="text" id="blank-prompt-input" placeholder="Type a new project or research topic to generate paper..." autocomplete="off" style="flex-grow: 1; background: transparent; border: none; outline: none; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem; font-family: inherit;">
+                        <button class="btn btn-primary" id="btn-blank-generate" style="padding: 0.6rem 1.35rem; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; font-size: 0.9rem; cursor: pointer;">
+                            <span>Generate</span>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Hidden file input triggered by plus icon -->
+                    <input type="file" id="home-restructure-file-input" accept=".pdf,.docx,.txt" style="display: none;">
+
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+                        <span style="font-size: 0.82rem; color: var(--text-secondary);">Suggested topics:</span>
+                        <button class="suggestion-tag-btn" data-topic="Deep Reinforcement Learning in Autonomous Robotics">Deep RL in Robotics</button>
+                        <button class="suggestion-tag-btn" data-topic="Graph Neural Networks for Drug Discovery and Molecular Property Prediction">GNNs in Drug Discovery</button>
+                        <button class="suggestion-tag-btn" data-topic="Transformer Architectures for Quantum Computing Simulation">Quantum Transformers</button>
+                        <button class="suggestion-tag-btn" data-topic="Zero-Knowledge Proofs for Decentralized Identity Verification">ZKP Identity</button>
                     </div>
                 </div>
             </div>
+
+
 
             <!-- ==================== 2. PLAGIARISM CHECKER WORKSPACE ==================== -->
             <div class="workspace-view content-grid hidden" id="dashboard-workspace">
@@ -482,24 +524,32 @@
             <div class="workspace-view content-grid hidden" id="paraphraser-workspace">
                 <!-- Left Panel: Text Input -->
                 <section class="left-panel panel">
-                    <div class="panel-header-row">
-                        <h3>Plagiarism-Free Generator</h3>
-                        <span class="badge badge-purple">Ollama Llama3</span>
+                    <div class="panel-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <h3 style="margin: 0 0 4px 0;">AI Academic Paraphraser</h3>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Transform flagged text into 100% original scholarly writing</span>
+                        </div>
+                        <button class="btn btn-sm btn-outline" id="btn-clear-para-input">
+                            <i class="fa-solid fa-trash-can"></i> Clear
+                        </button>
                     </div>
                     <div class="textarea-container">
                         <textarea id="para-input-text"
-                            placeholder="Paste your plagiarized sentence, paragraph, or document text here..."></textarea>
+                            placeholder="Paste your sentence, paragraph, or academic passage here to rewrite..."></textarea>
                     </div>
-                    <div class="panel-footer-row">
-                        <div class="tone-selector">
-                            <label for="para-tone"><i class="fa-solid fa-sliders"></i> Tone:</label>
-                            <select id="para-tone">
-                                <option value="academic">Academic & Professional</option>
-                                <option value="standard">Standard</option>
-                                <option value="creative">Creative</option>
+                    <div class="panel-footer-row" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                        <div class="tone-selector" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <label for="para-tone" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);"><i class="fa-solid fa-sliders"></i> Tone:</label>
+                            <select id="para-tone" class="research-select" style="padding: 0.45rem 0.85rem; font-size: 0.85rem; min-width: 200px;">
+                                <option value="academic" selected>🎓 Academic & Scholarly</option>
+                                <option value="standard">⚡ Standard & Fluent</option>
+                                <option value="formal">💼 Formal & Professional</option>
+                                <option value="creative">💡 Creative & Engaging</option>
+                                <option value="shorten">📉 Shorten & Concise</option>
+                                <option value="expand">📈 Expand & Elaborate</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary" id="btn-run-paraphrase">
+                        <button class="btn btn-primary" id="btn-run-paraphrase" style="padding: 0.6rem 1.4rem;">
                             <i class="fa-solid fa-wand-magic-sparkles"></i> Paraphrase Text
                         </button>
                     </div>
@@ -508,31 +558,126 @@
                 <!-- Right Panel: Paraphrased Output -->
                 <aside class="right-panel">
                     <div class="panel output-card">
-                        <div class="card-header-row">
-                            <h3>Paraphrased Output</h3>
+                        <div class="card-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0;">Paraphrased Output</h3>
                             <button class="btn btn-sm btn-outline" id="btn-copy-paraphrase" disabled>
-                                <i class="fa-regular fa-copy"></i> Copy
+                                <i class="fa-regular fa-copy"></i> Copy Text
                             </button>
                         </div>
-                        <div class="output-scroller">
-                            <div class="paraphrased-content-render" id="para-output-render">
-                                <span class="placeholder-text">Paraphrased text will be generated here...</span>
+                        <div class="output-scroller" style="min-height: 200px; max-height: 280px; overflow-y: auto; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--btn-radius); padding: 1rem;">
+                            <div class="paraphrased-content-render" id="para-output-render" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-primary);">
+                                <span class="placeholder-text" style="color: var(--text-muted); font-style: italic;">Paraphrased text will appear here...</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Side-by-side comparative metadata -->
                     <div class="panel diff-metadata-card">
-                        <h3>Comparison Summary</h3>
-                        <div class="stats-grid">
+                        <h3 style="margin-bottom: 1rem;">Comparison Summary</h3>
+                        <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                             <div class="stat-box">
                                 <span class="stat-label">Original Words</span>
                                 <span class="stat-value" id="para-orig-words">0</span>
                             </div>
                             <div class="stat-box">
-                                <span class="stat-label">Paraphrased Words</span>
+                                <span class="stat-label">Rewritten Words</span>
                                 <span class="stat-value" id="para-new-words">0</span>
                             </div>
+                        </div>
+                        <button class="btn btn-outline btn-full" id="btn-transfer-plag-check" style="margin-top: 0.5rem;" disabled>
+                            <i class="fa-solid fa-shield-halved"></i> Verify Similarity (Plagiarism Check)
+                        </button>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- ==================== 3.5 AI HUMANIZER & BYPASS WORKSPACE ==================== -->
+            <div class="workspace-view content-grid hidden" id="humanizer-workspace">
+                <!-- Left Panel: Humanizer Input -->
+                <section class="left-panel panel">
+                    <div class="panel-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-purple);"></i>
+                                AI Humanizer & Stealth Bypass
+                            </h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+                                Transforms AI drafts into authentic human scholarly writing with high burstiness to bypass Turnitin, GPTZero & CopyLeaks.
+                            </p>
+                        </div>
+                        <span class="badge" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-purple); border: 1px solid rgba(99, 102, 241, 0.3); font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;">
+                            Anti-AI 2.0
+                        </span>
+                    </div>
+
+                    <div class="input-container" style="margin-bottom: 1rem;">
+                        <textarea id="humanize-input-text" class="styled-textarea" placeholder="Paste AI-generated text, draft paragraphs, or assignments here to humanize..." style="width: 100%; height: 260px; font-family: inherit; font-size: 0.92rem; line-height: 1.6; padding: 1rem; border-radius: var(--btn-radius); border: 1px solid var(--border-color); background: var(--bg-tertiary); color: var(--text-primary); resize: vertical;"></textarea>
+                    </div>
+
+                    <div class="controls-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <div class="select-wrapper">
+                                <label for="humanize-tone-select" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Scholarly Style</label>
+                                <select id="humanize-tone-select" class="styled-select" style="padding: 0.5rem 0.8rem; font-size: 0.88rem; border-radius: var(--btn-radius); border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);">
+                                    <option value="academic" selected>🎓 Academic Scholar (IEEE / Peer-Review)</option>
+                                    <option value="stealth">🛡️ Turnitin Stealth Bypass</option>
+                                    <option value="formal">👔 Formal Executive</option>
+                                    <option value="natural">✍️ Natural Student Flow</option>
+                                </select>
+                            </div>
+                            <div class="select-wrapper">
+                                <label for="humanize-intensity-select" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Burstiness Level</label>
+                                <select id="humanize-intensity-select" class="styled-select" style="padding: 0.5rem 0.8rem; font-size: 0.88rem; border-radius: var(--btn-radius); border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);">
+                                    <option value="high" selected>⚡ High (Recommended)</option>
+                                    <option value="maximum">🔥 Maximum Human Entropy</option>
+                                    <option value="standard">🌱 Standard Smoothing</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-outline" id="btn-clear-humanize-input" style="padding: 0.6rem 0.9rem;">
+                                <i class="fa-solid fa-eraser"></i> Clear
+                            </button>
+                            <button class="btn btn-primary" id="btn-run-humanize" style="padding: 0.65rem 1.4rem; font-weight: 600;">
+                                <i class="fa-solid fa-sparkles"></i> Humanize Text
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Right Panel: Output & AI Bypass Metrics -->
+                <aside class="right-panel">
+                    <div class="panel output-card">
+                        <div class="card-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; font-size: 1rem;">Humanized Output</h3>
+                            <button class="btn btn-sm btn-outline" id="btn-copy-humanize" disabled>
+                                <i class="fa-regular fa-copy"></i> Copy Text
+                            </button>
+                        </div>
+                        <div class="output-scroller" style="min-height: 200px; max-height: 280px; overflow-y: auto; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--btn-radius); padding: 1rem;">
+                            <div class="humanized-content-render" id="humanize-output-render" style="font-size: 0.92rem; line-height: 1.6; color: var(--text-primary);">
+                                <span class="placeholder-text" style="color: var(--text-muted); font-style: italic;">Humanized output will appear here with high burstiness and zero AI clichés...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Bypass Scorecard -->
+                    <div class="panel diff-metadata-card">
+                        <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">AI Detection Bypass Analysis</h3>
+                        <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div class="stat-box" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                                <span class="stat-label" style="font-size: 0.75rem; color: #ef4444; font-weight: 600; text-transform: uppercase;">Estimated AI Before</span>
+                                <span class="stat-value" id="humanize-ai-before" style="font-size: 1.4rem; font-weight: 800; color: #ef4444; display: block;">--</span>
+                            </div>
+                            <div class="stat-box" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px; text-align: center;">
+                                <span class="stat-label" style="font-size: 0.75rem; color: #10b981; font-weight: 600; text-transform: uppercase;">AI Score After</span>
+                                <span class="stat-value" id="humanize-ai-after" style="font-size: 1.4rem; font-weight: 800; color: #10b981; display: block;">--</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 0.5rem;">
+                            <button class="btn btn-outline btn-full" id="btn-humanize-transfer-plag" disabled style="font-size: 0.85rem;">
+                                <i class="fa-solid fa-shield-halved"></i> Check Similarity
+                            </button>
                         </div>
                     </div>
                 </aside>
@@ -582,6 +727,159 @@
                 </section>
             </div>
 
+            
+            <!-- ==================== CITATION GENERATOR WORKSPACE ==================== -->
+            <div class="workspace-view hidden" id="citations-workspace" style="max-width: 950px; margin: 0 auto; padding: 24px; padding-bottom: 80px;">
+                <!-- Citation Generator Input Card -->
+                <section class="panel citation-hero-card">
+                    <div class="panel-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+                                <div class="citation-icon-badge">
+                                    <i class="fa-solid fa-quote-left"></i>
+                                </div>
+                                <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">Academic Citation Studio</h2>
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 0.92rem; margin: 0; line-height: 1.5;">
+                                Instantly format academic papers, books, articles, and websites into standard IEEE, APA, MLA, and Chicago bibliography citations.
+                            </p>
+                        </div>
+                        <span class="badge badge-purple" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.8rem;">
+                            <i class="fa-solid fa-bolt"></i> Multi-Format AI
+                        </span>
+                    </div>
+
+                    <!-- Search Input Box -->
+                    <div class="citation-input-wrapper">
+                        <div class="citation-search-box">
+                            <i class="fa-solid fa-magnifying-glass citation-search-icon"></i>
+                            <input type="text" id="citation-input" class="citation-input-field" 
+                                placeholder="Paste source Title, DOI (e.g., 10.1145/...), arXiv link, or URL..." autocomplete="off">
+                            <button class="citation-clear-btn hidden" id="btn-clear-citation" title="Clear input">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary btn-lg citation-submit-btn" id="btn-generate-citation">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Citations
+                        </button>
+                    </div>
+
+                    <!-- Quick Preset Pills -->
+                    <div class="citation-presets-row">
+                        <span class="preset-label"><i class="fa-regular fa-lightbulb"></i> Try Examples:</span>
+                        <button class="preset-pill" data-query="Attention Is All You Need (Vaswani et al., 2017)">
+                            <i class="fa-solid fa-book-bookmark"></i> Attention Is All You Need
+                        </button>
+                        <button class="preset-pill" data-query="10.1145/3313831.3376722">
+                            <i class="fa-solid fa-barcode"></i> DOI: 10.1145/...
+                        </button>
+                        <button class="preset-pill" data-query="https://arxiv.org/abs/2005.14165">
+                            <i class="fa-solid fa-link"></i> arXiv: Language Models (GPT-3)
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- Results Panel -->
+                <section class="panel citation-results-section hidden" id="citation-results-panel">
+                    <div class="results-header-bar">
+                        <div>
+                            <h3 style="margin: 0 0 4px 0; font-size: 1.25rem; font-weight: 700; color: var(--text-primary);">
+                                Formatted Citations
+                            </h3>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);" id="citation-source-label">
+                                Generated across 4 global academic standards
+                            </span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-outline" id="btn-copy-all-citations" title="Copy all 4 formats">
+                                <i class="fa-regular fa-clone"></i> Copy All
+                            </button>
+                            <button class="btn btn-sm btn-outline" id="btn-download-bibtex" title="Download formatted citations">
+                                <i class="fa-solid fa-file-arrow-down"></i> Export .txt
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4 Styled Citation Cards Grid -->
+                    <div class="citation-cards-grid">
+                        <!-- IEEE Card -->
+                        <div class="citation-card" data-format="ieee">
+                            <div class="citation-card-header">
+                                <div class="citation-tag ieee-tag">
+                                    <i class="fa-solid fa-microchip"></i>
+                                    <span>IEEE Standard</span>
+                                    <span class="format-sub">Engineering & CS</span>
+                                </div>
+                                <button class="citation-copy-action" data-target="cit-ieee" title="Copy IEEE Citation">
+                                    <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                                </button>
+                            </div>
+                            <div class="citation-text-box" id="cit-ieee"></div>
+                        </div>
+
+                        <!-- APA Card -->
+                        <div class="citation-card" data-format="apa">
+                            <div class="citation-card-header">
+                                <div class="citation-tag apa-tag">
+                                    <i class="fa-solid fa-flask"></i>
+                                    <span>APA 7th Edition</span>
+                                    <span class="format-sub">Sciences & Social</span>
+                                </div>
+                                <button class="citation-copy-action" data-target="cit-apa" title="Copy APA Citation">
+                                    <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                                </button>
+                            </div>
+                            <div class="citation-text-box" id="cit-apa"></div>
+                        </div>
+
+                        <!-- MLA Card -->
+                        <div class="citation-card" data-format="mla">
+                            <div class="citation-card-header">
+                                <div class="citation-tag mla-tag">
+                                    <i class="fa-solid fa-feather-pointed"></i>
+                                    <span>MLA 9th Edition</span>
+                                    <span class="format-sub">Humanities & Literature</span>
+                                </div>
+                                <button class="citation-copy-action" data-target="cit-mla" title="Copy MLA Citation">
+                                    <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                                </button>
+                            </div>
+                            <div class="citation-text-box" id="cit-mla"></div>
+                        </div>
+
+                        <!-- Chicago Card -->
+                        <div class="citation-card" data-format="chicago">
+                            <div class="citation-card-header">
+                                <div class="citation-tag chicago-tag">
+                                    <i class="fa-solid fa-landmark"></i>
+                                    <span>Chicago / Turabian</span>
+                                    <span class="format-sub">History & Fine Arts</span>
+                                </div>
+                                <button class="citation-copy-action" data-target="cit-chicago" title="Copy Chicago Citation">
+                                    <i class="fa-regular fa-copy"></i> <span>Copy</span>
+                                </button>
+                            </div>
+                            <div class="citation-text-box" id="cit-chicago"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent Citations History Card -->
+                <section class="panel citation-history-card hidden" id="citation-history-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; font-size: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-purple);"></i> Recent Inquiries
+                        </h4>
+                        <button class="btn btn-sm btn-ghost" id="btn-clear-citation-history" style="font-size: 0.75rem;">
+                            Clear History
+                        </button>
+                    </div>
+                    <div class="citation-history-list" id="citation-history-list">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </section>
+            </div>
+
             <!-- ==================== 5. NON-FUNCTIONAL PLACEHOLDER WORKSPACE ==================== -->
             <div class="workspace-view hidden" id="placeholder-workspace">
                 <section class="panel placeholder-card" style="grid-column: span 12;">
@@ -601,6 +899,458 @@
                     </div>
                 </section>
             </div>
+
+        <!-- ===== NEW RESEARCH VIEWS ===== -->
+
+        <!-- ==================== GENERATE PAPER VIEW ==================== -->
+        <div class="workspace-view hidden" id="generate-paper-view" style="padding: 24px 24px 80px 24px;">
+            <div class="research-view-header">
+                <div>
+                    <h2 class="research-view-title">Generate Research Paper</h2>
+                    <p class="research-view-subtitle">Enter a topic and Lemma AI will generate a complete IEEE-structured paper with real citations from arXiv and Semantic Scholar.</p>
+                </div>
+            </div>
+
+            <div class="research-form-card">
+                <div class="form-group">
+                    <label for="gen-topic">Research Topic <span class="required">*</span></label>
+                    <input type="text" id="gen-topic" class="research-input"
+                        placeholder="e.g., Deep Learning for Medical Image Segmentation"
+                        maxlength="500" autocomplete="off">
+                    <span class="input-hint">Be specific for better results. Include domain if applicable.</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="gen-domain">Research Domain (optional)</label>
+                    <input type="text" id="gen-domain" class="research-input"
+                        placeholder="e.g., Computer Vision, Biomedical Engineering, Cybersecurity"
+                        maxlength="200" autocomplete="off">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gen-length">Paper Length</label>
+                        <select id="gen-length" class="research-select">
+                            <option value="short">Short (~3,000 words)</option>
+                            <option value="medium" selected>Medium (~6,000 words)</option>
+                            <option value="long">Long (~9,000 words)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="gen-refs">References Count</label>
+                        <select id="gen-refs" class="research-select">
+                            <option value="10" selected>10 references (Standard)</option>
+                            <option value="15">15 references (In-depth)</option>
+                            <option value="20">20 references (Comprehensive)</option>
+                            <option value="30">30 references (Survey level)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="gen-ieee" checked>
+                        <span>Apply IEEE formatting</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-lg" id="btn-generate-paper">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Generate Research Paper
+                    </button>
+                    <span class="form-note">Generation takes 3–8 minutes depending on length and available resources.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== RESTRUCTURE VIEW ==================== -->
+        <div class="workspace-view hidden" id="restructure-view" style="padding: 28px; overflow-y: auto;">
+            <div class="research-view-header">
+                <div>
+                    <h2 class="research-view-title">Restructure to IEEE Format</h2>
+                    <p class="research-view-subtitle">Upload your existing research paper (PDF, DOCX, or TXT) and Lemma AI will detect and reorganize its sections into proper IEEE format while preserving your content.</p>
+                </div>
+            </div>
+
+            <div class="research-form-card">
+                <div class="form-group">
+                    <div class="research-drop-zone" id="restructure-drop-zone">
+                        <div class="drop-zone-icon">
+                            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                        </div>
+                        <h3>Drop your paper here</h3>
+                        <p>or <button class="link-btn" id="btn-restructure-browse">browse files</button></p>
+                        <span class="file-formats">PDF, DOCX, TXT — Max 100MB</span>
+                        <input type="file" id="restructure-file-input" accept=".pdf,.docx,.txt" style="display:none;">
+                    </div>
+                    <div class="selected-file-indicator hidden" id="restructure-file-selected">
+                        <span id="restructure-filename-display">No file selected</span>
+                        <button class="btn btn-sm btn-outline" id="btn-restructure-clear">Remove</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="restructure-preserve-citations" checked>
+                        <span>Preserve existing citations and references</span>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-lg" id="btn-start-restructure" disabled>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9"></polyline>
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                            <polyline points="7 23 3 19 7 15"></polyline>
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                        </svg>
+                        Restructure to IEEE
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SIMILARITY CHECK VIEW ==================== -->
+        <div class="workspace-view hidden" id="simcheck-view" style="padding: 28px; overflow-y: auto;">
+            <div class="research-view-header">
+                <div>
+                    <h2 class="research-view-title">Similarity Check</h2>
+                    <p class="research-view-subtitle">Upload a document or paste text to analyze for textual and semantic similarity against academic sources. Uses lexical BM25 + vector semantic matching.</p>
+                </div>
+            </div>
+
+            <div class="research-form-card">
+                <!-- Mode Tabs -->
+                <div class="sim-mode-tabs">
+                    <button class="sim-tab active" id="sim-tab-file" data-mode="file">Upload File</button>
+                    <button class="sim-tab" id="sim-tab-text" data-mode="text">Paste Text</button>
+                </div>
+
+                <!-- File Mode -->
+                <div id="sim-file-mode">
+                    <div class="research-drop-zone" id="simcheck-drop-zone">
+                        <div class="drop-zone-icon">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <polyline points="9 12 11 14 15 10"></polyline>
+                            </svg>
+                        </div>
+                        <h3>Drop document to analyze</h3>
+                        <p>or <button class="link-btn" id="btn-simcheck-browse">browse files</button></p>
+                        <span class="file-formats">PDF, DOCX, TXT — Max 100MB</span>
+                        <input type="file" id="simcheck-file-input" accept=".pdf,.docx,.txt" style="display:none;">
+                    </div>
+                    <div class="selected-file-indicator hidden" id="simcheck-file-selected">
+                        <span id="simcheck-filename-display">No file selected</span>
+                        <button class="btn btn-sm btn-outline" id="btn-simcheck-clear">Remove</button>
+                    </div>
+                </div>
+
+                <!-- Text Mode (hidden by default) -->
+                <div id="sim-text-mode" class="hidden">
+                    <textarea id="simcheck-text-input" class="research-textarea"
+                        placeholder="Paste your text here to check for similarity...
+Minimum 50 characters required. For best results, paste the full document text."
+                        rows="10"></textarea>
+                </div>
+
+                <div class="form-actions" style="margin-top: 16px;">
+                    <button class="btn btn-primary btn-lg" id="btn-run-simcheck">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <polyline points="9 12 11 14 15 10"></polyline>
+                        </svg>
+                        Run Similarity Check
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PAPER PROGRESS VIEW ==================== -->
+        <div class="workspace-view hidden" id="paper-progress-view">
+            <!-- Left Side: Progress Box (Vertically Centered, Attached to Left) -->
+            <div class="progress-view-card" id="progress-view-card">
+                <div class="progress-view-header">
+                    <div class="progress-spinner" id="progress-spinner"></div>
+                    <h2 id="progress-title">Generating Research Paper...</h2>
+                    <p id="progress-subtitle">This may take a few minutes. Please don't close this tab.</p>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-bar-outer">
+                        <div class="progress-bar-inner" id="progress-bar-fill" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-pct-text" id="progress-pct-text">0%</span>
+                </div>
+
+                <div class="progress-step-display" id="progress-step-text">Initializing...</div>
+
+                <div class="progress-stages">
+                    <div class="progress-stage" id="stage-analyze">
+                        <div class="stage-dot pending" id="stage-analyze-dot"></div>
+                        <span>Topic Analysis</span>
+                    </div>
+                    <div class="progress-stage" id="stage-sources">
+                        <div class="stage-dot pending" id="stage-sources-dot"></div>
+                        <span>Source Retrieval</span>
+                    </div>
+                    <div class="progress-stage" id="stage-outline">
+                        <div class="stage-dot pending" id="stage-outline-dot"></div>
+                        <span>Building Outline</span>
+                    </div>
+                    <div class="progress-stage" id="stage-write">
+                        <div class="stage-dot pending" id="stage-write-dot"></div>
+                        <span>Writing Sections</span>
+                    </div>
+                    <div class="progress-stage" id="stage-citations">
+                        <div class="stage-dot pending" id="stage-citations-dot"></div>
+                        <span>Citations</span>
+                    </div>
+                    <div class="progress-stage" id="stage-similarity">
+                        <div class="stage-dot pending" id="stage-similarity-dot"></div>
+                        <span>Similarity Check</span>
+                    </div>
+                    <div class="progress-stage" id="stage-done">
+                        <div class="stage-dot pending" id="stage-done-dot"></div>
+                        <span>Ready</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-outline" id="btn-progress-cancel" style="margin-top: 20px; width: 100%;">Cancel</button>
+
+                <!-- Workspace Sponsor Ad (Configurable in assets/js/ads-config.js) -->
+                <div class="workspace-ad-box" id="workspace-ad-box"></div>
+            </div>
+
+            <!-- Right Side: Live Paper Stage -->
+            <div class="live-paper-stage" id="live-paper-stage">
+                <div class="live-paper-sheet" id="live-paper-sheet">
+                    <div class="paper-preview-inner" id="live-paper-inner">
+                        <!-- Live IEEE paper generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== PAPER EDITOR/REVIEW VIEW ==================== -->
+        <div class="workspace-view hidden" id="paper-editor-view">
+            <!-- Paper Editor Header -->
+            <div class="paper-editor-header">
+                <div class="paper-editor-header-left">
+                    <button class="btn btn-sm btn-outline" id="btn-paper-back">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Back</span>
+                    </button>
+                    <div class="paper-header-titles-group">
+                        <div class="paper-editor-title" id="paper-editor-title">Research Paper</div>
+                        <div class="paper-editor-meta" id="paper-editor-meta">Generated • Loading...</div>
+                    </div>
+                </div>
+                <div class="paper-editor-header-right">
+                    <div class="similarity-badge" id="paper-similarity-badge">
+                        <span class="similarity-badge-label">Similarity</span>
+                        <span class="similarity-badge-score" id="paper-similarity-score">—</span>
+                    </div>
+
+                    <!-- In-Place Manual Editing Controls -->
+                    <button class="btn btn-sm btn-outline" id="btn-edit-paper" title="Edit Paper in-place">
+                        <i class="fa-solid fa-pen-to-square"></i> <span>Edit Paper</span>
+                    </button>
+                    <button class="btn btn-sm btn-success hidden" id="btn-save-paper" title="Save manual edits">
+                        <i class="fa-solid fa-floppy-disk"></i> <span>Save Changes</span>
+                    </button>
+                    <button class="btn btn-sm btn-outline hidden" id="btn-cancel-edit" title="Discard edits">
+                        <i class="fa-solid fa-xmark"></i> <span>Cancel</span>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline" id="btn-export-docx">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        DOCX
+                    </button>
+                    <button class="btn btn-sm btn-primary" id="btn-export-pdf">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                            <polyline points="16 6 12 2 8 6"></polyline>
+                            <line x1="12" y1="2" x2="12" y2="15"></line>
+                        </svg>
+                        Export PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paper Editor Body: Section Nav + Content -->
+            <div class="paper-editor-body">
+                <!-- Left: Section Navigator -->
+                <nav class="paper-section-nav" id="paper-section-nav">
+                    <div class="paper-nav-header">Sections</div>
+                    <div class="paper-nav-item active" data-section="abstract">Abstract</div>
+                    <!-- Dynamic section nav items injected here -->
+                    <div class="paper-nav-divider"></div>
+                    <div class="paper-nav-item" data-section="references">References</div>
+                </nav>
+
+                <!-- Right: Paper Content -->
+                <div class="paper-content-area" id="paper-content-area">
+                    <!-- Editing Mode Guidance Banner -->
+                    <div class="paper-edit-banner hidden" id="paper-edit-banner">
+                        <div class="edit-banner-text">
+                            <i class="fa-solid fa-pen-nib edit-pulse-icon"></i>
+                            <span><strong>Editing Mode Active:</strong> Click directly into the title, abstract, headings, or any paragraph to type. Click <strong>"Save Changes"</strong> when done.</span>
+                        </div>
+                    </div>
+
+                    <div class="paper-preview-wrapper" id="paper-preview-wrapper">
+                        <!-- IEEE-formatted paper content injected here -->
+                        <div class="paper-loading-placeholder">
+                            <div class="paper-loading-line" style="width: 60%; margin: 0 auto 12px;"></div>
+                            <div class="paper-loading-line" style="width: 40%; margin: 0 auto 24px;"></div>
+                            <div class="paper-loading-line" style="width: 90%; margin-bottom: 8px;"></div>
+                            <div class="paper-loading-line" style="width: 85%; margin-bottom: 8px;"></div>
+                            <div class="paper-loading-line" style="width: 88%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right sidebar: Section details + improve -->
+                <aside class="paper-editor-sidebar" id="paper-editor-sidebar">
+                    <div class="paper-sidebar-card">
+                        <h4>Section Details</h4>
+                        <div id="section-detail-info">
+                            <p style="color: var(--text-muted); font-size: 0.8rem;">Click a section to view details.</p>
+                        </div>
+                    </div>
+                    <div class="paper-sidebar-card" id="section-improve-card" style="display: none;">
+                        <h4>Improve Section</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Similarity score is above threshold. Rewrite to reduce matches.</p>
+                        <button class="btn btn-full btn-outline" id="btn-improve-section">
+                            Rewrite Section
+                        </button>
+                    </div>
+                    <div class="paper-sidebar-card">
+                        <h4>Paper Info</h4>
+                        <div class="paper-info-row"><span>Type</span><span id="paper-info-type">—</span></div>
+                        <div class="paper-info-row"><span>Sections</span><span id="paper-info-sections">—</span></div>
+                        <div class="paper-info-row"><span>References</span><span id="paper-info-refs">—</span></div>
+                        <div class="paper-info-row"><span>Similarity</span><span id="paper-info-similarity">—</span></div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <!-- ==================== SIMILARITY RESULTS VIEW ==================== -->
+        <div class="workspace-view hidden" id="simresults-view" style="padding: 28px; overflow-y: auto;">
+            <div class="research-view-header">
+                <div>
+                    <h2 class="research-view-title">Similarity Analysis Results</h2>
+                    <p class="research-view-subtitle" id="simresults-subtitle">Analysis complete.</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="btn btn-outline btn-sm" id="btn-simresults-pdf">Download Report PDF</button>
+                    <button class="btn btn-outline btn-sm" id="btn-simresults-back">New Check</button>
+                </div>
+            </div>
+
+            <!-- Score Summary -->
+            <div class="sim-score-summary">
+                <div class="sim-score-main">
+                    <div class="sim-score-circle" id="sim-score-circle">
+                        <span class="sim-score-number" id="sim-score-number">0%</span>
+                        <span class="sim-score-label">Similarity</span>
+                    </div>
+                </div>
+                <div class="sim-score-breakdown">
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Original Content</span>
+                        <span class="sim-stat-val" id="sim-original-pct">100%</span>
+                    </div>
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Matched Content</span>
+                        <span class="sim-stat-val" id="sim-matched-pct">0%</span>
+                    </div>
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Total Sentences</span>
+                        <span class="sim-stat-val" id="sim-total-sents">0</span>
+                    </div>
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Matched Sentences</span>
+                        <span class="sim-stat-val" id="sim-matched-sents">0</span>
+                    </div>
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Lexical Matches</span>
+                        <span class="sim-stat-val" id="sim-lexical-count">0</span>
+                    </div>
+                    <div class="sim-stat-row">
+                        <span class="sim-stat-label">Semantic Matches</span>
+                        <span class="sim-stat-val" id="sim-semantic-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Match Cards List -->
+            <div class="sim-matches-section">
+                <h3 style="margin-bottom: 16px;">Matched Passages</h3>
+                <div id="sim-matches-list">
+                    <!-- Match cards dynamically injected here -->
+                    <div class="sim-empty-state" id="sim-no-matches" style="display: none;">
+                        <p>No significant matches found. Content appears to be original.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MY PAPERS VIEW ==================== -->
+        <div class="workspace-view hidden" id="mypapers-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+            <div class="research-view-header library-header">
+                <div class="library-header-text">
+                    <h2 class="research-view-title">My Research Library</h2>
+                    <p class="research-view-subtitle">All generated papers, restructured IEEE documents, and similarity check reports stored in your database.</p>
+                </div>
+                <div class="library-header-actions">
+                    <button class="btn btn-outline btn-sm header-action-btn" onclick="showView('simcheck-view')">+ Similarity Check</button>
+                    <button class="btn btn-outline btn-sm header-action-btn" onclick="showView('restructure-view')">+ Restructure</button>
+                    <button class="btn btn-primary btn-sm header-action-btn" id="btn-new-paper">+ Generate Paper</button>
+                </div>
+            </div>
+
+            <!-- Library Category Filter Tabs -->
+            <div class="mypapers-filter-tabs" id="mypapers-filter-tabs">
+                <button class="filter-tab active" data-filter="all">All Items <span class="tab-badge" id="badge-all-count">0</span></button>
+                <button class="filter-tab" data-filter="generated">Generated Papers <span class="tab-badge" id="badge-gen-count">0</span></button>
+                <button class="filter-tab" data-filter="restructured">Restructured <span class="tab-badge" id="badge-restruct-count">0</span></button>
+                <button class="filter-tab" data-filter="similarity_check">Similarity Checks <span class="tab-badge" id="badge-sim-count">0</span></button>
+            </div>
+
+            <div id="mypapers-list" style="width: 100%;">
+                <div class="mypapers-empty" id="mypapers-empty" style="display: none;">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text-muted); margin-bottom: 12px;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                    </svg>
+                    <p>No documents found in this section.</p>
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 12px;">
+                        <button class="btn btn-primary" onclick="showView('generate-paper-view')">Generate Paper</button>
+                        <button class="btn btn-outline" onclick="showView('simcheck-view')">Check Similarity</button>
+                    </div>
+                </div>
+                <div class="papers-grid" id="papers-grid" style="display: none;">
+                    <!-- Paper cards dynamically injected here -->
+                </div>
+            </div>
+        </div>
         </main>
 
         <!-- Sticky On-Device Engine Status Monitor -->
@@ -633,9 +1383,16 @@
     <!-- Error/Notification Toast -->
     <div class="toast-container" id="toast-container"></div>
 
-    <script src="assets/js/config.js"></script>
-    <script src="assets/js/app.js"></script>
-    <script src="assets/js/mobile-ui.js"></script>
+    <script src="assets/js/config.js?v=35"></script>
+    <script src="assets/js/app.js?v=42"></script>
+    <script src="assets/js/research.js?v=45"></script>
+    <script src="assets/js/mobile-ui.js?v=35"></script>
+    <script src="assets/js/ads-config.js?v=1"></script>
 </body>
 
 </html>
+
+
+
+
+

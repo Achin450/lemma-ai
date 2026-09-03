@@ -48,12 +48,12 @@ class Settings(BaseSettings):
     SPACY_MODEL: str = "en_core_web_sm"
     SENTENCE_TRANSFORMERS_MODEL: str = "all-MiniLM-L6-v2"
     MOCK_DATABASE_PATH: Path = BASE_DIR / "data" / "mock_references.json"
-    LEXICAL_THRESHOLD: float = 0.70
-    SEMANTIC_THRESHOLD: float = 0.65
-    HYBRID_THRESHOLD: float = 0.60
+    LEXICAL_THRESHOLD: float = 0.50
+    SEMANTIC_THRESHOLD: float = 0.55
+    HYBRID_THRESHOLD: float = 0.45
     
     # Database Settings
-    DATABASE_URL: str | None = None
+    DATABASE_URL: str
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "lemma"
@@ -68,18 +68,31 @@ class Settings(BaseSettings):
     SEMANTIC_SCHOLAR_API_KEY: str | None = None
     MAX_ONLINE_CANDIDATES_PER_QUERY: int = 30
     
-    # Deprecated/Fallback Settings
-    SQLITE_DB_FILE: str = "lemma.db"
-    SQLITE_DB_PATH: Path = BASE_DIR / "data" / "lemma.db"
-    FAISS_INDEX_PATH: Path = BASE_DIR / "data" / "lemma_vectors.index"
-    
     # Redis & Celery
     REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_ALWAYS_EAGER: bool = True
+    CELERY_ALWAYS_EAGER: bool = False
     
     # Ollama settings
     OLLAMA_URL: str = "http://127.0.0.1:11434"
     OLLAMA_MODEL: str = "lemma-model"
+    
+    # JWT / Auth Settings
+    JWT_SECRET_KEY: str = "lemma-super-secret-change-in-production-please"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    
+    # Email / SMTP Settings (for verification emails)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_EMAIL: str = "noreply@lemma.ai"
+    
+    # Federation Settings (Phase 4)
+    FEDERATION_ENABLED: bool = False
+    FEDERATION_PEER_URL: str | None = None
+    FEDERATION_API_KEY: str | None = None
+    FEDERATION_NOISE_EPSILON: float = 0.1
     
     # Firebase settings (to be integrated fully in Phase 4)
     FIREBASE_CREDENTIALS_PATH: str | None = None
@@ -105,12 +118,3 @@ except Exception as e:
     logger.warning(f"Could not create UPLOAD_DIR at {settings.UPLOAD_DIR}: {e}. Falling back to system temp directory.")
     settings.UPLOAD_DIR = Path(tempfile.gettempdir()) / "lemma_uploads"
     settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
-try:
-    settings.FAISS_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
-except Exception as e:
-    import tempfile
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.warning(f"Could not create FAISS parent directory at {settings.FAISS_INDEX_PATH.parent}: {e}. Falling back to system temp directory.")
-    settings.FAISS_INDEX_PATH = Path(tempfile.gettempdir()) / "lemma_vectors.index"

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemma — Sign In</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0a0a0c;
+            --surface2: #111115;
+            --border: #1e1e2a;
+            --border-hover: #2d2d3f;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-dim: rgba(99, 102, 241, 0.12);
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --glass: rgba(255, 255, 255, 0.03);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.06) 0%, transparent 60%),
+                              radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%);
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 24px;
+        }
+        .logo-area {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo-area img { height: 36px; margin-bottom: 12px; }
+        .logo-area h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+        .logo-area p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--surface2);
+            color: var(--text-primary);
+        }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 7px; letter-spacing: 0.3px; }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        input::placeholder { color: var(--text-muted); }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 4px;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+        .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+        .divider span { font-size: 11px; color: var(--text-muted); }
+
+        .inst-code-row { display: flex; gap: 10px; align-items: flex-end; }
+        .inst-code-row .form-group { flex: 1; margin-bottom: 0; }
+
+        .message { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .message.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+        .message.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+        .message.show { display: block; }
+
+        .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        footer { text-align: center; margin-top: 24px; font-size: 11px; color: var(--text-muted); }
+        footer a { color: var(--text-secondary); text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="logo-area">
+        <h1>⚡ Lemma</h1>
+        <p>Academic Integrity Platform</p>
+    </div>
+
+    <div class="card">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+            <button class="tab-btn" onclick="switchTab('register')">Create Account</button>
+        </div>
+
+        <div id="msg" class="message"></div>
+
+        <!-- Login Panel -->
+        <div id="login-panel" class="panel active">
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="login-email" placeholder="you@university.edu" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="Your password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+            </form>
+        </div>
+
+        <!-- Register Panel -->
+        <div id="register-panel" class="panel">
+            <form id="register-form" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="reg-name" placeholder="John Doe" required autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="reg-email" placeholder="you@example.com" required autocomplete="email">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn-primary" id="register-btn">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        By signing in, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.<br>
+        &copy; 2026 Lemma Academic Integrity Platform
+    </footer>
+</div>
+
+<script>
+    const API_BASE = (() => {
+        try {
+            const cfg = JSON.parse(localStorage.getItem("lemma_api_config") || "{}");
+            return cfg.apiUrl || window.location.origin;
+        } catch { return window.location.origin; }
+    })();
+
+    // Redirect if already logged in
+    const existingToken = localStorage.getItem("lemma_access_token");
+    if (existingToken) {
+        window.location.href = "/dashboard.html";
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll(".tab-btn").forEach((b, i) => {
+            b.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "register"));
+        });
+        document.getElementById("login-panel").classList.toggle("active", tab === "login");
+        document.getElementById("register-panel").classList.toggle("active", tab === "register");
+        hideMsg();
+    }
+
+    function showMsg(text, type = "error") {
+        const el = document.getElementById("msg");
+        el.className = `message ${type} show`;
+        el.textContent = text;
+    }
+    function hideMsg() {
+        const el = document.getElementById("msg");
+        el.className = "message";
+        el.textContent = "";
+    }
+
+    function storeTokens(data) {
+        localStorage.setItem("lemma_access_token", data.access_token);
+        localStorage.setItem("lemma_refresh_token", data.refresh_token);
+        localStorage.setItem("lemma_user", JSON.stringify(data.user));
+    }
+
+    async function handleLogin(e) {
+        e.preventDefault();
+        hideMsg();
+        const btn = document.getElementById("login-btn");
+        btn.disabled = true;
+        btn.textContent = "Signing in...";
+        try {
+            const res = await fetch(`${API_BASE}/api/v1/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: document.getElementById("login-email").value,
+                    password: document.getElementById("login-password").value,
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Login failed.");
+            storeTokens(data);
+            showMsg("Signed in! Redirecting…", "success");
+            setTimeout(() => { window.location.href = "/dashboard.html"; }, 800);
+        } catch (err) {
+            showMsg(err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Sign In";
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        hideMsg();
+
+        const password = document.getElementById("reg-password").value;
+        const confirmPassword = document.getElementById("reg-confirm-password").value;
+
+        if (password !== confirmPassword) {
+            showMsg("Passwords do not match! Please check and try again.", "error");
+            document.getElementById("reg-confirm-password").focus();
+            return;
+        }
+
+        const btn = document.getElementById("register-btn");
+        btn.disabled = true;
+        btn.textContent = "Creating account...";
+        try {
+            const body = {
+                full_name: document.getElementById("reg-name").value.trim(),
+                email: document.getElementById("reg-email").value.trim(),
+                password: password,
+            };
+
+            const res = await fetch(`${API_BASE}/api/v1/auth/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail || "Registration failed.");
+            storeTokens(data);
+            showMsg("Account created! Redirecting to dashboard…", "success");
+            setTimeout(() => { window.location.href = "/dashboard.html"; }, 900);
+        } catch (err) {
+            showMsg(err.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Create Account";
+        }
+    }
+</script>
+</body>
+</html>

@@ -15,7 +15,7 @@ class OnlineRetrieverService:
     """Manages dynamic query generation, external academic API fetching, and JIT ephemeral caching."""
 
     @classmethod
-    def extract_search_queries(cls, text: str, num_queries: int = 3) -> list[str]:
+    def extract_search_queries(cls, text: str, num_queries: int = 8) -> list[str]:
         """
         Analyzes document text using spaCy to extract high-entropy phrases for searching external APIs,
         distributing candidate selection across different parts of the document.
@@ -117,22 +117,28 @@ class OnlineRetrieverService:
     async def fetch_arxiv_candidates(cls, query: str, limit: int = 15) -> list[dict]:
         """Queries the arXiv API for matching academic preprints with retries."""
         url = "https://export.arxiv.org/api/query"
+        # Search all fields with flexible query terms without strict quote nesting
+        clean_q = query.replace('"', '').strip()
         params = {
-            "search_query": f'all:"{query}"',
+            "search_query": f'all:{clean_q}',
             "max_results": limit
         }
         
-        max_retries = 3
-        backoff = 1.5
+        max_retries = 2
         for attempt in range(max_retries):
             try:
-                async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                async with httpx.AsyncClient(timeout=8.0, follow_redirects=True) as client:
                     response = await client.get(url, params=params)
                     if response.status_code == 200:
                         ns = {'atom': 'http://www.w3.org/2005/Atom'}
-                        root = ET.fromstring(response.content)
+                        try:
+                            if "xml" not in response.headers.get("content-type", "").lower():
+                                return []
+                            root = ET.fromstring(response.content)
+                        except ET.ParseError:
+                            return []
+                            
                         entries = root.findall('atom:entry', ns)
-                        
                         candidates = []
                         for entry in entries:
                             title_elem = entry.find('atom:title', ns)
@@ -162,85 +168,227 @@ class OnlineRetrieverService:
                                 "text": abstract
                             })
                         return candidates
-                    elif response.status_code == 429:
-                        wait_time = backoff * (2 ** attempt)
-                        logger.warning(f"arXiv API returned 429. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        logger.warning(f"arXiv API returned status code {response.status_code}")
-                        return []
             except Exception as e:
-                logger.error(f"Failed to fetch candidates from arXiv for query '{query}': {e}")
-                return []
+                logger.warning(f"arXiv candidate search error for '{query}': {e}")
+        return []
+
+    @classmethod
+    async def fetch_crossref_candidates(cls, query: str, limit: int = 15) -> list[dict]:
+        """Queries the Crossref Academic API for matching DOI peer-reviewed journal papers and abstracts."""
+        url = "https://api.crossref.org/works"
+        params = {
+            "query": query.replace('"', '').strip(),
+            "rows": limit,
+            "select": "DOI,title,author,abstract,container-title,published"
+        }
+        headers = {
+            "User-Agent": "LemmaAcademicIntegrity/2.0 (mailto:contact@lemma.ai)"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=8.0, headers=headers, follow_redirects=True) as client:
+                response = await client.get(url, params=params)
+                if response.status_code == 200:
+                    items = response.json().get("message", {}).get("items", [])
+                    candidates = []
+                    for item in items:
+                        title_list = item.get("title", [])
+                        title = title_list[0] if title_list else "Academic Reference"
+                        abstract = item.get("abstract", "") or ""
+                        
+                        # Strip jats xml tags if present
+                        if abstract:
+                            import re
+                            abstract = re.sub(r'<[^>]+>', ' ', abstract).strip()
+                            
+                        # If abstract is absent, use title and venue context
+                        if not abstract or len(abstract) < 20:
+                            venue = item.get("container-title", [""])[0] if item.get("container-title") else ""
+                            abstract = f"{title}. Published in {venue}." if venue else title
+                            
+                        doi = item.get("DOI", "unknown")
+                        venue = item.get("container-title", ["Academic Publisher"])[0] if item.get("container-title") else "Peer-Reviewed Journal"
+                        
+                        # Authors
+                        authors = []
+                        for a in item.get("author", []):
+                            family = a.get("family", "")
+                            given = a.get("given", "")
+                            if family:
+                                authors.append(f"{given} {family}".strip())
+                        author_str = ", ".join(authors) if authors else "Scholarly Research Team"
+                        
+                        candidates.append({
+                            "doc_id": f"crossref_{doi.replace('/', '_')}",
+                            "title": title,
+                            "author": author_str,
+                            "source": f"{venue} (DOI: {doi})",
+                            "text": abstract
+                        })
+                    return candidates
+        except Exception as e:
+            logger.warning(f"Crossref search error for '{query}': {e}")
+        return []
+
+    @classmethod
+    async def fetch_wikipedia_candidates(cls, query: str, limit: int = 5) -> list[dict]:
+        """Queries the Wikipedia Encyclopedia API for matching academic concepts and text excerpts."""
+        url = "https://en.wikipedia.org/w/api.php"
+        headers = {
+            "User-Agent": "LemmaAcademicIntegrity/2.0 (contact@lemma.ai)"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=8.0, headers=headers, follow_redirects=True) as client:
+                search_res = await client.get(url, params={
+                    "action": "query",
+                    "list": "search",
+                    "srsearch": query.replace('"', '').strip(),
+                    "format": "json",
+                    "srlimit": limit
+                })
+                if search_res.status_code == 200:
+                    results = search_res.json().get("query", {}).get("search", [])
+                    titles = [r.get("title") for r in results if r.get("title")]
+                    if not titles:
+                        return []
+                    
+                    # Fetch extracts for found titles
+                    extract_res = await client.get(url, params={
+                        "action": "query",
+                        "prop": "extracts",
+                        "explaintext": "1",
+                        "titles": "|".join(titles[:limit]),
+                        "format": "json"
+                    })
+                    if extract_res.status_code == 200:
+                        pages = extract_res.json().get("query", {}).get("pages", {})
+                        candidates = []
+                        for pid, pdata in pages.items():
+                            title = pdata.get("title", "Wikipedia Article")
+                            extract = pdata.get("extract", "")
+                            if extract and len(extract) > 30:
+                                candidates.append({
+                                    "doc_id": f"wiki_{pid}",
+                                    "title": f"Wikipedia: {title}",
+                                    "author": "Wikipedia Contributors",
+                                    "source": f"https://en.wikipedia.org/wiki/{title.replace(' ', '_')}",
+                                    "text": extract[:2500]
+                                })
+                        return candidates
+        except Exception as e:
+            logger.warning(f"Wikipedia search error for '{query}': {e}")
         return []
 
     @classmethod
     async def fetch_semantic_scholar_candidates(cls, query: str, limit: int = 15) -> list[dict]:
-        """Queries the Semantic Scholar search API for matching academic papers with retries."""
+        """Queries the Semantic Scholar search API for matching academic papers."""
         url = "https://api.semanticscholar.org/graph/v1/paper/search"
         params = {
-            "query": query,
+            "query": query.replace('"', '').strip(),
             "limit": limit,
             "fields": "title,authors,venue,year,abstract"
         }
         
         headers = {}
-        has_key = False
         if settings.SEMANTIC_SCHOLAR_API_KEY:
             headers["x-api-key"] = settings.SEMANTIC_SCHOLAR_API_KEY
-            has_key = True
             
-        max_retries = 3 if has_key else 1
-        backoff = 1.5
-        for attempt in range(max_retries):
-            try:
-                async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
-                    response = await client.get(url, params=params, headers=headers)
-                    if response.status_code == 200:
-                        data = response.json()
-                        papers = data.get("data", [])
+        try:
+            async with httpx.AsyncClient(timeout=8.0, headers=headers, follow_redirects=True) as client:
+                response = await client.get(url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    papers = data.get("data", [])
+                    
+                    candidates = []
+                    for paper in papers:
+                        paper_id = paper.get("paperId")
+                        title = paper.get("title")
+                        abstract = paper.get("abstract")
                         
-                        candidates = []
-                        for paper in papers:
-                            paper_id = paper.get("paperId")
-                            title = paper.get("title")
-                            abstract = paper.get("abstract")
+                        if not paper_id or not title or not abstract:
+                            continue
                             
-                            if not paper_id or not title or not abstract:
-                                continue
-                                
-                            authors = [auth.get("name") for auth in paper.get("authors", []) if auth.get("name")]
-                            author_str = ", ".join(authors) if authors else "N/A"
+                        authors = [auth.get("name") for auth in paper.get("authors", []) if auth.get("name")]
+                        author_str = ", ".join(authors) if authors else "N/A"
+                        venue = paper.get("venue", "Academic Publication")
+                        year = paper.get("year", "N/A")
+                        
+                        candidates.append({
+                            "doc_id": f"semschol_{paper_id}",
+                            "title": title,
+                            "author": author_str,
+                            "source": f"{venue}, {year}",
+                            "text": abstract
+                        })
+                    return candidates
+        except Exception as e:
+            logger.warning(f"Semantic Scholar candidate search error: {e}")
+        return []
+
+    @classmethod
+    async def fetch_openalex_candidates(cls, query: str, limit: int = 15) -> list[dict]:
+        """Queries OpenAlex Academic API for matching research works, reconstructs abstracts from inverted indices."""
+        clean_q = query.replace('"', '').strip()
+        url = "https://api.openalex.org/works"
+        params = {
+            "search": clean_q,
+            "per-page": limit,
+            "select": "id,title,doi,publication_year,primary_location,authorships,abstract_inverted_index"
+        }
+        headers = {
+            "User-Agent": "LemmaAcademicIntegrity/2.0 (mailto:admin@lemma.ai)"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=8.0, headers=headers, follow_redirects=True) as client:
+                response = await client.get(url, params=params)
+                if response.status_code == 200:
+                    data = response.json()
+                    results = data.get("results", [])
+                    candidates = []
+                    for item in results:
+                        title = item.get("title") or "Scholarly Publication"
+                        inv = item.get("abstract_inverted_index")
+                        abstract = ""
+                        if inv:
+                            pos_word_pairs = []
+                            for word, positions in inv.items():
+                                for p in positions:
+                                    pos_word_pairs.append((p, word))
+                            pos_word_pairs.sort(key=lambda x: x[0])
+                            abstract = " ".join(w for _, w in pos_word_pairs)
+                        
+                        if not abstract or len(abstract) < 30:
+                            venue_name = ""
+                            if item.get("primary_location") and item["primary_location"].get("source"):
+                                venue_name = item["primary_location"]["source"].get("display_name", "")
+                            abstract = f"{title}. Published in {venue_name}." if venue_name else title
                             
-                            venue = paper.get("venue", "Unknown Venue")
-                            year = paper.get("year", "N/A")
-                            
-                            candidates.append({
-                                "doc_id": f"semschol_{paper_id}",
-                                "title": title,
-                                "author": author_str,
-                                "source": f"{venue}, {year}",
-                                "text": abstract
-                            })
-                        return candidates
-                    elif response.status_code == 429:
-                        if not has_key:
-                            logger.warning("Semantic Scholar API returned 429 (unauthenticated). Skipping retries to avoid timeout.")
-                            return []
-                        wait_time = backoff * (2 ** attempt)
-                        logger.warning(f"Semantic Scholar API returned 429. Retrying in {wait_time}s... (Attempt {attempt+1}/{max_retries})")
-                        await asyncio.sleep(wait_time)
-                    else:
-                        logger.warning(f"Semantic Scholar API returned status code {response.status_code}: {response.text}")
-                        return []
-            except Exception as e:
-                logger.error(f"Failed to fetch candidates from Semantic Scholar for query '{query}': {e}")
-                return []
+                        raw_id = item.get("id", "").split("/")[-1] or "work"
+                        doi = item.get("doi") or f"https://openalex.org/{raw_id}"
+                        
+                        authors = []
+                        for a in item.get("authorships", []):
+                            author_obj = a.get("author", {})
+                            name = author_obj.get("display_name")
+                            if name:
+                                authors.append(name)
+                        author_str = ", ".join(authors[:4]) if authors else "Academic Research Team"
+                        
+                        candidates.append({
+                            "doc_id": f"openalex_{raw_id}",
+                            "title": title,
+                            "author": author_str,
+                            "source": f"OpenAlex Academic Works ({doi})",
+                            "text": abstract
+                        })
+                    return candidates
+        except Exception as e:
+            logger.warning(f"OpenAlex candidate search error for '{query}': {e}")
         return []
 
     @classmethod
     async def get_online_candidates(cls, queries: list[str], limit_per_query: int = None) -> list[dict]:
-        """Fetches and merges candidates from multiple APIs, deduplicating them."""
+        """Fetches and merges candidates concurrently across OpenAlex, Crossref, arXiv, Wikipedia, and Semantic Scholar."""
         if limit_per_query is None:
             limit_per_query = settings.MAX_ONLINE_CANDIDATES_PER_QUERY
             
@@ -248,23 +396,26 @@ class OnlineRetrieverService:
         seen_ids = set()
         seen_titles = set()
         
-        for idx, query in enumerate(queries):
-            if idx > 0:
-                await asyncio.sleep(1.0)  # Rate-limit padding between queries
-                
-            # Query APIs in sequence or gather them
-            arxiv_res = await cls.fetch_arxiv_candidates(query, limit=limit_per_query)
-            semschol_res = await cls.fetch_semantic_scholar_candidates(query, limit=limit_per_query)
+        tasks = []
+        for query in queries[:8]:
+            tasks.append(cls.fetch_openalex_candidates(query, limit=10))
+            tasks.append(cls.fetch_crossref_candidates(query, limit=10))
+            tasks.append(cls.fetch_arxiv_candidates(query, limit=10))
+            tasks.append(cls.fetch_wikipedia_candidates(query, limit=4))
+            tasks.append(cls.fetch_semantic_scholar_candidates(query, limit=8))
             
-            for cand in arxiv_res + semschol_res:
-                cand_id = cand["doc_id"]
-                title_lower = cand["title"].lower().strip()
-                
-                if cand_id not in seen_ids and title_lower not in seen_titles:
-                    seen_ids.add(cand_id)
-                    seen_titles.add(title_lower)
-                    all_candidates.append(cand)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for cand_list in results:
+            if isinstance(cand_list, list):
+                for cand in cand_list:
+                    cand_id = cand.get("doc_id", "")
+                    title_lower = cand.get("title", "").lower().strip()
                     
+                    if cand_id and cand_id not in seen_ids and title_lower not in seen_titles:
+                        seen_ids.add(cand_id)
+                        seen_titles.add(title_lower)
+                        all_candidates.append(cand)
+                        
         return all_candidates
 
     @classmethod

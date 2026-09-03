@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 class SentenceCoordinate(BaseModel):
     text: str = Field(..., description="The raw text of the segmented sentence.")
@@ -23,6 +24,11 @@ class PlagiarismMatch(BaseModel):
     match_type: str = Field(..., description="Type of match: 'lexical', 'semantic', or 'hybrid'.")
     score: float = Field(..., description="Cosine similarity score.")
     highlights: list[MatchHighlight] = Field(..., description="Exact coordinate highlights within the sentence.")
+    # Explainability fields (Feature 6)
+    lexical_overlap_pct: float = Field(0.0, description="Jaccard word-set overlap percentage (0.0-1.0).")
+    semantic_similarity_score: float = Field(0.0, description="Raw cosine similarity from pgvector (0.0-1.0).")
+    confidence_tier: str = Field("Low", description="Confidence tier: High, Medium, or Low.")
+    explanation: str = Field("", description="Plain-language explanation of why this was flagged.")
 
 class PlagiarismAnalysisReport(BaseModel):
     plagiarism_score: float = Field(..., description="Overall plagiarism ratio (0.0 to 1.0).")
@@ -33,11 +39,13 @@ class PlagiarismAnalysisReport(BaseModel):
     hybrid_matches_count: int = Field(0, description="Count of hybrid matches.")
     matches: list[PlagiarismMatch] = Field(..., description="Sentence-by-sentence match details.")
 
-
 class DocumentUploadResponse(BaseModel):
     filename: str = Field(..., description="The name of the uploaded file.")
     text: str = Field(..., description="The full extracted text of the document.")
     char_count: int = Field(..., description="Total characters in the document.")
     sentence_count: int = Field(..., description="Total segmented sentences in the document.")
     sentences: list[SentenceCoordinate] = Field(..., description="List of sentence coordinate objects.")
-    analysis: PlagiarismAnalysisReport | None = Field(None, description="Detailed plagiarism analysis report.")
+    analysis: Optional[PlagiarismAnalysisReport] = Field(None, description="Detailed plagiarism analysis report.")
+    ai_detection: Optional[dict] = Field(None, description="AI-generated text detection results (Phase 2).")
+    citation_analysis: Optional[dict] = Field(None, description="Citation graph analysis results (Phase 2).")
+

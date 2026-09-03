@@ -29,7 +29,10 @@ def initialize_es() -> None:
                     "properties": {
                         "document_id": { "type": "keyword" },
                         "sentence_index": { "type": "integer" },
-                        "text": { "type": "text" }
+                        "text": { "type": "text" },
+                        "title": { "type": "keyword" },
+                        "author": { "type": "keyword" },
+                        "source": { "type": "keyword" }
                     }
                 }
             }
@@ -60,7 +63,10 @@ def index_sentence_bulk(sentences: list[dict]) -> None:
             "_source": {
                 "document_id": s["document_id"],
                 "sentence_index": s["sentence_index"],
-                "text": s["text"]
+                "text": s["text"],
+                "title": s.get("title", "Unknown"),
+                "author": s.get("author", "N/A"),
+                "source": s.get("source", "N/A")
             }
         }
         for s in sentences
@@ -124,6 +130,9 @@ def search_sentences_bm25(query_text: str, k: int = 20, job_id: str = None) -> l
                 "document_id": hit["_source"]["document_id"],
                 "sentence_index": hit["_source"]["sentence_index"],
                 "text": hit["_source"]["text"],
+                "title": hit["_source"].get("title", "Unknown"),
+                "author": hit["_source"].get("author", "N/A"),
+                "source": hit["_source"].get("source", "N/A"),
                 "score": hit["_score"]
             })
         return results

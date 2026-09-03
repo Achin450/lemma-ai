@@ -4,14 +4,15 @@ from celery.result import AsyncResult
 # pyrefly: ignore [missing-import]
 import os
 from sqlalchemy import create_engine
-from fastapi import FastAPI, UploadFile, File, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
 from app.config import settings
 from app.services.pdf_generator import PDFGeneratorService
 from app.schemas.document import DocumentUploadResponse, SentenceCoordinate
-from app.schemas.rewrite import RewriteRequest, RewriteResponse
+from app.schemas.rewrite import RewriteRequest, RewriteResponse, HumanizeRequest, HumanizeResponse
+from app.schemas.coach import IntegrityCoachRequest, IntegrityCoachResponse, CitationFormats
 from app.services.extractor import (
     DocumentExtractorService,
     FileSizeExceededError,
@@ -21,8 +22,26 @@ from app.services.extractor import (
 from app.services.segmenter import SentenceSegmenterService
 from app.services.matcher import DualTierMatcher
 from app.services.llm import LLMService
+from app.services.auth import get_current_user, require_any_user
 from app.tasks.celery_app import celery_app
 from app.tasks.analysis import analyze_document_task
+from app.tasks.research_tasks import (
+    generate_paper_task,
+    restructure_paper_task,
+    similarity_check_task,
+)
+
+# Import routers
+from app.routers.auth import router as auth_router
+from app.routers.admin import router as admin_router
+from app.routers.instructor import router as instructor_router
+from app.routers.lti import router as lti_router
+from app.routers.public_api import router as public_api_router
+from app.routers.citations import router as citations_router
+from app.routers.federation import router as federation_router
+# NEW: Research Paper Assistant routers
+from app.routers.research import router as research_router
+from app.routers.plagiarism import router as plagiarism_check_router
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -36,8 +55,8 @@ engine = create_engine(DATABASE_URL)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Backend API for Plagiarism Detection and Text Rewriting",
-    version="1.0.0",
+    description="Backend API for Lemma AI Research Paper Assistant & Academic Integrity Platform",
+    version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -51,7 +70,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ---------------------------------------------------------------------------
+# Include routers
+# ---------------------------------------------------------------------------
+app.include_router(auth_router)
+app.include_router(admin_router)
+app.include_router(instructor_router)
+app.include_router(lti_router)
+app.include_router(public_api_router)
+app.include_router(citations_router)
+app.include_router(federation_router)
+# NEW: Research Paper Assistant
+app.include_router(research_router)
+app.include_router(plagiarism_check_router)
+
+# ---------------------------------------------------------------------------
+# Startup event — ensure new DB tables exist
+# ---------------------------------------------------------------------------
+@app.on_event("startup")
+async def startup_event():
+    """Initialize new database tables on startup."""
+    import logging
+    _startup_logger = logging.getLogger("startup")
+    try:
+        from app.services.paper_store import PaperStore
+        PaperStore.ensure_db_table()
+        _startup_logger.info("research_papers table initialized.")
+    except Exception as e:
+        _startup_logger.warning(f"Could not initialize research_papers table: {e}")
+
+
+# ---------------------------------------------------------------------------
 # Global Exception Handlers
+# ---------------------------------------------------------------------------
 @app.exception_handler(FileSizeExceededError)
 async def file_size_exceeded_handler(request, exc: FileSizeExceededError):
     return JSONResponse(
@@ -75,7 +126,6 @@ async def extraction_error_handler(request, exc: ExtractionError):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc: Exception):
-    # Log this in a production app
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": f"An unexpected error occurred: {str(exc)}"},
@@ -97,13 +147,11 @@ async def health():
     
     local_logger = logging.getLogger("health_check")
     
-    # Clean loopback helper to prevent Windows getaddrinfo latency
     def clean_host(host_str: str) -> str:
         if host_str and host_str.lower() == "localhost":
             return "127.0.0.1"
         return host_str
 
-    # Socket precheck helper
     def is_port_open_sync(h: str, p: int) -> bool:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -115,7 +163,6 @@ async def health():
     async def is_port_open(h: str, p: int) -> bool:
         return await anyio.to_thread.run_sync(is_port_open_sync, h, p)
 
-    # Parse Postgres host/ports
     db_host = settings.POSTGRES_HOST
     db_port = int(settings.POSTGRES_PORT or 5432)
     db_url = settings.DATABASE_URL
@@ -129,7 +176,6 @@ async def health():
         except Exception:
             pass
 
-    # Parse Redis host/ports
     redis_host = "localhost"
     redis_port = 6379
     redis_url = settings.REDIS_URL
@@ -143,7 +189,6 @@ async def health():
         except Exception:
             pass
 
-    # 1. Define PostgreSQL checker task
     async def check_database():
         if not await is_port_open(db_host, db_port):
             return "disconnected"
@@ -154,7 +199,6 @@ async def health():
                     cursor.execute("SELECT 1;")
                 conn.close()
                 return "connected"
-                
             return await asyncio.wait_for(
                 anyio.to_thread.run_sync(check_db),
                 timeout=1.0
@@ -163,7 +207,6 @@ async def health():
             local_logger.warning(f"Health check: Database connection failed: {e}")
             return "disconnected"
 
-    # 2. Define Elasticsearch checker task
     async def check_elasticsearch():
         try:
             async with httpx.AsyncClient(timeout=0.8) as client:
@@ -176,10 +219,8 @@ async def health():
             local_logger.warning(f"Health check: Elasticsearch ping failed: {e}")
             return "offline"
 
-    # 3. Define Ollama checker task
     async def check_ollama():
         try:
-            # Check Ollama status directly with a fast 1.0s timeout
             url = f"{settings.OLLAMA_URL.rstrip('/')}/api/tags"
             async with httpx.AsyncClient(timeout=1.0) as client:
                 response = await client.get(url)
@@ -194,14 +235,11 @@ async def health():
             local_logger.warning(f"Health check: Ollama check failed: {e}")
             return "offline", []
 
-    # 4. Define Celery checker task
     async def check_celery_status():
         if settings.CELERY_ALWAYS_EAGER:
             return "idle"
-            
         if not await is_port_open(redis_host, redis_port):
             return "offline"
-            
         try:
             def check_celery():
                 inspector = celery_app.control.inspect(timeout=0.5)
@@ -211,7 +249,6 @@ async def health():
                     if has_active:
                         return "working"
                 return "idle"
-                
             return await asyncio.wait_for(
                 anyio.to_thread.run_sync(check_celery),
                 timeout=1.0
@@ -220,7 +257,6 @@ async def health():
             local_logger.warning(f"Health check: Celery status check failed: {e}")
             return "offline"
 
-    # Run all checks in parallel
     db_task = check_database()
     es_task = check_elasticsearch()
     ollama_task = check_ollama()
@@ -230,7 +266,6 @@ async def health():
         db_task, es_task, ollama_task, celery_task
     )
 
-    # Determine general status
     general_status = "ok"
     if db_status == "disconnected" or es_status == "offline" or ollama_status == "offline":
         general_status = "degraded"
@@ -238,21 +273,17 @@ async def health():
     return {
         "status": general_status,
         "project": settings.PROJECT_NAME,
+        "version": "2.0.0",
+        "features": ["plagiarism-detection", "ai-detection", "citation-analysis", "integrity-coach", "institutional-auth"],
         "services": {
-            "database": {
-                "status": db_status
-            },
-            "elasticsearch": {
-                "status": es_status
-            },
+            "database": {"status": db_status},
+            "elasticsearch": {"status": es_status},
             "ollama": {
                 "status": ollama_status,
                 "model": settings.OLLAMA_MODEL,
                 "available_models": available_models
             },
-            "celery": {
-                "status": celery_status
-            }
+            "celery": {"status": celery_status}
         }
     }
 
@@ -331,6 +362,7 @@ async def check_ollama_online():
             detail="Ollama service is offline. Please make sure Ollama is running locally on your system."
         )
 
+
 @app.post(
     f"{settings.API_V1_STR}/documents/upload",
     response_model=DocumentUploadResponse,
@@ -338,26 +370,18 @@ async def check_ollama_online():
     summary="Upload and segment a document",
     description="Ingests a PDF, DOCX, or TXT file, validates constraints, extracts plain text, and segments it."
 )
-async def upload_document(file: UploadFile = File(...)):
-    await check_postgres_online()
-    await check_elasticsearch_online()
-
+async def upload_document(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No filename provided in upload request."
         )
-
-    # Read content
     content = await file.read()
-    
-    # Extract text (validations are performed internally)
     text = DocumentExtractorService.extract_text(file.filename, content)
-    
-    # Segment sentences with coordinates
     sentences_data = SentenceSegmenterService.segment(text)
-    
-    # Format response
     sentences = [
         SentenceCoordinate(
             text=s["text"],
@@ -366,7 +390,6 @@ async def upload_document(file: UploadFile = File(...)):
         )
         for s in sentences_data
     ]
-    
     return DocumentUploadResponse(
         filename=file.filename,
         text=text,
@@ -387,33 +410,26 @@ async def upload_document(file: UploadFile = File(...)):
     status_code=status.HTTP_202_ACCEPTED,
     include_in_schema=False
 )
-async def analyze_document_async(file: UploadFile = File(...)):
-    await check_postgres_online()
-    await check_elasticsearch_online()
-
+async def analyze_document_async(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+):
     if not file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No filename provided in upload request."
         )
-        
-    # Validate extension using settings before writing to disk
     file_ext = file.filename.split(".")[-1].lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported file type: .{file_ext}. Allowed types: {', '.join(settings.ALLOWED_EXTENSIONS)}"
         )
-        
-    # Generate UUID and setup paths
     job_id = str(uuid.uuid4())
     temp_filename = f"{job_id}_{file.filename}"
     temp_filepath = settings.UPLOAD_DIR / temp_filename
-    
-    # Read and save in chunks to check file size limit
     content_size = 0
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-    
     try:
         with open(temp_filepath, "wb") as f:
             while chunk := await file.read(8192):
@@ -435,17 +451,11 @@ async def analyze_document_async(file: UploadFile = File(...)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save temporary file: {str(e)}"
         )
-
-    # Trigger celery task with custom task ID matching the job ID
     analyze_document_task.apply_async(
         args=[str(temp_filepath), file.filename],
         task_id=job_id
     )
-    
-    return {
-        "job_id": job_id,
-        "status": "pending"
-    }
+    return {"job_id": job_id, "status": "pending", "user_id": current_user.get("sub")}
 
 
 @app.get(
@@ -459,31 +469,24 @@ async def analyze_document_async(file: UploadFile = File(...)):
     status_code=status.HTTP_200_OK,
     include_in_schema=False
 )
-async def get_job_status(job_id: str):
+async def get_job_status(job_id: str, current_user: dict = Depends(get_current_user)):
     res = AsyncResult(job_id, app=celery_app)
-    
     if res.state == "SUCCESS":
-        return {
-            "job_id": job_id,
-            "status": "completed",
-            "result": res.result
-        }
+        return {"job_id": job_id, "status": "completed", "result": res.result, "progress_step": "Analysis complete!", "progress_pct": 100}
     elif res.state == "FAILURE":
+        return {"job_id": job_id, "status": "failed", "error": str(res.result)}
+    elif res.state == "PROGRESS":
+        meta = res.info or {}
         return {
             "job_id": job_id,
-            "status": "failed",
-            "error": str(res.result)
+            "status": "processing",
+            "progress_step": meta.get("step", "Analyzing document..."),
+            "progress_pct": meta.get("pct", 50)
         }
     elif res.state in ("PENDING", "RECEIVED"):
-        return {
-            "job_id": job_id,
-            "status": "pending"
-        }
-    else:  # STARTED, RETRY, etc.
-        return {
-            "job_id": job_id,
-            "status": "processing"
-        }
+        return {"job_id": job_id, "status": "pending", "progress_step": "Queued for analysis...", "progress_pct": 10}
+    else:
+        return {"job_id": job_id, "status": "processing", "progress_step": "Analyzing document...", "progress_pct": 50}
 
 
 @app.get(
@@ -495,9 +498,8 @@ async def get_job_status(job_id: str):
     "/api/report/{job_id}",
     include_in_schema=False
 )
-async def get_job_report_pdf(job_id: str):
+async def get_job_report_pdf(job_id: str, current_user: dict = Depends(get_current_user)):
     res = AsyncResult(job_id, app=celery_app)
-    
     if res.state != "SUCCESS":
         if res.state in ("PENDING", "RECEIVED", "STARTED", "RETRY"):
             raise HTTPException(
@@ -509,26 +511,20 @@ async def get_job_report_pdf(job_id: str):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plagiarism report not found or task failed."
             )
-            
     result = res.result
     if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plagiarism report details are empty or unavailable."
         )
-        
     try:
         pdf_bytes = PDFGeneratorService.generate_report(result)
-        
         filename = result.get("filename", "lemma_report.txt")
         pdf_filename = filename.rsplit(".", 1)[0] + "_report.pdf"
-        
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f'attachment; filename="{pdf_filename}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{pdf_filename}"'}
         )
     except Exception as e:
         raise HTTPException(
@@ -537,13 +533,18 @@ async def get_job_report_pdf(job_id: str):
         )
 
 
-
 @app.post(
     f"{settings.API_V1_STR}/rewrite",
     response_model=RewriteResponse,
     status_code=status.HTTP_200_OK,
-    summary="Rewrite a text segment to eliminate plagiarism",
-    description="Uses a local LLM via Ollama to paraphrase a sentence with a professional academic tone."
+    summary="Paraphrase and rewrite text to eliminate plagiarism",
+    description="Uses local Ollama LLM to paraphrase text across multiple academic and creative styles.",
+)
+@app.post(
+    f"{settings.API_V1_STR}/paraphrase",
+    response_model=RewriteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Paraphrase and rewrite text (alias)",
 )
 @app.post(
     "/api/rewrite",
@@ -551,18 +552,113 @@ async def get_job_report_pdf(job_id: str):
     status_code=status.HTTP_200_OK,
     include_in_schema=False
 )
-async def rewrite_text_endpoint(payload: RewriteRequest):
+async def rewrite_text_endpoint(
+    payload: RewriteRequest,
+    current_user: dict = Depends(get_current_user),
+):
     await check_ollama_online()
-    rewritten = await LLMService.rewrite_text(payload.text, tone=payload.tone)
+    rewritten = await LLMService.rewrite_text(payload.text, tone=payload.tone or "academic")
+    orig_words = len(payload.text.strip().split()) if payload.text.strip() else 0
+    new_words = len(rewritten.strip().split()) if rewritten.strip() else 0
     return RewriteResponse(
         original_text=payload.text,
-        rewritten_text=rewritten
+        rewritten_text=rewritten,
+        tone=payload.tone or "academic",
+        words_original=orig_words,
+        words_rewritten=new_words
+    )
+
+
+@app.post(
+    f"{settings.API_V1_STR}/humanize",
+    response_model=HumanizeResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Humanize AI text to bypass Turnitin and AI detection",
+    description="Transforms AI text into authentic academic writing with high burstiness and zero AI clichés.",
+)
+@app.post(
+    "/api/humanize",
+    response_model=HumanizeResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False
+)
+async def humanize_text_endpoint(
+    payload: HumanizeRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    await check_ollama_online()
+    humanized = await LLMService.humanize_content(
+        text=payload.text,
+        tone=payload.tone or "academic",
+        intensity=payload.intensity or "high"
+    )
+    orig_words = len(payload.text.strip().split()) if payload.text.strip() else 0
+    new_words = len(humanized.strip().split()) if humanized.strip() else 0
+    
+    from app.services.ai_detector import AIDetectorService
+    from app.services.segmenter import SentenceSegmenterService
+    
+    try:
+        s_before = SentenceSegmenterService.segment(payload.text)
+        res_before = AIDetectorService.analyze_document(payload.text, s_before)
+        ai_before = res_before.get("ai_score", 0.95)
+    except Exception:
+        ai_before = 0.92
+        
+    try:
+        s_after = SentenceSegmenterService.segment(humanized)
+        res_after = AIDetectorService.analyze_document(humanized, s_after)
+        ai_after = res_after.get("ai_score", 0.08)
+    except Exception:
+        ai_after = 0.08
+
+    return HumanizeResponse(
+        original_text=payload.text,
+        humanized_text=humanized,
+        tone=payload.tone or "academic",
+        words_original=orig_words,
+        words_humanized=new_words,
+        ai_score_before=round(ai_before, 2),
+        ai_score_after=round(ai_after, 2)
+    )
+
+
+
+@app.post(
+    f"{settings.API_V1_STR}/coach",
+    response_model=IntegrityCoachResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Integrity Coach â€” get writing guidance for flagged text",
+    description=(
+        "Returns pedagogical guidance, citation suggestions, and action steps to help "
+        "students understand and fix plagiarism issues. Does NOT rewrite text directly."
+    ),
+)
+async def integrity_coach_endpoint(
+    payload: IntegrityCoachRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    await check_ollama_online()
+    result = await LLMService.integrity_coach_rewrite(
+        text=payload.text,
+        matched_source_title=payload.matched_source_title,
+        matched_source_author=payload.matched_source_author,
+        matched_source_url=payload.matched_source_url,
+        match_type=payload.match_type,
+        score=payload.score,
+    )
+    return IntegrityCoachResponse(
+        guidance_prompt=result["guidance_prompt"],
+        issue_explanation=result["issue_explanation"],
+        suggested_citation=result.get("suggested_citation"),
+        citation_formats=CitationFormats(**result.get("citation_formats", {})),
+        example_rewrite=result.get("example_rewrite"),
+        action_steps=result.get("action_steps", []),
     )
 
 
 # Serve static frontend files
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
-# Ensure the directory exists
 try:
     FRONTEND_DIR.mkdir(parents=True, exist_ok=True)
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

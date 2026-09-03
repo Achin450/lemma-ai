@@ -25,6 +25,11 @@ lemma.db
 uploads/
 backend/uploads/
 backend/app/uploads/
+backend/papers/
+*.patch.py
+fix_*.py
+patch_*.py
+test_*.py
 
 # AI Agent Context Files
 lemma/Project Context/

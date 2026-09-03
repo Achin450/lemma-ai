@@ -1,8 +1,6 @@
 import io
 import html
 import datetime
-from weasyprint import HTML
-
 class PDFGeneratorService:
     """
     Generates beautiful, production-grade PDF plagiarism analysis reports using WeasyPrint.
@@ -127,6 +125,25 @@ class PDFGeneratorService:
         hybrid_pct = int(round((hybrid_count / total_sents) * 100)) if total_sents > 0 else 0
         original_pct = max(0, 100 - lexical_pct - semantic_pct - hybrid_pct)
         
+        # AI Detection vars
+        ai = data.get("ai_detection", {}) or {}
+        ai_score = int(round(ai.get("ai_score", 0.0) * 100))
+        ai_confidence = ai.get("confidence", "Unknown")
+        ai_perplexity = ai.get("perplexity_score", 0.0)
+        ai_burstiness = ai.get("burstiness_score", 0.0)
+        ai_flagged_sents = ai.get("flagged_sentence_count", 0)
+        ai_fingerprints = ai.get("fingerprint_matches", [])
+
+        # Citation Analysis vars
+        cit = data.get("citation_analysis", {}) or {}
+        cit_score = int(round(cit.get("citation_integrity_score", 1.0) * 100))
+        cit_in_text = cit.get("total_in_text_citations", 0)
+        cit_bib = cit.get("total_bibliography_entries", 0)
+        cit_unsupported = len(cit.get("unsupported_citations", []))
+        cit_padded = len(cit.get("padded_citations", []))
+        cit_uncited = len(cit.get("uncited_paraphrases", []))
+        cit_summary = cit.get("summary", "No citation analysis available.")
+
         # Format current timestamp
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
@@ -134,10 +151,10 @@ class PDFGeneratorService:
         sources_summary = {}
         for m in matches:
             ref = m.get("matched_sentence", {})
-            doc_id = ref.get("doc_id", "unknown")
-            doc_title = ref.get("doc_title", "Unknown Reference")
-            doc_author = ref.get("doc_author", "N/A")
-            doc_source = ref.get("doc_source", "N/A")
+            doc_id = ref.get("doc_id") or ref.get("document_id") or "unknown"
+            doc_title = ref.get("doc_title") or ref.get("title") or "Unknown Reference"
+            doc_author = ref.get("doc_author") or ref.get("author") or "N/A"
+            doc_source = ref.get("doc_source") or ref.get("source") or "N/A"
             score = m.get("score", 0.0)
             m_type = m.get("match_type", "lexical")
             
@@ -194,10 +211,11 @@ class PDFGeneratorService:
         detailed_comparisons = ""
         if matches:
             for idx, m in enumerate(matches, 1):
-                q_sent = m["query_sentence"]["text"]
-                r_sent = m["matched_sentence"]["text"]
-                ref_title = m["matched_sentence"]["doc_title"]
-                ref_citation = f"{m['matched_sentence']['doc_author']} — {m['matched_sentence']['doc_source']}"
+                q_sent = m.get("query_sentence", {}).get("text", "")
+                ms = m.get("matched_sentence", {})
+                r_sent = ms.get("text", "")
+                ref_title = ms.get("doc_title") or ms.get("title") or "Reference Source"
+                ref_citation = f"{ms.get('doc_author') or ms.get('author') or 'N/A'} — {ms.get('doc_source') or ms.get('source') or 'N/A'}"
                 score_pct = int(round(m["score"] * 100))
                 m_type = m["match_type"]
                 type_label = "Lexical Match" if m_type == "lexical" else ("Hybrid Match" if m_type == "hybrid" else "Semantic Match")
@@ -606,6 +624,68 @@ class PDFGeneratorService:
         </table>
     </div>
 
+    <div class="section">
+        <div class="section-title">AI Content Detection</div>
+        <table class="metrics-table">
+            <tr>
+                <td class="metric-card primary">
+                    <div class="metric-label">AI Score</div>
+                    <div class="metric-value" style="color: {'#ef4444' if ai_score >= 65 else '#f59e0b' if ai_score >= 40 else '#10b981'};">{ai_score}%</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">Confidence</div>
+                    <div class="metric-value" style="font-size: 14pt;">{ai_confidence}</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">Perplexity</div>
+                    <div class="metric-value">{ai_perplexity}</div>
+                    <div style="font-size: 7.5pt; color: #64748b;">(Lower = more uniform)</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">Burstiness</div>
+                    <div class="metric-value">{ai_burstiness}</div>
+                    <div style="font-size: 7.5pt; color: #64748b;">(0 = varied, 1 = uniform)</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">Flagged Sentences</div>
+                    <div class="metric-value">{ai_flagged_sents}</div>
+                    <div style="font-size: 7.5pt; color: #64748b;">out of {total_sents}</div>
+                </td>
+            </tr>
+        </table>
+        {f'<div style="font-size: 9pt; color: #64748b; margin-top: 5px;"><strong>Detected Patterns:</strong> {", ".join(ai_fingerprints)}</div>' if ai_fingerprints else ''}
+    </div>
+
+    <div class="section">
+        <div class="section-title">Citation Graph Analysis</div>
+        <table class="metrics-table">
+            <tr>
+                <td class="metric-card primary">
+                    <div class="metric-label">Integrity Score</div>
+                    <div class="metric-value" style="color: {'#10b981' if cit_score >= 90 else '#f59e0b' if cit_score >= 70 else '#ef4444'};">{cit_score}%</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">In-Text Citations</div>
+                    <div class="metric-value">{cit_in_text}</div>
+                </td>
+                <td class="metric-card">
+                    <div class="metric-label">Bibliography Entries</div>
+                    <div class="metric-value">{cit_bib}</div>
+                </td>
+                <td class="metric-card" style="border-color: {'#ef4444' if cit_unsupported else '#e2e8f0'};">
+                    <div class="metric-label">Unsupported Claims</div>
+                    <div class="metric-value">{cit_unsupported}</div>
+                </td>
+                <td class="metric-card" style="border-color: {'#f59e0b' if (cit_padded or cit_uncited) else '#e2e8f0'};">
+                    <div class="metric-label">Other Issues</div>
+                    <div class="metric-value">{cit_padded + cit_uncited}</div>
+                    <div style="font-size: 7.5pt; color: #64748b;">Padding/Uncited</div>
+                </td>
+            </tr>
+        </table>
+        <div style="font-size: 9pt; color: #334155; margin-top: 5px; font-style: italic;">{cit_summary}</div>
+    </div>
+
     <div class="page-break"></div>
 
     <div class="section">
@@ -624,7 +704,311 @@ class PDFGeneratorService:
 </body>
 </html>
 """
-        # Compile HTML string to PDF bytes via WeasyPrint
-        pdf_bytes = io.BytesIO()
-        HTML(string=html_content).write_pdf(target=pdf_bytes)
-        return pdf_bytes.getvalue()
+        # Try WeasyPrint first if system libraries are present
+        try:
+            from weasyprint import HTML
+            pdf_bytes = io.BytesIO()
+            HTML(string=html_content).write_pdf(target=pdf_bytes)
+            return pdf_bytes.getvalue()
+        except Exception:
+            # Fallback to robust pure-python ReportLab generator (ideal for Windows)
+            return cls._generate_report_reportlab(data)
+
+    @classmethod
+    def _generate_report_reportlab(cls, data: dict) -> bytes:
+        """
+        Pure-Python ReportLab generator for official Lemma Academic Integrity & Plagiarism PDF reports.
+        """
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import (
+            SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, HRFlowable
+        )
+
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(
+            buf,
+            pagesize=letter,
+            leftMargin=36,
+            rightMargin=36,
+            topMargin=36,
+            bottomMargin=36
+        )
+
+        styles = getSampleStyleSheet()
+        story = []
+
+        # Color palette
+        PRIMARY = colors.HexColor('#0f172a')
+        ACCENT_PURPLE = colors.HexColor('#6366f1')
+        TEXT_DARK = colors.HexColor('#1e293b')
+        TEXT_MUTED = colors.HexColor('#64748b')
+        BG_LIGHT = colors.HexColor('#f8fafc')
+        BORDER_LIGHT = colors.HexColor('#e2e8f0')
+        COLOR_LEXICAL = colors.HexColor('#ef4444')
+        COLOR_HYBRID = colors.HexColor('#f59e0b')
+        COLOR_SEMANTIC = colors.HexColor('#8b5cf6')
+        COLOR_ORIGINAL = colors.HexColor('#10b981')
+
+        # Typography styles
+        title_style = ParagraphStyle(
+            'RepTitle', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=17, leading=21, textColor=PRIMARY
+        )
+        subtitle_style = ParagraphStyle(
+            'RepSub', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=8.5, leading=11, textColor=TEXT_MUTED
+        )
+        section_h1 = ParagraphStyle(
+            'SecH1', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=12, leading=15, textColor=PRIMARY,
+            spaceBefore=12, spaceAfter=6
+        )
+        body_style = ParagraphStyle(
+            'RepBody', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=9, leading=13.5, textColor=TEXT_DARK
+        )
+        table_cell_style = ParagraphStyle(
+            'CellText', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=8.5, leading=11, textColor=TEXT_DARK
+        )
+        table_cell_bold = ParagraphStyle(
+            'CellBold', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=8.5, leading=11, textColor=PRIMARY
+        )
+        card_num_style = ParagraphStyle(
+            'CardNum', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=22, leading=26, spaceAfter=3
+        )
+        card_title_style = ParagraphStyle(
+            'CardTitle', parent=styles['Normal'],
+            fontName='Helvetica-Bold', fontSize=9.5, leading=13, textColor=PRIMARY, spaceAfter=2
+        )
+        card_sub_style = ParagraphStyle(
+            'CardSub', parent=styles['Normal'],
+            fontName='Helvetica', fontSize=8, leading=11, textColor=TEXT_MUTED
+        )
+
+        filename = data.get("filename", "document.txt")
+        char_count = data.get("char_count", 0)
+        sentence_count = data.get("sentence_count", 0)
+        sentences = data.get("sentences", [])
+        
+        analysis = data.get("analysis", {}) or {}
+        plag_score_float = analysis.get("plagiarism_score", 0.0) or 0.0
+        plag_score_pct = int(round(plag_score_float * 100))
+        total_sents = analysis.get("total_sentences", len(sentences)) or len(sentences)
+        lexical_count = analysis.get("lexical_matches_count", 0)
+        semantic_count = analysis.get("semantic_matches_count", 0)
+        hybrid_count = analysis.get("hybrid_matches_count", 0)
+        matches = analysis.get("matches", [])
+
+        lexical_pct = int(round((lexical_count / total_sents) * 100)) if total_sents > 0 else 0
+        semantic_pct = int(round((semantic_count / total_sents) * 100)) if total_sents > 0 else 0
+        hybrid_pct = int(round((hybrid_count / total_sents) * 100)) if total_sents > 0 else 0
+        original_pct = max(0, 100 - lexical_pct - semantic_pct - hybrid_pct)
+
+        ai = data.get("ai_detection", {}) or {}
+        ai_score = int(round(ai.get("ai_score", 0.0) * 100))
+        ai_confidence = ai.get("confidence", "High")
+
+        cit = data.get("citation_analysis", {}) or {}
+        cit_score = int(round(cit.get("citation_integrity_score", 1.0) * 100))
+
+        current_time = datetime.datetime.now().strftime("%B %d, %Y - %H:%M:%S")
+
+        # 1. Header Block
+        header_data = [
+            [
+                Paragraph("<b>LEMMA AI</b> &bull; Academic Integrity & Plagiarism Analysis", title_style),
+                Paragraph(f"<b>Report Generated:</b><br/>{current_time}", subtitle_style)
+            ],
+            [
+                Paragraph(f"<b>Document:</b> {html.escape(filename)} &nbsp;|&nbsp; <b>Chars:</b> {char_count:,} &nbsp;|&nbsp; <b>Sentences:</b> {sentence_count}", subtitle_style),
+                Paragraph("<b>Engine:</b> Dual-Tier Lexical + pgvector Semantic", subtitle_style)
+            ]
+        ]
+        t_header = Table(header_data, colWidths=[380, 160])
+        t_header.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        story.append(t_header)
+        story.append(HRFlowable(width="100%", thickness=1.5, color=PRIMARY, spaceBefore=6, spaceAfter=14))
+
+        # 2. Key Metrics Cards
+        score_color = COLOR_ORIGINAL if plag_score_pct < 15 else (COLOR_HYBRID if plag_score_pct < 30 else COLOR_LEXICAL)
+        
+        c1_content = [
+            Paragraph(f"<font color='{score_color.hexval()}'><b>{plag_score_pct}%</b></font>", card_num_style),
+            Paragraph("Overall Similarity", card_title_style),
+            Paragraph(f"{len(matches)} matched segments", card_sub_style)
+        ]
+        c2_content = [
+            Paragraph(f"<font color='#6366f1'><b>{ai_score}%</b></font>", card_num_style),
+            Paragraph("AI Probability", card_title_style),
+            Paragraph(f"Confidence: {ai_confidence}", card_sub_style)
+        ]
+        c3_content = [
+            Paragraph(f"<font color='#10b981'><b>{cit_score}%</b></font>", card_num_style),
+            Paragraph("Citation Integrity", card_title_style),
+            Paragraph("Academic verification", card_sub_style)
+        ]
+
+        metrics_table = Table(
+            [[c1_content, c2_content, c3_content]],
+            colWidths=[180, 180, 180]
+        )
+        metrics_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), BG_LIGHT),
+            ('BOX', (0, 0), (-1, -1), 1, BORDER_LIGHT),
+            ('INNERGRID', (0, 0), (-1, -1), 1, BORDER_LIGHT),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LEFTPADDING', (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+        ]))
+        story.append(metrics_table)
+        story.append(Spacer(1, 12))
+
+        # 3. Similarity Breakdown Table
+        story.append(Paragraph("Similarity Profile Breakdown", section_h1))
+        breakdown_data = [
+            [
+                Paragraph("<b>Match Classification</b>", table_cell_bold),
+                Paragraph("<b>Detection Technology</b>", table_cell_bold),
+                Paragraph("<b>Sentence Count</b>", table_cell_bold),
+                Paragraph("<b>Percentage</b>", table_cell_bold)
+            ],
+            [
+                Paragraph(f"<font color='#ef4444'>&bull;</font> <b>Lexical Matching</b>", table_cell_style),
+                Paragraph("Elasticsearch BM25 & Shingling", table_cell_style),
+                Paragraph(str(lexical_count), table_cell_style),
+                Paragraph(f"<b>{lexical_pct}%</b>", table_cell_style)
+            ],
+            [
+                Paragraph(f"<font color='#f59e0b'>&bull;</font> <b>Hybrid Matching</b>", table_cell_style),
+                Paragraph("Syntactic & Fuzzy Token Alignment", table_cell_style),
+                Paragraph(str(hybrid_count), table_cell_style),
+                Paragraph(f"<b>{hybrid_pct}%</b>", table_cell_style)
+            ],
+            [
+                Paragraph(f"<font color='#8b5cf6'>&bull;</font> <b>Semantic Indexing</b>", table_cell_style),
+                Paragraph("pgvector Dense Neural Embeddings", table_cell_style),
+                Paragraph(str(semantic_count), table_cell_style),
+                Paragraph(f"<b>{semantic_pct}%</b>", table_cell_style)
+            ],
+            [
+                Paragraph(f"<font color='#10b981'>&bull;</font> <b>Original Content</b>", table_cell_style),
+                Paragraph("Unique Scholarly Formulation", table_cell_style),
+                Paragraph(str(max(0, total_sents - lexical_count - hybrid_count - semantic_count)), table_cell_style),
+                Paragraph(f"<b>{original_pct}%</b>", table_cell_style)
+            ]
+        ]
+        t_breakdown = Table(breakdown_data, colWidths=[150, 190, 100, 100])
+        t_breakdown.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+            ('GRID', (0, 0), (-1, -1), 0.5, BORDER_LIGHT),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        story.append(t_breakdown)
+        story.append(Spacer(1, 14))
+
+        # 4. Top Reference Matches
+        if matches:
+            story.append(Paragraph("Matched Reference Sources", section_h1))
+            sources_data = [
+                [
+                    Paragraph("<b>Source / Paper Title</b>", table_cell_bold),
+                    Paragraph("<b>Author / Provenance</b>", table_cell_bold),
+                    Paragraph("<b>Match Type</b>", table_cell_bold),
+                    Paragraph("<b>Score</b>", table_cell_bold)
+                ]
+            ]
+            seen_sources = set()
+            for m in matches[:6]:
+                ms = m.get("matched_sentence", {})
+                title = ms.get("title", "Reference Corpus Document")
+                if title in seen_sources:
+                    continue
+                seen_sources.add(title)
+                mtype = m.get("match_type", "lexical").upper()
+                score_val = f"{int(round(m.get('score', 0.9) * 100))}%"
+                sources_data.append([
+                    Paragraph(html.escape(title[:60]), table_cell_style),
+                    Paragraph(html.escape(ms.get("author", "Academic Database")[:35]), table_cell_style),
+                    Paragraph(mtype, table_cell_style),
+                    Paragraph(score_val, table_cell_bold)
+                ])
+
+            t_sources = Table(sources_data, colWidths=[230, 150, 90, 70])
+            t_sources.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f1f5f9')),
+                ('GRID', (0, 0), (-1, -1), 0.5, BORDER_LIGHT),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(t_sources)
+            story.append(Spacer(1, 14))
+
+        # 5. Document Content Flow with Highlights
+        story.append(PageBreak())
+        story.append(Paragraph("Annotated Document Content", section_h1))
+        story.append(Paragraph("Below is the full document text with highlighted match classifications.", subtitle_style))
+        story.append(Spacer(1, 6))
+
+        matches_map = {m["query_sentence"]["start_char"]: m for m in matches if "query_sentence" in m}
+        doc_paras = []
+        for s in sentences:
+            stext = html.escape(s.get("text", ""))
+            start = s.get("start_char", 0)
+            if start in matches_map:
+                m = matches_map[start]
+                mtype = m.get("match_type", "lexical")
+                color_hex = "#ef4444" if mtype == "lexical" else ("#f59e0b" if mtype == "hybrid" else "#8b5cf6")
+                doc_paras.append(f"<font color='{color_hex}'><b>[{mtype.upper()}]</b> {stext}</font>")
+            else:
+                doc_paras.append(stext)
+
+        full_annotated_text = " ".join(doc_paras)
+        story.append(Paragraph(full_annotated_text, body_style))
+        story.append(Spacer(1, 14))
+
+        # 6. Detailed Comparisons (if any)
+        if matches:
+            story.append(PageBreak())
+            story.append(Paragraph("Segment-by-Segment Comparisons", section_h1))
+            for i, m in enumerate(matches[:10], 1):
+                qs = m.get("query_sentence", {}).get("text", "")
+                ms = m.get("matched_sentence", {})
+                ms_text = ms.get("text", "")
+                ms_title = ms.get("title", "Corpus Document")
+                mtype = m.get("match_type", "lexical").upper()
+                score_pct = int(round(m.get("score", 0.9) * 100))
+
+                comp_data = [
+                    [Paragraph(f"<b>Match #{i}: {mtype} ({score_pct}% Match)</b> &mdash; <i>{html.escape(ms_title)}</i>", table_cell_bold)],
+                    [Paragraph(f"<b>Query:</b> {html.escape(qs)}", table_cell_style)],
+                    [Paragraph(f"<b>Source:</b> {html.escape(ms_text)}", table_cell_style)]
+                ]
+                t_comp = Table(comp_data, colWidths=[540])
+                t_comp.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, -1), BG_LIGHT),
+                    ('BOX', (0, 0), (-1, -1), 1, BORDER_LIGHT),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ]))
+                story.append(t_comp)
+                story.append(Spacer(1, 6))
+
+        doc.build(story)
+        return buf.getvalue()
+

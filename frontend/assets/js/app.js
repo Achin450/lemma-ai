@@ -4,10 +4,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
     // API URL configuration
-    let API_BASE_URL = 'https://r4hul-78-lemma-backend.hf.space'; -icon
+    let API_BASE_URL = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1') ? 'http://localhost:8000' : window.location.origin;
     let API_UPLOAD_URL = `${API_BASE_URL}/api/v1/documents/upload`;
     let API_ANALYZE_URL = `${API_BASE_URL}/api/v1/analyze`;
     let API_STATUS_URL = `${API_BASE_URL}/api/v1/status`;
+    let API_COACH_URL = `${API_BASE_URL}/api/v1/coach`;
     let API_REWRITE_URL = `${API_BASE_URL}/api/v1/rewrite`;
     let API_HEALTH_URL = `${API_BASE_URL}/api/v1/health`;
 
@@ -16,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
         API_UPLOAD_URL = `${API_BASE_URL}/api/v1/documents/upload`;
         API_ANALYZE_URL = `${API_BASE_URL}/api/v1/analyze`;
         API_STATUS_URL = `${API_BASE_URL}/api/v1/status`;
+        API_COACH_URL = `${API_BASE_URL}/api/v1/coach`;
         API_REWRITE_URL = `${API_BASE_URL}/api/v1/rewrite`;
         API_HEALTH_URL = `${API_BASE_URL}/api/v1/health`;
     }
@@ -438,14 +440,23 @@ document.addEventListener("DOMContentLoaded", () => {
         const progressScore = document.getElementById("plagiarism-score-text");
         const progressCircle = document.querySelector(".circular-progress");
 
+        let consecutiveErrors = 0;
+        const MAX_CONSECUTIVE_ERRORS = 8;
+
         const interval = setInterval(async () => {
             try {
                 const response = await fetch(`${API_STATUS_URL}/${jobId}`);
-                const data = await response.json();
-
                 if (!response.ok) {
-                    throw new Error(data.detail || "Status check failed");
+                    consecutiveErrors++;
+                    if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+                        const data = await response.json().catch(() => ({}));
+                        throw new Error(data.detail || "Status check failed after retries");
+                    }
+                    return; // Wait for next tick
                 }
+
+                const data = await response.json();
+                consecutiveErrors = 0; // Reset error counter on successful response
 
                 if (data.status === "completed") {
                     clearInterval(interval);
@@ -455,11 +466,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     uploadResponseData = data.result;
 
                     showToast("Document analysis complete!", "success");
-                    metaStatus.innerHTML = '<span class="badge badge-dim">Analyzed</span>';
+                    metaStatus.innerHTML = '<span class="badge badge-dim" style="color: #10b981;">Analyzed (100%)</span>';
 
                     // Update checklist
-                    lexicalChk.innerHTML = '<i class="fa-regular fa-circle-check"></i> Lexical Match Complete';
-                    semanticChk.innerHTML = '<i class="fa-regular fa-circle-check"></i> Semantic Matching Complete';
+                    lexicalChk.innerHTML = '<i class="fa-regular fa-circle-check" style="color: #10b981;"></i> Lexical Matching Complete';
+                    lexicalChk.className = "checklist-item done";
+                    semanticChk.innerHTML = '<i class="fa-regular fa-circle-check" style="color: #10b981;"></i> Semantic Matching Complete';
                     semanticChk.className = "checklist-item done";
 
                     // Calculate real percentages
@@ -504,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Final success toast
                     if (realPlagScore > 0) {
-                        showToast(`Analysis complete. Found ${realPlagScore}% plagiarism match profile.`, "success");
+                        showToast(`Analysis complete. Found ${realPlagScore}% similarity match.`, "success");
                     } else {
                         showToast("Analysis complete. Document is 100% original and clean!", "success");
                     }
@@ -515,14 +527,42 @@ document.addEventListener("DOMContentLoaded", () => {
                     checkServerHealth();
                     throw new Error(data.error || "Analysis task failed");
                 } else if (data.status === "processing") {
-                    metaStatus.innerHTML = '<span class="badge badge-dim">Analyzing...</span>';
-                    lexicalChk.innerHTML = '<i class="fa-regular fa-circle-check"></i> Lexical Match Complete';
-                    semanticChk.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Indexing Semantic Vectors...';
-                    semanticChk.className = "checklist-item done";
+                    const step = data.progress_step || "Analyzing...";
+                    const pct = data.progress_pct || 50;
+                    
+                    metaStatus.innerHTML = `<span class="badge badge-dim"><i class="fa-solid fa-spinner fa-spin"></i> ${step} (${pct}%)</span>`;
+                    
+                    // Show live progress inside gauge while processing
+                    progressScore.textContent = `${pct}%`;
+                    const deg = pct * 3.6;
+                    progressCircle.style.background = `conic-gradient(var(--accent-purple) 0deg ${deg}deg, var(--border-color) ${deg}deg 360deg)`;
+
+                    if (pct >= 65) {
+                        lexicalChk.innerHTML = '<i class="fa-regular fa-circle-check" style="color: #10b981;"></i> Lexical Matching (TF-IDF)';
+                        lexicalChk.className = "checklist-item done";
+                    } else if (pct >= 30) {
+                        lexicalChk.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #6366f1;"></i> Lexical Matching (TF-IDF)...';
+                        lexicalChk.className = "checklist-item done";
+                    }
+
+                    if (pct >= 90) {
+                        semanticChk.innerHTML = '<i class="fa-regular fa-circle-check" style="color: #10b981;"></i> Semantic Indexing Complete';
+                        semanticChk.className = "checklist-item done";
+                    } else if (pct >= 65) {
+                        semanticChk.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #8b5cf6;"></i> Semantic Indexing (Embeddings)...';
+                        semanticChk.className = "checklist-item done";
+                    }
                 } else {
-                    metaStatus.innerHTML = '<span class="badge badge-dim">Queued...</span>';
+                    const step = data.progress_step || "Queued...";
+                    const pct = data.progress_pct || 10;
+                    metaStatus.innerHTML = `<span class="badge badge-dim"><i class="fa-solid fa-clock"></i> ${step} (${pct}%)</span>`;
+                    progressScore.textContent = `${pct}%`;
                 }
             } catch (error) {
+                consecutiveErrors++;
+                if (consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+                    return; // Gracefully retry on transient error
+                }
                 clearInterval(interval);
                 isAnalyzing = false;
                 checkServerHealth();
@@ -530,11 +570,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Polling Error:", error);
                 showToast(error.message, "error");
 
-                metaStatus.innerHTML = '<span class="badge badge-dim">Failed</span>';
+                metaStatus.innerHTML = '<span class="badge badge-dim" style="color: #ef4444;">Failed</span>';
                 btnRunAnalysis.disabled = false;
                 resetMetricsUI();
             }
-        }, 1000);
+        }, 800);
     }
 
     /* -------------------------------------------------------------
@@ -678,7 +718,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Set reference sentence and doc info
             inspectMatchRefText.textContent = `"${matchData.matched_sentence.text}"`;
             matchTitle.textContent = matchData.matched_sentence.doc_title;
-            matchCitation.textContent = `${matchData.matched_sentence.doc_author} — ${matchData.matched_sentence.doc_source}`;
+            matchCitation.textContent = `${matchData.matched_sentence.doc_author} â€” ${matchData.matched_sentence.doc_source}`;
         } else {
             // Check if this sentence was marked as original
             const sentenceSpans = document.querySelectorAll(".doc-sentence");
@@ -857,8 +897,14 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast("No active report job ID found.", "error");
             return;
         }
-        showToast("Downloading PDF report...", "info");
-        window.open(`${API_BASE_URL}/api/v1/documents/report/${currentJobId}`, "_blank");
+        showToast("Downloading official Plagiarism PDF report...", "info");
+        const downloadUrl = `${API_BASE_URL}/api/v1/documents/report/${currentJobId}`;
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        a.download = `plagiarism_report_${currentJobId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     });
 
     // Notification Dropdown Toggle & Clear Event Handlers
@@ -916,9 +962,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(API_REWRITE_URL, {
                 method: "POST",
                 headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ text: sentenceText })
+                body: JSON.stringify({
+                    text: sentenceText,
+                    tone: "academic"
+                })
             });
 
             const data = await response.json();
@@ -950,26 +1000,69 @@ document.addEventListener("DOMContentLoaded", () => {
     const dashboardWorkspace = document.getElementById("dashboard-workspace");
     const paraphraserWorkspace = document.getElementById("paraphraser-workspace");
 
-    function hideAllWorkspaces() {
-        const views = [
+    window.showToast = showToast;
+    window.API_BASE = API_BASE_URL;
+    window.LEMMA_API_BASE = API_BASE_URL;
+
+    function showView(viewId) {
+        // Hide all workspace views and legacy containers
+        document.querySelectorAll(".workspace-view").forEach(v => {
+            v.classList.add("hidden");
+            v.style.display = "none";
+        });
+        const legacyViews = [
             dashboardHomeView,
             dashboardWorkspace,
             paraphraserWorkspace,
             reportsWorkspace,
-            placeholderWorkspace
+            placeholderWorkspace,
+            document.getElementById('citations-workspace')
         ];
-        views.forEach(v => {
-            if (v) v.classList.add("hidden");
+        legacyViews.forEach(v => {
+            if (v) {
+                v.classList.add("hidden");
+                v.style.display = "none";
+            }
         });
+
+        const target = document.getElementById(viewId);
+        if (target) {
+            target.classList.remove("hidden");
+            target.style.display = target.classList.contains("content-grid") ? "grid" : "flex";
+        }
+
+        if (viewId === 'paper-editor-view') {
+            document.body.classList.add('in-paper-editor');
+        } else {
+            document.body.classList.remove('in-paper-editor');
+        }
+
+        // Update nav item active state
+        navItems.forEach(n => n.classList.remove("active"));
+        const navMap = {
+            'dashboard-home-view': 'nav-dashboard',
+            'dashboard-workspace': 'nav-plagiarism',
+            'generate-paper-view': 'nav-generate',
+            'restructure-view': 'nav-restructure',
+            'simcheck-view': 'nav-simcheck',
+            'simresults-view': 'nav-simcheck',
+            'mypapers-view': 'nav-mypapers',
+            'paraphraser-workspace': 'nav-aichat',
+            'humanizer-workspace': 'nav-humanizer',
+            'reports-workspace': 'nav-export',
+            'citations-workspace': 'nav-citations',
+        };
+        const activeNavId = navMap[viewId];
+        if (activeNavId) {
+            const navEl = document.getElementById(activeNavId);
+            if (navEl) navEl.classList.add("active");
+        }
     }
+    window.showView = showView;
 
     navItems.forEach(item => {
         item.addEventListener("click", (e) => {
             e.preventDefault();
-
-            // Deactivate all nav items
-            navItems.forEach(n => n.classList.remove("active"));
-            item.classList.add("active");
 
             // Close mobile sidebar drawer if it was opened
             const sidebar = document.getElementById("sidebar-panel");
@@ -980,20 +1073,33 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const tabId = item.id;
-            hideAllWorkspaces();
 
             if (tabId === "nav-dashboard") {
-                if (dashboardHomeView) dashboardHomeView.classList.remove("hidden");
-            } else if (tabId === "nav-aichat") {
-                if (paraphraserWorkspace) paraphraserWorkspace.classList.remove("hidden");
+                showView("dashboard-home-view");
+            } else if (tabId === "nav-generate") {
+                showView("generate-paper-view");
+            } else if (tabId === "nav-restructure") {
+                showView("restructure-view");
+            } else if (tabId === "nav-simcheck") {
+                showView("simcheck-view");
+            } else if (tabId === "nav-mypapers") {
+                showView("mypapers-view");
+                if (window.loadMyPapers) window.loadMyPapers();
             } else if (tabId === "nav-plagiarism") {
-                if (dashboardWorkspace) dashboardWorkspace.classList.remove("hidden");
+                showView("dashboard-workspace");
+            } else if (tabId === "nav-aichat") {
+                showView("paraphraser-workspace");
+            } else if (tabId === "nav-humanizer") {
+                showView("humanizer-workspace");
+            } else if (tabId === "nav-citations") {
+                showView("citations-workspace");
             } else if (tabId === "nav-export") {
-                if (reportsWorkspace) reportsWorkspace.classList.remove("hidden");
+                showView("reports-workspace");
                 renderReportsHistory();
             } else {
                 // Non-functional pages -> show placeholder
                 if (placeholderWorkspace) {
+                    showView("placeholder-workspace");
                     const pIcon = document.getElementById("placeholder-icon");
                     const pTitle = document.getElementById("placeholder-title");
                     const pDesc = document.getElementById("placeholder-desc");
@@ -1013,11 +1119,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         title = "Literature Review Workspace";
                         iconClass = "fa-book-open";
                         desc = "Compare research methodologies, identify research gaps, list limitations, and compile theme summaries.";
-                        sprint = "Sprint 3";
-                    } else if (tabId === "nav-citations") {
-                        title = "Citation Generator";
-                        iconClass = "fa-quote-right";
-                        desc = "Generate academic citations in APA, IEEE, MLA, Chicago, Harvard, BibTeX, and RIS formats.";
                         sprint = "Sprint 3";
                     } else if (tabId === "nav-notes") {
                         title = "Academic Note Editor";
@@ -1050,12 +1151,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (pTitle) pTitle.textContent = title;
                     if (pDesc) pDesc.textContent = desc;
                     if (pSprint) pSprint.textContent = sprint;
-
-                    placeholderWorkspace.classList.remove("hidden");
                 }
             }
         });
     });
+
 
     // Return to dashboard button in placeholder page
     const btnPlaceholderBack = document.getElementById("btn-placeholder-back");
@@ -1178,86 +1278,248 @@ document.addEventListener("DOMContentLoaded", () => {
     const paraOutputRender = document.getElementById("para-output-render");
     const btnRunParaphrase = document.getElementById("btn-run-paraphrase");
     const btnCopyParaphrase = document.getElementById("btn-copy-paraphrase");
+    const btnClearParaInput = document.getElementById("btn-clear-para-input");
+    const btnTransferPlagCheck = document.getElementById("btn-transfer-plag-check");
     const paraTone = document.getElementById("para-tone");
     const paraOrigWords = document.getElementById("para-orig-words");
     const paraNewWords = document.getElementById("para-new-words");
 
     // Track word counts on input change
-    paraInputText.addEventListener("input", () => {
-        const text = paraInputText.value.trim();
-        const wordCount = text ? text.split(/\s+/).length : 0;
-        paraOrigWords.textContent = wordCount;
-    });
+    if (paraInputText) {
+        paraInputText.addEventListener("input", () => {
+            const text = paraInputText.value.trim();
+            const wordCount = text ? text.split(/\s+/).length : 0;
+            paraOrigWords.textContent = wordCount;
+        });
+    }
+
+    // Clear input action
+    if (btnClearParaInput) {
+        btnClearParaInput.addEventListener("click", () => {
+            if (paraInputText) paraInputText.value = "";
+            if (paraOrigWords) paraOrigWords.textContent = "0";
+            if (paraNewWords) paraNewWords.textContent = "0";
+            if (paraOutputRender) paraOutputRender.innerHTML = '<span class="placeholder-text" style="color: var(--text-muted); font-style: italic;">Paraphrased text will appear here...</span>';
+            if (btnCopyParaphrase) btnCopyParaphrase.disabled = true;
+            if (btnTransferPlagCheck) btnTransferPlagCheck.disabled = true;
+        });
+    }
 
     // Run Paraphrase Action
-    btnRunParaphrase.addEventListener("click", async () => {
-        const textToParaphrase = paraInputText.value.trim();
-        if (!textToParaphrase) {
-            showToast("Please enter some text to paraphrase.", "error");
-            return;
-        }
-
-        // Disable button, show loading spinner
-        btnRunParaphrase.disabled = true;
-        btnRunParaphrase.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Paraphrasing...';
-        paraOutputRender.innerHTML = '<span class="placeholder-text"><i class="fa-solid fa-spinner fa-spin"></i> Generating plagiarism-free text...</span>';
-        btnCopyParaphrase.disabled = true;
-        paraNewWords.textContent = "0";
-
-        showToast("Paraphrasing text with local Llama3...", "info");
-
-        try {
-            const response = await fetch(API_REWRITE_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    text: textToParaphrase,
-                    tone: paraTone.value
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.detail || "Paraphrasing failed");
+    if (btnRunParaphrase) {
+        btnRunParaphrase.addEventListener("click", async () => {
+            const textToParaphrase = paraInputText ? paraInputText.value.trim() : "";
+            if (!textToParaphrase) {
+                showToast("Please enter some text to paraphrase.", "error");
+                return;
             }
 
-            // Render result
-            paraOutputRender.innerHTML = escapeHtml(data.rewritten_text);
+            // Disable button, show loading spinner
+            btnRunParaphrase.disabled = true;
+            btnRunParaphrase.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Paraphrasing...';
+            paraOutputRender.innerHTML = '<span class="placeholder-text" style="color: var(--accent-purple);"><i class="fa-solid fa-spinner fa-spin"></i> Generating 100% original academic phrasing...</span>';
+            if (btnCopyParaphrase) btnCopyParaphrase.disabled = true;
+            if (btnTransferPlagCheck) btnTransferPlagCheck.disabled = true;
+            if (paraNewWords) paraNewWords.textContent = "0";
 
-            // Calculate new word count
-            const wordsNew = data.rewritten_text.trim().split(/\s+/).length;
-            paraNewWords.textContent = wordsNew;
+            showToast(`Paraphrasing text (${paraTone ? paraTone.value : 'academic'} tone)...`, "info");
 
-            // Enable copy button
-            btnCopyParaphrase.disabled = false;
+            try {
+                const response = await fetch(API_REWRITE_URL, {
+                    method: "POST",
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: textToParaphrase,
+                        tone: paraTone ? paraTone.value : "academic"
+                    })
+                });
 
-            showToast("Text paraphrased successfully!", "success");
-        } catch (error) {
-            console.error("Paraphrase Workspace Error:", error);
-            paraOutputRender.innerHTML = `<span class="placeholder-text" style="color: #ef4444; font-style: normal;"><i class="fa-solid fa-circle-exclamation"></i> Error: ${escapeHtml(error.message)}</span>`;
-            showToast(error.message, "error");
-        } finally {
-            // Restore button
-            btnRunParaphrase.disabled = false;
-            btnRunParaphrase.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Paraphrase Text';
-        }
-    });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Paraphrasing failed");
+                }
+
+                // Render result
+                const rewritten = data.rewritten_text || "";
+                paraOutputRender.innerHTML = escapeHtml(rewritten);
+
+                // Calculate new word count
+                const wordsNew = rewritten.trim() ? rewritten.trim().split(/\s+/).length : 0;
+                if (paraNewWords) paraNewWords.textContent = wordsNew;
+
+                // Enable copy & verify buttons
+                if (btnCopyParaphrase) btnCopyParaphrase.disabled = false;
+                if (btnTransferPlagCheck) btnTransferPlagCheck.disabled = false;
+
+                showToast("Text paraphrased successfully!", "success");
+            } catch (error) {
+                console.error("Paraphrase Workspace Error:", error);
+                paraOutputRender.innerHTML = `<span class="placeholder-text" style="color: #ef4444; font-style: normal;"><i class="fa-solid fa-circle-exclamation"></i> Error: ${escapeHtml(error.message)}</span>`;
+                showToast(error.message, "error");
+            } finally {
+                // Restore button
+                btnRunParaphrase.disabled = false;
+                btnRunParaphrase.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Paraphrase Text';
+            }
+        });
+    }
 
     // Copy to Clipboard Action
-    btnCopyParaphrase.addEventListener("click", () => {
-        const textToCopy = paraOutputRender.textContent;
-        if (!textToCopy) return;
+    if (btnCopyParaphrase) {
+        btnCopyParaphrase.addEventListener("click", () => {
+            const textToCopy = paraOutputRender ? paraOutputRender.textContent : "";
+            if (!textToCopy || textToCopy.includes("Paraphrased text will appear here")) return;
 
-        navigator.clipboard.writeText(textToCopy).then(() => {
-            showToast("Copied paraphrased text to clipboard!", "success");
-        }).catch(err => {
-            console.error("Clipboard Error:", err);
-            showToast("Failed to copy text.", "error");
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast("Copied paraphrased text to clipboard!", "success");
+            }).catch(err => {
+                console.error("Clipboard Error:", err);
+                showToast("Failed to copy text.", "error");
+            });
         });
-    });
+    }
+
+    // Transfer to Plagiarism Check
+    if (btnTransferPlagCheck) {
+        btnTransferPlagCheck.addEventListener("click", () => {
+            const textToCheck = paraOutputRender ? paraOutputRender.textContent : "";
+            if (!textToCheck || textToCheck.includes("Paraphrased text will appear here")) return;
+
+            // Switch to standalone Similarity Check view
+            showView("simcheck-view");
+            const simTextarea = document.getElementById("simcheck-text-input");
+            if (simTextarea) {
+                simTextarea.value = textToCheck;
+                const tabText = document.querySelector('[data-tab="text"]');
+                if (tabText) tabText.click();
+            }
+            showToast("Transferred paraphrased text to Similarity Check.", "info");
+        });
+    }
+
+    /* -------------------------------------------------------------
+     * AI Humanizer & Stealth Bypass Workspace Logic
+     * ------------------------------------------------------------- */
+    const humanizeInputText = document.getElementById("humanize-input-text");
+    const humanizeOutputRender = document.getElementById("humanize-output-render");
+    const btnRunHumanize = document.getElementById("btn-run-humanize");
+    const btnCopyHumanize = document.getElementById("btn-copy-humanize");
+    const btnClearHumanizeInput = document.getElementById("btn-clear-humanize-input");
+    const btnHumanizeTransferPlag = document.getElementById("btn-humanize-transfer-plag");
+    const humanizeToneSelect = document.getElementById("humanize-tone-select");
+    const humanizeIntensitySelect = document.getElementById("humanize-intensity-select");
+    const humanizeAiBefore = document.getElementById("humanize-ai-before");
+    const humanizeAiAfter = document.getElementById("humanize-ai-after");
+
+    // Clear action
+    if (btnClearHumanizeInput) {
+        btnClearHumanizeInput.addEventListener("click", () => {
+            if (humanizeInputText) humanizeInputText.value = "";
+            if (humanizeOutputRender) humanizeOutputRender.innerHTML = '<span class="placeholder-text" style="color: var(--text-muted); font-style: italic;">Humanized output will appear here with high burstiness and zero AI clichés...</span>';
+            if (humanizeAiBefore) humanizeAiBefore.textContent = "--";
+            if (humanizeAiAfter) humanizeAiAfter.textContent = "--";
+            if (btnCopyHumanize) btnCopyHumanize.disabled = true;
+            if (btnHumanizeTransferPlag) btnHumanizeTransferPlag.disabled = true;
+        });
+    }
+
+    // Run Humanize Action
+    if (btnRunHumanize) {
+        btnRunHumanize.addEventListener("click", async () => {
+            const textToHumanize = humanizeInputText ? humanizeInputText.value.trim() : "";
+            if (!textToHumanize) {
+                showToast("Please enter AI-generated text to humanize.", "error");
+                return;
+            }
+
+            btnRunHumanize.disabled = true;
+            btnRunHumanize.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Humanizing...';
+            humanizeOutputRender.innerHTML = '<span class="placeholder-text" style="color: var(--accent-purple);"><i class="fa-solid fa-spinner fa-spin"></i> Eliminating AI patterns & modulating sentence burstiness...</span>';
+            if (btnCopyHumanize) btnCopyHumanize.disabled = true;
+            if (btnHumanizeTransferPlag) btnHumanizeTransferPlag.disabled = true;
+
+            showToast("Humanizing text with Turnitin Anti-AI Engine...", "info");
+
+            try {
+                const response = await fetch("/api/v1/humanize", {
+                    method: "POST",
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: textToHumanize,
+                        tone: humanizeToneSelect ? humanizeToneSelect.value : "academic",
+                        intensity: humanizeIntensitySelect ? humanizeIntensitySelect.value : "high"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Humanization failed");
+                }
+
+                const humanized = data.humanized_text || "";
+                humanizeOutputRender.innerHTML = escapeHtml(humanized);
+
+                // Update before/after AI gauges
+                const beforePct = Math.round((data.ai_score_before || 0.95) * 100);
+                const afterPct = Math.round((data.ai_score_after || 0.08) * 100);
+                
+                if (humanizeAiBefore) humanizeAiBefore.textContent = `${beforePct}%`;
+                if (humanizeAiAfter) humanizeAiAfter.textContent = `${afterPct}%`;
+
+                if (btnCopyHumanize) btnCopyHumanize.disabled = false;
+                if (btnHumanizeTransferPlag) btnHumanizeTransferPlag.disabled = false;
+
+                showToast(`Text successfully humanized! AI probability reduced from ${beforePct}% to ${afterPct}%.`, "success");
+            } catch (error) {
+                console.error("Humanize Workspace Error:", error);
+                humanizeOutputRender.innerHTML = `<span class="placeholder-text" style="color: #ef4444; font-style: normal;"><i class="fa-solid fa-circle-exclamation"></i> Error: ${escapeHtml(error.message)}</span>`;
+                showToast(error.message, "error");
+            } finally {
+                btnRunHumanize.disabled = false;
+                btnRunHumanize.innerHTML = '<i class="fa-solid fa-sparkles"></i> Humanize Text';
+            }
+        });
+    }
+
+    // Copy Humanized Text
+    if (btnCopyHumanize) {
+        btnCopyHumanize.addEventListener("click", () => {
+            const textToCopy = humanizeOutputRender ? humanizeOutputRender.textContent : "";
+            if (!textToCopy || textToCopy.includes("Humanized output will appear here")) return;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showToast("Copied humanized text to clipboard!", "success");
+            }).catch(err => {
+                console.error("Clipboard Error:", err);
+                showToast("Failed to copy text.", "error");
+            });
+        });
+    }
+
+    // Transfer Humanized Text to Plagiarism / Similarity Check
+    if (btnHumanizeTransferPlag) {
+        btnHumanizeTransferPlag.addEventListener("click", () => {
+            const textToCheck = humanizeOutputRender ? humanizeOutputRender.textContent : "";
+            if (!textToCheck || textToCheck.includes("Humanized output will appear here")) return;
+
+            showView("simcheck-view");
+            const simTextarea = document.getElementById("simcheck-text-input");
+            if (simTextarea) {
+                simTextarea.value = textToCheck;
+                const tabText = document.querySelector('[data-tab="text"]');
+                if (tabText) tabText.click();
+            }
+            showToast("Transferred humanized text to Similarity Check.", "info");
+        });
+    }
 
     /* -------------------------------------------------------------
      * Reports History & LocalStorage Persistence [NEW]
@@ -1441,39 +1703,344 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Blank Start Page Workspace Event Handlers
-    const blankPromptInput = document.getElementById("blank-prompt-input");
-    if (blankPromptInput) {
-        blankPromptInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") {
-                const promptVal = blankPromptInput.value.trim();
-                if (promptVal) {
-                    // Navigate to AI Paraphraser (AI Chat)
-                    const paraInputText = document.getElementById("para-input-text");
-                    if (paraInputText) {
-                        paraInputText.value = promptVal;
-                        paraInputText.dispatchEvent(new Event("input"));
-                    }
 
-                    const navParaphrase = document.getElementById("nav-paraphrase");
-                    if (navParaphrase) {
-                        navParaphrase.click();
-                    }
 
-                    blankPromptInput.value = "";
-                }
+    /* -------------------------------------------------------------
+     * Academic Citation Studio Interactive Logic
+     * ------------------------------------------------------------- */
+    const citationInput = document.getElementById("citation-input");
+    const btnClearCitation = document.getElementById("btn-clear-citation");
+    const btnGenerateCitation = document.getElementById("btn-generate-citation");
+    const citationResultsPanel = document.getElementById("citation-results-panel");
+    const citationHistoryPanel = document.getElementById("citation-history-panel");
+    const citationHistoryList = document.getElementById("citation-history-list");
+    const btnClearCitationHistory = document.getElementById("btn-clear-citation-history");
+    const btnCopyAllCitations = document.getElementById("btn-copy-all-citations");
+    const btnDownloadBibtex = document.getElementById("btn-download-bibtex");
+    const citationSourceLabel = document.getElementById("citation-source-label");
+
+    // Toggle clear button on input
+    if (citationInput && btnClearCitation) {
+        citationInput.addEventListener("input", () => {
+            if (citationInput.value.trim().length > 0) {
+                btnClearCitation.classList.remove("hidden");
+            } else {
+                btnClearCitation.classList.add("hidden");
+            }
+        });
+
+        btnClearCitation.addEventListener("click", () => {
+            citationInput.value = "";
+            btnClearCitation.classList.add("hidden");
+            citationInput.focus();
+        });
+
+        // Trigger generate on Enter key
+        citationInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (btnGenerateCitation) btnGenerateCitation.click();
             }
         });
     }
 
-    const btnBlankNew = document.getElementById("btn-blank-new");
-    if (btnBlankNew) {
-        btnBlankNew.addEventListener("click", () => {
-            const navPlagiarism = document.getElementById("nav-plagiarism");
-            if (navPlagiarism) {
-                navPlagiarism.click();
+    // Quick Preset Pills
+    document.querySelectorAll(".preset-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            const query = pill.getAttribute("data-query");
+            if (citationInput && query) {
+                citationInput.value = query;
+                if (btnClearCitation) btnClearCitation.classList.remove("hidden");
+                if (btnGenerateCitation) btnGenerateCitation.click();
             }
         });
+    });
+
+    // Render Citation History from localStorage
+    function loadCitationHistory() {
+        if (!citationHistoryList || !citationHistoryPanel) return;
+        try {
+            const history = JSON.parse(localStorage.getItem("lemma_citation_history") || "[]");
+            if (!history || history.length === 0) {
+                citationHistoryPanel.classList.add("hidden");
+                return;
+            }
+
+            citationHistoryList.innerHTML = "";
+            history.slice(0, 5).forEach((item) => {
+                const row = document.createElement("div");
+                row.className = "citation-history-item";
+                row.innerHTML = `
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 85%;">
+                        <i class="fa-solid fa-bookmark" style="color: var(--accent-purple); margin-right: 6px;"></i> ${escapeHtml(item.query)}
+                    </span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">${item.date || 'Recent'}</span>
+                `;
+                row.addEventListener("click", () => {
+                    if (citationInput) {
+                        citationInput.value = item.query;
+                        if (btnClearCitation) btnClearCitation.classList.remove("hidden");
+                    }
+                    displayCitationResults(item.data, item.query);
+                });
+                citationHistoryList.appendChild(row);
+            });
+            citationHistoryPanel.classList.remove("hidden");
+        } catch (e) {
+            console.warn("Could not load citation history:", e);
+        }
+    }
+
+    function saveToCitationHistory(query, data) {
+        try {
+            let history = JSON.parse(localStorage.getItem("lemma_citation_history") || "[]");
+            history = history.filter(h => h.query.toLowerCase() !== query.toLowerCase());
+            history.unshift({
+                query: query,
+                data: data,
+                date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+            localStorage.setItem("lemma_citation_history", JSON.stringify(history.slice(0, 10)));
+            loadCitationHistory();
+        } catch (e) {
+            console.warn("Could not save citation history:", e);
+        }
+    }
+
+    if (btnClearCitationHistory) {
+        btnClearCitationHistory.addEventListener("click", () => {
+            localStorage.removeItem("lemma_citation_history");
+            loadCitationHistory();
+            showToast("Citation history cleared.", "info");
+        });
+    }
+
+    // Display formatted results helper
+    function displayCitationResults(data, query) {
+        const citApa = document.getElementById("cit-apa");
+        const citMla = document.getElementById("cit-mla");
+        const citChicago = document.getElementById("cit-chicago");
+        const citIeee = document.getElementById("cit-ieee");
+
+        if (citApa) citApa.textContent = data.apa || "Citation format unavailable.";
+        if (citMla) citMla.textContent = data.mla || "Citation format unavailable.";
+        if (citChicago) citChicago.textContent = data.chicago || "Citation format unavailable.";
+        if (citIeee) citIeee.textContent = data.ieee || "Citation format unavailable.";
+
+        if (citationSourceLabel) {
+            citationSourceLabel.textContent = `Generated for: "${query.length > 50 ? query.substring(0, 50) + '...' : query}"`;
+        }
+
+        if (citationResultsPanel) {
+            citationResultsPanel.classList.remove("hidden");
+            citationResultsPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+    }
+
+    // Citation Generator Event Listener
+    if (btnGenerateCitation) {
+        btnGenerateCitation.addEventListener("click", async () => {
+            const input = citationInput ? citationInput.value.trim() : "";
+            if (!input) {
+                showToast("Please enter a source URL, DOI, or title.", "error");
+                if (citationInput) citationInput.focus();
+                return;
+            }
+            
+            btnGenerateCitation.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Formatting...';
+            btnGenerateCitation.disabled = true;
+            showToast("Generating standardized citations with AI...", "info");
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/citations/generate`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + localStorage.getItem("lemma_access_token")
+                    },
+                    body: JSON.stringify({ query: input })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    displayCitationResults(data, input);
+                    saveToCitationHistory(input, data);
+                    showToast("Citations generated successfully!", "success");
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    showToast(errData.detail || "Failed to generate citations. Please check the source.", "error");
+                }
+            } catch (err) {
+                console.error("Citation error:", err);
+                showToast("Network error while generating citations.", "error");
+            } finally {
+                btnGenerateCitation.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Citations';
+                btnGenerateCitation.disabled = false;
+            }
+        });
+    }
+
+    // Individual Copy Buttons
+    document.querySelectorAll(".citation-copy-action").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const targetId = btn.getAttribute("data-target");
+            const targetEl = document.getElementById(targetId);
+            if (!targetEl || !targetEl.textContent) return;
+
+            navigator.clipboard.writeText(targetEl.textContent).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.classList.add("copied");
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Copied!</span>';
+                showToast(`Copied ${btn.getAttribute("title") || "citation"} to clipboard!`, "success");
+                setTimeout(() => {
+                    btn.classList.remove("copied");
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            }).catch(err => {
+                console.error("Clipboard error:", err);
+                showToast("Failed to copy to clipboard.", "error");
+            });
+        });
+    });
+
+    // Copy All Citations
+    if (btnCopyAllCitations) {
+        btnCopyAllCitations.addEventListener("click", () => {
+            const ieee = document.getElementById("cit-ieee")?.textContent || "";
+            const apa = document.getElementById("cit-apa")?.textContent || "";
+            const mla = document.getElementById("cit-mla")?.textContent || "";
+            const chicago = document.getElementById("cit-chicago")?.textContent || "";
+
+            const combined = `[IEEE Format]\n${ieee}\n\n[APA 7th Edition]\n${apa}\n\n[MLA 9th Edition]\n${mla}\n\n[Chicago / Turabian]\n${chicago}\n`;
+            navigator.clipboard.writeText(combined).then(() => {
+                showToast("All 4 citation formats copied to clipboard!", "success");
+            }).catch(() => {
+                showToast("Failed to copy citations.", "error");
+            });
+        });
+    }
+
+    // Export .txt file
+    if (btnDownloadBibtex) {
+        btnDownloadBibtex.addEventListener("click", () => {
+            const query = citationInput ? citationInput.value.trim() : "source";
+            const ieee = document.getElementById("cit-ieee")?.textContent || "";
+            const apa = document.getElementById("cit-apa")?.textContent || "";
+            const mla = document.getElementById("cit-mla")?.textContent || "";
+            const chicago = document.getElementById("cit-chicago")?.textContent || "";
+
+            const content = `ACADEMIC CITATIONS REPORT\nSource Inquiry: ${query}\nDate: ${new Date().toLocaleString()}\n\n------------------------------------------------------------\n[IEEE Standard]\n${ieee}\n\n[APA 7th Edition]\n${apa}\n\n[MLA 9th Edition]\n${mla}\n\n[Chicago / Turabian Format]\n${chicago}\n------------------------------------------------------------\nGenerated by Lemma AI Academic Studio\n`;
+
+            const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `citations_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Exported citations text file.", "success");
+        });
+    }
+
+    // Initial load of citation history
+    loadCitationHistory();
+
+    // Initialize user authentication session
+    initUserSession();
+
+});
+
+// ---------------------------------------------------------------------------
+// Authentication & Session Management
+// ---------------------------------------------------------------------------
+async function initUserSession() {
+    const token = localStorage.getItem("lemma_access_token");
+    const avatarEl = document.getElementById("nav-user-avatar");
+    const nameEl = document.getElementById("nav-user-name");
+    const dropAvatarEl = document.getElementById("dropdown-user-avatar");
+    const dropNameEl = document.getElementById("dropdown-user-name");
+    const dropEmailEl = document.getElementById("dropdown-user-email");
+    const dropRoleEl = document.getElementById("dropdown-user-role");
+    const welcomeTitle = document.querySelector(".blank-start-title");
+
+    function applyUserData(user) {
+        if (!user) return;
+        const fullName = user.full_name || user.name || "Researcher";
+        const email = user.email || "researcher@lemma.ai";
+        const role = (user.role || "student").toUpperCase();
+        const initial = fullName.charAt(0).toUpperCase();
+
+        if (avatarEl) avatarEl.textContent = initial;
+        if (nameEl) nameEl.textContent = fullName.split(" ")[0];
+        if (dropAvatarEl) dropAvatarEl.textContent = initial;
+        if (dropNameEl) dropNameEl.textContent = fullName;
+        if (dropEmailEl) dropEmailEl.textContent = email;
+        if (dropRoleEl) dropRoleEl.textContent = role;
+        if (welcomeTitle) {
+            welcomeTitle.textContent = `What's next, ${fullName.split(" ")[0]}?`;
+        }
+    }
+
+    // Check cached profile first for instantaneous UI render
+    const cachedUser = JSON.parse(localStorage.getItem("lemma_user") || "null");
+    if (cachedUser) {
+        applyUserData(cachedUser);
+    }
+
+    if (!token) {
+        return;
+    }
+
+    try {
+        const base = typeof APIConfigManager !== 'undefined' 
+            ? await APIConfigManager.getApiBaseUrl() 
+            : window.location.origin;
+
+        const res = await fetch(`${base}/api/v1/auth/me`, {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        if (res.ok) {
+            const user = await res.json();
+            localStorage.setItem("lemma_user", JSON.stringify(user));
+            applyUserData(user);
+        } else if (res.status === 401) {
+            // Token expired
+            localStorage.removeItem("lemma_access_token");
+        }
+    } catch (e) {
+        console.warn("User profile fetch failed:", e);
+    }
+}
+
+function toggleProfileDropdown(forceState) {
+    const menu = document.getElementById("profile-dropdown");
+    if (!menu) return;
+    if (typeof forceState === 'boolean') {
+        menu.style.display = forceState ? "block" : "none";
+    } else {
+        menu.style.display = menu.style.display === "block" ? "none" : "block";
+    }
+}
+
+function handleLogout() {
+    localStorage.removeItem("lemma_access_token");
+    localStorage.removeItem("lemma_refresh_token");
+    localStorage.removeItem("lemma_user");
+    window.location.href = "/login.html";
+}
+
+// Global click outside listener to close profile dropdown
+document.addEventListener("click", (e) => {
+    const wrapper = document.querySelector(".header-profile-wrapper");
+    const dropdown = document.getElementById("profile-dropdown");
+    if (wrapper && dropdown && !wrapper.contains(e.target)) {
+        dropdown.style.display = "none";
     }
 });
+
 

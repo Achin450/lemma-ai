@@ -60,6 +60,138 @@ class DatabaseService:
                     CREATE INDEX IF NOT EXISTS sentences_embedding_hnsw_idx 
                     ON sentences USING hnsw (embedding vector_cosine_ops);
                 """)
+                
+                # Create institutions table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS institutions (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        name TEXT NOT NULL,
+                        domain TEXT UNIQUE,
+                        institution_code VARCHAR(32) UNIQUE,
+                        max_seats INT DEFAULT 100,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                # Create users table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        email TEXT UNIQUE NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        full_name TEXT NOT NULL,
+                        role VARCHAR(32) NOT NULL DEFAULT 'student',
+                        institution_id UUID REFERENCES institutions(id) ON DELETE SET NULL,
+                        email_verified BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                # Create api_keys table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS api_keys (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                        key_hash TEXT NOT NULL,
+                        label TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        expires_at TIMESTAMPTZ
+                    );
+                """)
+                
+                # Create submissions table (for instructor dashboard - Phase 3)
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS courses (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        institution_id UUID REFERENCES institutions(id) ON DELETE CASCADE,
+                        instructor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                        name TEXT NOT NULL,
+                        course_code VARCHAR(32),
+                        semester VARCHAR(32),
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS assignments (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+                        title TEXT NOT NULL,
+                        due_date TIMESTAMPTZ,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS submissions (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        assignment_id UUID REFERENCES assignments(id) ON DELETE CASCADE,
+                        student_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                        job_id VARCHAR(255),
+                        filename TEXT,
+                        submitted_at TIMESTAMPTZ DEFAULT NOW(),
+                        plagiarism_score FLOAT,
+                        ai_score FLOAT,
+                        status VARCHAR(32) DEFAULT 'pending'
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS cross_submission_matches (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        submission_a UUID REFERENCES submissions(id) ON DELETE CASCADE,
+                        submission_b UUID REFERENCES submissions(id) ON DELETE CASCADE,
+                        similarity_score FLOAT,
+                        match_count INT
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS lti_platforms (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        institution_id UUID REFERENCES institutions(id) ON DELETE CASCADE,
+                        platform_type VARCHAR(32),
+                        client_id TEXT NOT NULL,
+                        deployment_id TEXT,
+                        auth_url TEXT,
+                        token_url TEXT,
+                        jwks_url TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS api_usage_log (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        api_key_id UUID REFERENCES api_keys(id) ON DELETE SET NULL,
+                        endpoint TEXT,
+                        status_code INT,
+                        timestamp TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS federation_peers (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        institution_id UUID REFERENCES institutions(id) ON DELETE SET NULL,
+                        peer_url TEXT NOT NULL,
+                        api_key_hash TEXT NOT NULL,
+                        status VARCHAR(32) DEFAULT 'active',
+                        last_heartbeat TIMESTAMPTZ,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS federation_queries (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        source_peer_id UUID REFERENCES federation_peers(id) ON DELETE SET NULL,
+                        query_embedding_count INT,
+                        results_returned INT,
+                        latency_ms INT,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
             conn.commit()
 
     @classmethod
