@@ -1,13 +1,16 @@
-﻿"""
+"""
 LTI 1.3 Service
 
 Handles LTI 1.3 Advantage integrations for LMS platforms like Canvas, Moodle, and Blackboard.
 Provides OIDC login flows, deep linking, and assignment grade passback.
 """
 import logging
-from typing import Optional
-from pylti1p3.tool_config import ToolConfDict
-from pylti1p3.registration import Registration
+try:
+    from pylti1p3.tool_config import ToolConfDict
+    from pylti1p3.registration import Registration
+except (ImportError, ModuleNotFoundError):
+    ToolConfDict = dict
+    Registration = None
 from app.config import settings
 
 logger = logging.getLogger(__name__)
