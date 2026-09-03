@@ -3250,70 +3250,83 @@ mark.mark-hybrid {
 #paper-progress-view {
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
-    gap: 2.5rem;
+    gap: 1.5rem;
     width: 100%;
-    max-width: 1450px;
-    height: calc(100vh - 80px);
+    max-width: 1550px;
+    height: calc(100vh - 75px);
     margin: 0 auto;
-    padding: 1.5rem 2rem;
+    padding: 1rem 1.5rem;
     box-sizing: border-box;
     overflow: hidden;
     position: relative;
     transition: all 0.4s ease;
 }
 
-/* Left Side: Generation Progress Box (Vertically Centered, Attached to Left) */
+/* Left Side: Generation Progress Box (Clean, Non-Clipping, Auto-Fitting) */
 #paper-progress-view .progress-view-card {
-    width: 400px;
-    min-width: 380px;
-    max-width: 420px;
+    width: 360px;
+    min-width: 340px;
+    max-width: 380px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
-    padding: 2.25rem 2rem;
+    padding: 1.25rem 1.25rem;
     text-align: center;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.4);
     box-sizing: border-box;
     flex-shrink: 0;
-    align-self: center;
+    align-self: stretch;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
     transition: all 0.4s ease;
 }
 
+#paper-progress-view .progress-view-card::-webkit-scrollbar {
+    width: 5px;
+}
+#paper-progress-view .progress-view-card::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
 #paper-progress-view .progress-view-header h2 {
-    font-size: 1.35rem;
-    margin-bottom: 0.35rem;
+    font-size: 1.15rem;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
 }
 
 #paper-progress-view .progress-view-header p {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-muted);
 }
 
 #paper-progress-view .progress-spinner {
-    width: 42px;
-    height: 42px;
-    margin: 0 auto 1.25rem;
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 0.75rem;
 }
 
 #paper-progress-view .progress-track {
-    margin: 1.5rem 0 0.75rem;
+    margin: 1rem 0 0.5rem;
 }
 
 #paper-progress-view .progress-step-display {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     color: var(--text-secondary);
-    margin-bottom: 1.25rem;
-    min-height: 1.3em;
+    margin-bottom: 0.75rem;
+    min-height: 1.2em;
 }
 
 #paper-progress-view .progress-stages {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.65rem 0.75rem;
-    padding: 1rem 0;
+    gap: 0.45rem 0.65rem;
+    padding: 0.75rem 0;
     border-top: 1px solid var(--border-color);
     text-align: left;
 }
@@ -3322,8 +3335,8 @@ mark.mark-hybrid {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.76rem;
+    gap: 0.45rem;
+    font-size: 0.74rem;
     color: var(--text-muted);
     min-width: 0;
 }
@@ -3335,8 +3348,8 @@ mark.mark-hybrid {
 }
 
 #paper-progress-view .stage-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     flex-shrink: 0;
 }
 
@@ -3348,31 +3361,41 @@ mark.mark-hybrid {
     max-height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    background: var(--bg-tertiary);
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(16px);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    padding: 2rem 2.5rem;
+    padding: 1.5rem 2rem;
     box-sizing: border-box;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     box-shadow: inset 0 0 24px rgba(0,0,0,0.3);
+    scrollbar-width: thin;
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.live-paper-stage::-webkit-scrollbar {
+    width: 6px;
+}
+.live-paper-stage::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
 }
 
 .live-paper-sheet {
     width: 100%;
-    max-width: 860px;
+    max-width: 820px;
     background: #ffffff;
     color: #000000;
     border-radius: 6px;
-    padding: 3.25rem 3.75rem;
+    padding: 2.75rem 3.25rem;
     box-sizing: border-box;
     font-family: "Times New Roman", Times, serif;
     font-size: 10pt;
     line-height: 1.48;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
-    min-height: 850px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    min-height: auto;
 }
 
 /* When Generation Completes: Box disappears, Paper centers */
