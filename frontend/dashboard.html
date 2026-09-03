@@ -7,7 +7,7 @@
     <script>
         // Strict Authentication Guard — nobody can access dashboard without logging in
         (function () {
-            const token = localStorage.getItem("lemma_access_token");
+            const token = sessionStorage.getItem("lemma_access_token");
             if (!token) {
                 window.location.replace("login.html");
             }

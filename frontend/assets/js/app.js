@@ -962,7 +962,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(API_REWRITE_URL, {
                 method: "POST",
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
+                    'Authorization': 'Bearer ' + (sessionStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_access_token') || ''),
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
@@ -1328,7 +1328,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch(API_REWRITE_URL, {
                     method: "POST",
                     headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
+                        'Authorization': 'Bearer ' + (sessionStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_access_token') || ''),
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -1448,7 +1448,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const response = await fetch("/api/v1/humanize", {
                     method: "POST",
                     headers: {
-                        'Authorization': 'Bearer ' + localStorage.getItem('lemma_access_token'),
+                        'Authorization': 'Bearer ' + (sessionStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_access_token') || ''),
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -1856,7 +1856,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer " + localStorage.getItem("lemma_access_token")
+                        "Authorization": "Bearer " + (sessionStorage.getItem("lemma_access_token") || localStorage.getItem("lemma_access_token") || "")
                     },
                     body: JSON.stringify({ query: input })
                 });
@@ -1956,7 +1956,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Authentication & Session Management
 // ---------------------------------------------------------------------------
 async function initUserSession() {
-    const token = localStorage.getItem("lemma_access_token");
+    const token = sessionStorage.getItem("lemma_access_token") || localStorage.getItem("lemma_access_token");
     const avatarEl = document.getElementById("nav-user-avatar");
     const nameEl = document.getElementById("nav-user-name");
     const dropAvatarEl = document.getElementById("dropdown-user-avatar");
@@ -1984,7 +1984,7 @@ async function initUserSession() {
     }
 
     // Check cached profile first for instantaneous UI render
-    const cachedUser = JSON.parse(localStorage.getItem("lemma_user") || "null");
+    const cachedUser = JSON.parse(sessionStorage.getItem("lemma_user") || localStorage.getItem("lemma_user") || "null");
     if (cachedUser) {
         applyUserData(cachedUser);
     }
@@ -2006,10 +2006,11 @@ async function initUserSession() {
 
         if (res.ok) {
             const user = await res.json();
-            localStorage.setItem("lemma_user", JSON.stringify(user));
+            sessionStorage.setItem("lemma_user", JSON.stringify(user));
             applyUserData(user);
         } else if (res.status === 401) {
             // Token expired
+            sessionStorage.removeItem("lemma_access_token");
             localStorage.removeItem("lemma_access_token");
         }
     } catch (e) {
@@ -2028,6 +2029,9 @@ function toggleProfileDropdown(forceState) {
 }
 
 function handleLogout() {
+    sessionStorage.removeItem("lemma_access_token");
+    sessionStorage.removeItem("lemma_refresh_token");
+    sessionStorage.removeItem("lemma_user");
     localStorage.removeItem("lemma_access_token");
     localStorage.removeItem("lemma_refresh_token");
     localStorage.removeItem("lemma_user");

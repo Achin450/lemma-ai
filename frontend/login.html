@@ -207,12 +207,6 @@
         } catch { return window.location.origin; }
     })();
 
-    // Redirect if already logged in
-    const existingToken = localStorage.getItem("lemma_access_token");
-    if (existingToken) {
-        window.location.href = "/dashboard.html";
-    }
-
     function switchTab(tab) {
         document.querySelectorAll(".tab-btn").forEach((b, i) => {
             b.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "register"));
@@ -234,9 +228,13 @@
     }
 
     function storeTokens(data) {
-        localStorage.setItem("lemma_access_token", data.access_token);
-        localStorage.setItem("lemma_refresh_token", data.refresh_token);
-        localStorage.setItem("lemma_user", JSON.stringify(data.user));
+        sessionStorage.setItem("lemma_access_token", data.access_token);
+        sessionStorage.setItem("lemma_refresh_token", data.refresh_token);
+        sessionStorage.setItem("lemma_user", JSON.stringify(data.user));
+        // Clear any persistent storage so sessions don't linger across visits
+        localStorage.removeItem("lemma_access_token");
+        localStorage.removeItem("lemma_refresh_token");
+        localStorage.removeItem("lemma_user");
     }
 
     async function handleLogin(e) {

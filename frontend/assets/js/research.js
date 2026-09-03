@@ -36,7 +36,7 @@
     // Utilities
     // ---------------------------------------------------------------------------
     function getToken() {
-        return localStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_token') || sessionStorage.getItem('lemma_token') || '';
+        return sessionStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_access_token') || '';
     }
 
     function authHeaders() {
