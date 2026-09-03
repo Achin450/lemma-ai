@@ -60,24 +60,55 @@ def _get_celery_result(job_id: str):
 )
 async def generate_research_paper(
     payload: GenerateRequest,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
     paper_id = str(uuid.uuid4())
 
-    from app.tasks.research_tasks import generate_paper_task
-    generate_paper_task.apply_async(
-        args=[paper_id],
-        kwargs={
-            "topic": payload.topic,
-            "domain": payload.domain,
-            "length": payload.length.value,
-            "num_references": payload.num_references,
-            "ieee_format": payload.ieee_format,
-        },
-        task_id=paper_id,
+    from app.schemas.research import ResearchPaper, PaperStatus, PaperType
+    init_paper = ResearchPaper(
+        paper_id=paper_id,
+        title=f"Research Paper on {payload.topic}",
+        status=PaperStatus.processing,
+        paper_type=PaperType.generated
     )
+    PaperStore.save(init_paper)
 
-    logger.info(f"Queued paper generation for topic='{payload.topic}', paper_id={paper_id}")
+    dispatched = False
+    try:
+        from app.tasks.research_tasks import generate_paper_task
+        generate_paper_task.apply_async(
+            args=[paper_id],
+            kwargs={
+                "topic": payload.topic,
+                "domain": payload.domain,
+                "length": payload.length.value,
+                "num_references": payload.num_references,
+                "ieee_format": payload.ieee_format,
+            },
+            task_id=paper_id,
+        )
+        dispatched = True
+        logger.info(f"Queued paper generation to Celery for topic='{payload.topic}', paper_id={paper_id}")
+    except Exception as e:
+        logger.warning(f"Could not dispatch to Celery: {e}. Falling back to FastAPI BackgroundTasks.")
+
+    if not dispatched:
+        def _bg_generate():
+            from app.tasks.research_tasks import generate_paper_task
+            try:
+                generate_paper_task.run(
+                    paper_id=paper_id,
+                    topic=payload.topic,
+                    domain=payload.domain,
+                    length=payload.length.value,
+                    num_references=payload.num_references,
+                    ieee_format=payload.ieee_format
+                )
+            except Exception as e:
+                logger.error(f"Background generation task error: {e}", exc_info=True)
+
+        background_tasks.add_task(_bg_generate)
 
     return {
         "job_id": paper_id,
@@ -101,6 +132,7 @@ async def generate_research_paper(
     ),
 )
 async def restructure_paper(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     preserve_citations: bool = Form(True),
     current_user: dict = Depends(get_current_user),
@@ -140,14 +172,33 @@ async def restructure_paper(
             temp_filepath.unlink()
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
-    from app.tasks.research_tasks import restructure_paper_task
-    restructure_paper_task.apply_async(
-        args=[paper_id, str(temp_filepath), file.filename],
-        kwargs={"preserve_citations": preserve_citations},
-        task_id=paper_id,
-    )
+    dispatched = False
+    try:
+        from app.tasks.research_tasks import restructure_paper_task
+        restructure_paper_task.apply_async(
+            args=[paper_id, str(temp_filepath), file.filename],
+            kwargs={"preserve_citations": preserve_citations},
+            task_id=paper_id,
+        )
+        dispatched = True
+        logger.info(f"Queued restructuring to Celery for file='{file.filename}', paper_id={paper_id}")
+    except Exception as e:
+        logger.warning(f"Could not dispatch restructure to Celery: {e}. Falling back to BackgroundTasks.")
 
-    logger.info(f"Queued restructuring for file='{file.filename}', paper_id={paper_id}")
+    if not dispatched:
+        def _bg_restructure():
+            from app.tasks.research_tasks import restructure_paper_task
+            try:
+                restructure_paper_task.run(
+                    paper_id=paper_id,
+                    file_path=str(temp_filepath),
+                    original_filename=file.filename,
+                    preserve_citations=preserve_citations
+                )
+            except Exception as e:
+                logger.error(f"Background restructure task error: {e}", exc_info=True)
+
+        background_tasks.add_task(_bg_restructure)
 
     return {
         "job_id": paper_id,
