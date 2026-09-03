@@ -1,0 +1,8 @@
+﻿{
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "https://lemma-ai-zi5o.onrender.com/api/:match*"
+    }
+  ]
+}

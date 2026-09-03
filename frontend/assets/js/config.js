@@ -2,7 +2,7 @@
  * Lemma Central API Configuration Engine
  */
 const APIConfigManager = {
-    DEFAULT_PROD_URL: 'https://r4hul-78-lemma-backend.hf.space',
+    DEFAULT_PROD_URL: 'https://lemma-ai-zi5o.onrender.com',
     DEFAULT_DEV_URL: 'http://localhost:8000',
     STORAGE_KEY: 'lemma_override_api_url',
 

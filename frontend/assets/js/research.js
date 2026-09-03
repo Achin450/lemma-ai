@@ -56,9 +56,10 @@
     function apiBase() {
         if (window.LEMMA_API_BASE) return window.LEMMA_API_BASE;
         if (window.API_BASE) return window.API_BASE;
-        if (window.location.protocol === 'file:') return 'http://localhost:8000';
-        if (window.location.port === '8000') return window.location.origin;
-        return 'http://localhost:8000';
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return window.location.port === '8000' ? window.location.origin : 'http://localhost:8000';
+        }
+        return window.location.origin; // On Vercel, vercel.json proxies all /api/ requests to Render!
     }
 
     function showToast(msg, type = 'info') {
