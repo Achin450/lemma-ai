@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     HYBRID_THRESHOLD: float = 0.45
     
     # Database Settings
-    DATABASE_URL: str
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/lemma")
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "lemma"
@@ -100,9 +100,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore",
-        env_prefix="LEMMA_"
+        case_sensitive=False,
+        extra="ignore"
     )
 
 settings = Settings()
