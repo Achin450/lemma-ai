@@ -19,8 +19,6 @@ from app.services.extractor import (
     UnsupportedFileTypeError,
     ExtractionError,
 )
-from app.services.segmenter import SentenceSegmenterService
-from app.services.matcher import DualTierMatcher
 from app.services.llm import LLMService
 from app.services.auth import get_current_user, require_any_user
 from app.tasks.celery_app import celery_app
@@ -294,6 +292,7 @@ matcher_instance = None
 def get_matcher():
     global matcher_instance
     if matcher_instance is None:
+        from app.services.matcher import DualTierMatcher
         matcher_instance = DualTierMatcher()
     return matcher_instance
 
@@ -381,6 +380,7 @@ async def upload_document(
         )
     content = await file.read()
     text = DocumentExtractorService.extract_text(file.filename, content)
+    from app.services.segmenter import SentenceSegmenterService
     sentences_data = SentenceSegmenterService.segment(text)
     sentences = [
         SentenceCoordinate(

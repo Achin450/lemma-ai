@@ -5,7 +5,6 @@ import logging
 import psycopg2
 import psycopg2.extras
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
 
 from app.config import settings
 from app.services.segmenter import SentenceSegmenterService
@@ -206,6 +205,7 @@ class SemanticMatcher:
     def get_model(cls):
         """Loads and returns the SentenceTransformer model as a singleton."""
         if cls._model is None:
+            from sentence_transformers import SentenceTransformer
             cls._model = SentenceTransformer(settings.SENTENCE_TRANSFORMERS_MODEL)
         return cls._model
 

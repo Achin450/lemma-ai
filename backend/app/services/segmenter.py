@@ -1,4 +1,3 @@
-import spacy
 from app.config import settings
 
 class SentenceSegmenterService:
@@ -8,6 +7,7 @@ class SentenceSegmenterService:
     def get_nlp(cls):
         """Loads and returns the spaCy NLP model as a singleton, optimizing components."""
         if cls._nlp is None:
+            import spacy
             # Disable unnecessary components to improve performance
             disable_components = ["ner", "lemmatizer"]
             try:
