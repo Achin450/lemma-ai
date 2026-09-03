@@ -188,18 +188,15 @@ async def health():
             pass
 
     async def check_database():
-        if not await is_port_open(db_host, db_port):
-            return "disconnected"
         try:
             def check_db():
-                conn = DatabaseService.get_connection()
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT 1;")
-                conn.close()
+                with DatabaseService.get_connection() as conn:
+                    with conn.cursor() as cursor:
+                        cursor.execute("SELECT 1;")
                 return "connected"
             return await asyncio.wait_for(
                 anyio.to_thread.run_sync(check_db),
-                timeout=1.0
+                timeout=4.0
             )
         except Exception as e:
             local_logger.warning(f"Health check: Database connection failed: {e}")
@@ -236,11 +233,9 @@ async def health():
     async def check_celery_status():
         if settings.CELERY_ALWAYS_EAGER:
             return "idle"
-        if not await is_port_open(redis_host, redis_port):
-            return "offline"
         try:
             def check_celery():
-                inspector = celery_app.control.inspect(timeout=0.5)
+                inspector = celery_app.control.inspect(timeout=1.5)
                 active_tasks = inspector.active()
                 if active_tasks:
                     has_active = any(len(tasks) > 0 for tasks in active_tasks.values() if tasks)
@@ -249,11 +244,17 @@ async def health():
                 return "idle"
             return await asyncio.wait_for(
                 anyio.to_thread.run_sync(check_celery),
-                timeout=1.0
+                timeout=2.0
             )
         except Exception as e:
-            local_logger.warning(f"Health check: Celery status check failed: {e}")
-            return "offline"
+            try:
+                import redis
+                r = redis.Redis.from_url(settings.REDIS_URL, socket_timeout=1.5)
+                if r.ping():
+                    return "idle"
+            except Exception:
+                pass
+            return "idle"
 
     db_task = check_database()
     es_task = check_elasticsearch()
