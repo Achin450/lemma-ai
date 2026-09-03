@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn("Failed resolving API from config manager, fallback to default URL:", err);
         } finally {
             checkServerHealth();
-            setInterval(checkServerHealth, 10000); // Check health every 10 seconds
+            setInterval(checkServerHealth, 15000); // Check health every 15 seconds
         }
     }
 
@@ -132,6 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
     /* -------------------------------------------------------------
      * Server Health Checking
      * ------------------------------------------------------------- */
+    let healthConsecutiveFailures = 0;
+
     async function checkServerHealth() {
         const hOllama = document.getElementById("health-ollama");
         const hOllamaDot = document.getElementById("health-ollama-dot");
@@ -151,16 +153,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!hOllama || !hEs || !hDb || !hCelery) return;
 
-        // Force working status during job performance to keep UI clean and accurate
-        if (isAnalyzing || isParaphrasing) {
-            if (isAnalyzing) {
-                hDb.className = "health-item working-orange";
-                hDbText.textContent = "Working";
-                hEs.className = "health-item working-orange";
-                hEsText.textContent = "Working";
-                hCelery.className = "health-item working-orange";
-                hCeleryText.textContent = "Working";
-            }
+        // Check if any research paper generation or analysis job is actively in progress
+        const isResearchRunning = window.lemmaResearch && window.lemmaResearch.state && window.lemmaResearch.state.pollingJobType;
+        if (isAnalyzing || isParaphrasing || isResearchRunning) {
+            hDb.className = "health-item connected-green";
+            hDbText.textContent = "Connected";
+            hCelery.className = "health-item working-orange";
+            hCeleryText.textContent = "Working";
             if (isParaphrasing) {
                 hOllama.className = "health-item working-orange";
                 hOllamaText.textContent = "Working";
@@ -169,8 +168,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch(API_HEALTH_URL, { signal: AbortSignal.timeout(5000) });
+            const response = await fetch(API_HEALTH_URL, { signal: AbortSignal.timeout(10000) });
             if (response.ok) {
+                healthConsecutiveFailures = 0;
                 const healthData = await response.json();
                 const services = healthData.services || {};
 
@@ -227,11 +227,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Health response not OK");
             }
         } catch (error) {
-            console.error("Health footer check failed:", error);
-            hOllama.className = "health-item offline-red"; hOllamaText.textContent = "Offline";
-            hEs.className = "health-item offline-red"; hEsText.textContent = "Offline";
-            hDb.className = "health-item offline-red"; hDbText.textContent = "Offline";
-            hCelery.className = "health-item offline-red"; hCeleryText.textContent = "Offline";
+            healthConsecutiveFailures++;
+            console.warn(`Health check attempt ${healthConsecutiveFailures} failed:`, error);
+            // Only update UI to offline if 3 consecutive checks fail, to avoid false alarms during heavy computation
+            if (healthConsecutiveFailures >= 3) {
+                hOllama.className = "health-item offline-red"; hOllamaText.textContent = "Offline";
+                hEs.className = "health-item offline-red"; hEsText.textContent = "Offline";
+                hDb.className = "health-item offline-red"; hDbText.textContent = "Offline";
+                hCelery.className = "health-item offline-red"; hCeleryText.textContent = "Offline";
+            }
         }
     }
 
