@@ -224,7 +224,7 @@ async def oauth_login(provider: str, req: Request):
     redirect_uri = f"{callback_base}/api/v1/auth/oauth/{provider}/callback"
 
     if provider == "google":
-        client_id = settings.GOOGLE_CLIENT_ID
+        client_id = os.getenv("GOOGLE_CLIENT_ID") or settings.GOOGLE_CLIENT_ID
         if not client_id:
             raise HTTPException(status_code=400, detail="Google OAuth is not configured on this server.")
         params = {
@@ -239,7 +239,7 @@ async def oauth_login(provider: str, req: Request):
         return RedirectResponse(url=url)
 
     elif provider == "github":
-        client_id = settings.GITHUB_CLIENT_ID
+        client_id = os.getenv("GITHUB_CLIENT_ID") or settings.GITHUB_CLIENT_ID
         if not client_id:
             # Fallback if GitHub credentials not provided yet: Inform user cleanly
             frontend_target = f"{settings.FRONTEND_URL.rstrip('/')}/login.html?error=" + urllib.parse.quote("GitHub OAuth is pending client_id configuration.")
@@ -259,7 +259,7 @@ async def oauth_login(provider: str, req: Request):
 @router.get("/oauth/{provider}/callback")
 async def oauth_callback(provider: str, code: Optional[str] = None, error: Optional[str] = None):
     """Handle OAuth authorization code callback, fetch user profile, and redirect to frontend with tokens."""
-    frontend_base = settings.FRONTEND_URL.rstrip("/")
+    frontend_base = (os.getenv("FRONTEND_URL") or settings.FRONTEND_URL).rstrip("/")
     provider = provider.lower()
 
     if error:
@@ -270,18 +270,20 @@ async def oauth_callback(provider: str, code: Optional[str] = None, error: Optio
         err_target = f"{frontend_base}/login.html?error={urllib.parse.quote('No authorization code returned.')}"
         return RedirectResponse(url=err_target)
 
-    callback_base = settings.BACKEND_PUBLIC_URL.rstrip("/")
+    callback_base = (os.getenv("BACKEND_PUBLIC_URL") or settings.BACKEND_PUBLIC_URL).rstrip("/")
     redirect_uri = f"{callback_base}/api/v1/auth/oauth/{provider}/callback"
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             if provider == "google":
+                g_client_id = os.getenv("GOOGLE_CLIENT_ID") or settings.GOOGLE_CLIENT_ID
+                g_client_secret = os.getenv("GOOGLE_CLIENT_SECRET") or settings.GOOGLE_CLIENT_SECRET
                 token_res = await client.post(
                     "https://oauth2.googleapis.com/token",
                     data={
                         "code": code,
-                        "client_id": settings.GOOGLE_CLIENT_ID,
-                        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                        "client_id": g_client_id,
+                        "client_secret": g_client_secret,
                         "redirect_uri": redirect_uri,
                         "grant_type": "authorization_code",
                     },
@@ -308,12 +310,14 @@ async def oauth_callback(provider: str, code: Optional[str] = None, error: Optio
                 avatar_url = uinfo.get("picture")
 
             elif provider == "github":
+                gh_client_id = os.getenv("GITHUB_CLIENT_ID") or settings.GITHUB_CLIENT_ID
+                gh_client_secret = os.getenv("GITHUB_CLIENT_SECRET") or settings.GITHUB_CLIENT_SECRET
                 token_res = await client.post(
                     "https://github.com/login/oauth/access_token",
                     data={
                         "code": code,
-                        "client_id": settings.GITHUB_CLIENT_ID,
-                        "client_secret": settings.GITHUB_CLIENT_SECRET,
+                        "client_id": gh_client_id,
+                        "client_secret": gh_client_secret,
                         "redirect_uri": redirect_uri,
                     },
                     headers={"Accept": "application/json"},
