@@ -374,7 +374,7 @@ body {
     }
 
     .paper-editor-title {
-        max-width: 200px !important;
+        max-width: 100% !important;
         font-size: 0.9rem !important;
     }
 
