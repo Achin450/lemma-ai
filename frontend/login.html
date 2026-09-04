@@ -263,8 +263,16 @@
     const API_BASE = (() => {
         try {
             const cfg = JSON.parse(localStorage.getItem("lemma_api_config") || "{}");
-            return cfg.apiUrl || window.location.origin;
-        } catch { return window.location.origin; }
+            if (cfg.apiUrl) return cfg.apiUrl;
+            const override = localStorage.getItem("lemma_override_api_url");
+            if (override) return override;
+        } catch {}
+
+        const host = window.location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1') {
+            return 'http://localhost:8000';
+        }
+        return 'https://lemma-ai-zi5o.onrender.com';
     })();
 
     function switchTab(tab) {
