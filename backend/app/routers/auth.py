@@ -1,11 +1,15 @@
-﻿import uuid
+import uuid
 import logging
+import urllib.parse
 from datetime import datetime, timezone
 from typing import Optional
 
+import httpx
 import psycopg2.extras
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
+from fastapi.responses import RedirectResponse
 
+from app.config import settings
 from app.services.database import DatabaseService
 from app.services.auth import (
     hash_password, verify_password,
@@ -173,3 +177,199 @@ async def change_password(payload: PasswordChangeRequest, current_user: dict = D
         with conn.cursor() as cur:
             cur.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_hash, current_user["sub"]))
         conn.commit()
+
+
+# ===========================================================================
+# OAuth 2.0 Social Authentication (Google & GitHub)
+# ===========================================================================
+
+def _upsert_oauth_user(email: str, full_name: str, provider: str, provider_id: str, avatar_url: Optional[str] = None) -> dict:
+    """Create or return existing user for OAuth social logins."""
+    with DatabaseService.get_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("SELECT * FROM users WHERE email = %s", (email.lower().strip(),))
+            user = cur.fetchone()
+
+            if user:
+                # Update provider details if missing
+                cur.execute(
+                    """UPDATE users 
+                       SET auth_provider = COALESCE(auth_provider, %s),
+                           provider_id = COALESCE(provider_id, %s),
+                           avatar_url = COALESCE(avatar_url, %s),
+                           email_verified = TRUE
+                       WHERE id = %s RETURNING *""",
+                    (provider, provider_id, avatar_url, user["id"])
+                )
+                user = cur.fetchone()
+            else:
+                # Create brand new user without requiring password
+                new_id = str(uuid.uuid4())
+                cur.execute(
+                    """INSERT INTO users (id, email, password_hash, full_name, role, auth_provider, provider_id, avatar_url, email_verified)
+                       VALUES (%s, %s, %s, %s, 'student', %s, %s, %s, TRUE)
+                       RETURNING *""",
+                    (new_id, email.lower().strip(), "", full_name or email.split("@")[0], provider, provider_id, avatar_url)
+                )
+                user = cur.fetchone()
+        conn.commit()
+    return user
+
+
+@router.get("/oauth/{provider}/login")
+async def oauth_login(provider: str, req: Request):
+    """Initiate OAuth flow by redirecting to Google or GitHub consent screen."""
+    provider = provider.lower()
+    callback_base = settings.BACKEND_PUBLIC_URL.rstrip("/")
+    redirect_uri = f"{callback_base}/api/v1/auth/oauth/{provider}/callback"
+
+    if provider == "google":
+        client_id = settings.GOOGLE_CLIENT_ID
+        if not client_id:
+            raise HTTPException(status_code=400, detail="Google OAuth is not configured on this server.")
+        params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "offline",
+            "prompt": "select_account",
+        }
+        url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+        return RedirectResponse(url=url)
+
+    elif provider == "github":
+        client_id = settings.GITHUB_CLIENT_ID
+        if not client_id:
+            # Fallback if GitHub credentials not provided yet: Inform user cleanly
+            frontend_target = f"{settings.FRONTEND_URL.rstrip('/')}/login.html?error=" + urllib.parse.quote("GitHub OAuth is pending client_id configuration.")
+            return RedirectResponse(url=frontend_target)
+        params = {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "scope": "read:user user:email",
+        }
+        url = f"https://github.com/login/oauth/authorize?{urllib.parse.urlencode(params)}"
+        return RedirectResponse(url=url)
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported OAuth provider: {provider}")
+
+
+@router.get("/oauth/{provider}/callback")
+async def oauth_callback(provider: str, code: Optional[str] = None, error: Optional[str] = None):
+    """Handle OAuth authorization code callback, fetch user profile, and redirect to frontend with tokens."""
+    frontend_base = settings.FRONTEND_URL.rstrip("/")
+    provider = provider.lower()
+
+    if error:
+        err_target = f"{frontend_base}/login.html?error={urllib.parse.quote(error)}"
+        return RedirectResponse(url=err_target)
+
+    if not code:
+        err_target = f"{frontend_base}/login.html?error={urllib.parse.quote('No authorization code returned.')}"
+        return RedirectResponse(url=err_target)
+
+    callback_base = settings.BACKEND_PUBLIC_URL.rstrip("/")
+    redirect_uri = f"{callback_base}/api/v1/auth/oauth/{provider}/callback"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            if provider == "google":
+                token_res = await client.post(
+                    "https://oauth2.googleapis.com/token",
+                    data={
+                        "code": code,
+                        "client_id": settings.GOOGLE_CLIENT_ID,
+                        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                        "redirect_uri": redirect_uri,
+                        "grant_type": "authorization_code",
+                    },
+                )
+                if not token_res.is_success:
+                    logger.error(f"Google token exchange failed: {token_res.text}")
+                    return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote('Google authorization failed.')}")
+
+                token_json = token_res.json()
+                google_access_token = token_json.get("access_token")
+
+                # Fetch userinfo
+                user_res = await client.get(
+                    "https://www.googleapis.com/oauth2/v2/userinfo",
+                    headers={"Authorization": f"Bearer {google_access_token}"},
+                )
+                if not user_res.is_success:
+                    return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote('Failed to fetch Google profile.')}")
+
+                uinfo = user_res.json()
+                email = uinfo.get("email")
+                full_name = uinfo.get("name") or uinfo.get("given_name") or email.split("@")[0]
+                provider_id = uinfo.get("id") or str(uuid.uuid4())
+                avatar_url = uinfo.get("picture")
+
+            elif provider == "github":
+                token_res = await client.post(
+                    "https://github.com/login/oauth/access_token",
+                    data={
+                        "code": code,
+                        "client_id": settings.GITHUB_CLIENT_ID,
+                        "client_secret": settings.GITHUB_CLIENT_SECRET,
+                        "redirect_uri": redirect_uri,
+                    },
+                    headers={"Accept": "application/json"},
+                )
+                token_json = token_res.json()
+                gh_access_token = token_json.get("access_token")
+
+                if not gh_access_token:
+                    return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote('GitHub token exchange failed.')}")
+
+                # Fetch GitHub user profile
+                user_res = await client.get(
+                    "https://api.github.com/user",
+                    headers={"Authorization": f"Bearer {gh_access_token}", "Accept": "application/json"},
+                )
+                uinfo = user_res.json()
+                provider_id = str(uinfo.get("id"))
+                full_name = uinfo.get("name") or uinfo.get("login")
+                avatar_url = uinfo.get("avatar_url")
+                email = uinfo.get("email")
+
+                # If email is private, fetch from emails endpoint
+                if not email:
+                    emails_res = await client.get(
+                        "https://api.github.com/user/emails",
+                        headers={"Authorization": f"Bearer {gh_access_token}", "Accept": "application/json"},
+                    )
+                    if emails_res.is_success:
+                        for item in emails_res.json():
+                            if item.get("primary") and item.get("verified"):
+                                email = item.get("email")
+                                break
+                if not email:
+                    email = f"{uinfo.get('login')}@users.noreply.github.com"
+
+            else:
+                return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote('Unsupported provider.')}")
+
+            # Upsert user in database
+            user = _upsert_oauth_user(email, full_name, provider, provider_id, avatar_url)
+            access_token = create_access_token(
+                str(user["id"]), user["email"], user["role"],
+                str(user["institution_id"]) if user.get("institution_id") else None,
+            )
+            refresh_token = create_refresh_token(str(user["id"]))
+
+            # Redirect user to login page with tokens in URL hash (secure against browser logs)
+            redirect_final = (
+                f"{frontend_base}/login.html#oauth_success=1"
+                f"&access_token={access_token}"
+                f"&refresh_token={refresh_token}"
+                f"&user_email={urllib.parse.quote(user['email'])}"
+                f"&user_name={urllib.parse.quote(user['full_name'])}"
+            )
+            return RedirectResponse(url=redirect_final)
+
+    except Exception as exc:
+        logger.exception("OAuth callback error:")
+        return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote(str(exc))}")

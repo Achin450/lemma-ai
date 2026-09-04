@@ -192,6 +192,33 @@ class DatabaseService:
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     );
                 """)
+
+                # Migration for OAuth social authentication
+                cursor.execute("""
+                    DO $$ 
+                    BEGIN 
+                        BEGIN
+                            ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'email';
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id TEXT;
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                    END $$;
+                """)
             conn.commit()
 
     @classmethod

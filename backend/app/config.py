@@ -97,6 +97,14 @@ class Settings(BaseSettings):
     # Firebase settings (to be integrated fully in Phase 4)
     FIREBASE_CREDENTIALS_PATH: str | None = None
 
+    # OAuth 2.0 Settings (Google & GitHub) - Configured via Render Environment Variables
+    GOOGLE_CLIENT_ID: str | None = os.getenv("GOOGLE_CLIENT_ID", None)
+    GOOGLE_CLIENT_SECRET: str | None = os.getenv("GOOGLE_CLIENT_SECRET", None)
+    GITHUB_CLIENT_ID: str | None = os.getenv("GITHUB_CLIENT_ID", None)
+    GITHUB_CLIENT_SECRET: str | None = os.getenv("GITHUB_CLIENT_SECRET", None)
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://lemma2.vercel.app")
+    BACKEND_PUBLIC_URL: str = os.getenv("BACKEND_PUBLIC_URL", "https://lemma-ai-zi5o.onrender.com")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
