@@ -40,7 +40,7 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="assets/css/style.css?v=48">
-    <link rel="stylesheet" href="assets/css/mobile.css?v=37">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=38">
 </head>
 
 <body>
@@ -77,16 +77,6 @@
             <nav class="sidebar-nav">
                 <div class="nav-section-title">Research Tools</div>
                 <ul>
-                    <li class="nav-item" id="nav-generate">
-                        <a href="#">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 20h9"></path>
-                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                            </svg>
-                            <span>Generate Paper</span>
-                        </a>
-                    </li>
                     <li class="nav-item" id="nav-restructure">
                         <a href="#">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
@@ -313,18 +303,31 @@
                 </div>
             </header>
             <div class="workspace-view" id="dashboard-home-view">
-                <div class="blank-start-content" style="max-width: 850px; margin: 0 auto; width: 100%; text-align: center; padding-top: 3rem;">
-                    <h2 class="blank-start-title" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 2rem; background: linear-gradient(135deg, var(--text-primary), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What's next, Researcher?</h2>
+                <div class="blank-start-content" style="max-width: 850px; margin: 0 auto; width: 100%; text-align: center; padding-top: 2rem;">
+                    <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 1rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-purple); font-size: 0.85rem;"></i>
+                        <span style="font-size: 0.82rem; font-weight: 600; color: var(--accent-purple);">Lemma Research Studio • v3.0</span>
+                    </div>
+
+                    <h2 class="blank-start-title" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 0.75rem; background: linear-gradient(135deg, var(--text-primary), var(--accent-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Generate &amp; Publish Academic Papers</h2>
+                    <p style="font-size: 0.95rem; color: var(--text-secondary); max-width: 620px; margin: 0 auto 2rem auto; line-height: 1.5;">Enter any research topic and Lemma AI will synthesize a complete IEEE-structured paper with verified citations from arXiv and Semantic Scholar.</p>
                     
-                    <div class="blank-start-bar" style="margin-bottom: 1.5rem; display: flex; align-items: center; background: var(--bg-secondary); border: 1.5px solid var(--border-color); border-radius: 14px; padding: 0.4rem 0.6rem; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: var(--transition-fast);">
-                        <button class="bar-plus-btn" id="btn-blank-new" title="Upload & Restructure Paper into IEEE Format (PDF, DOCX, TXT)" style="width: 38px; height: 38px; border-radius: 9px; border: none; background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: var(--transition-fast);">
+                    <!-- Search / Topic Prompt Bar -->
+                    <div class="blank-start-bar" style="margin-bottom: 1rem; display: flex; align-items: center; background: var(--bg-secondary); border: 1.5px solid var(--border-color); border-radius: 14px; padding: 0.4rem 0.6rem; box-shadow: 0 8px 30px rgba(0,0,0,0.12); transition: var(--transition-fast);">
+                        <button class="bar-plus-btn" id="btn-blank-new" title="Upload & Restructure Existing Paper into IEEE Format (PDF, DOCX, TXT)" style="width: 38px; height: 38px; border-radius: 9px; border: none; background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: var(--transition-fast);">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </button>
-                        <input type="text" id="blank-prompt-input" placeholder="Type a new project or research topic to generate paper..." autocomplete="off" style="flex-grow: 1; background: transparent; border: none; outline: none; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem; font-family: inherit;">
+                        <input type="text" id="blank-prompt-input" placeholder="Type a research topic (e.g. Deep Reinforcement Learning in Autonomous Robotics)..." autocomplete="off" style="flex-grow: 1; background: transparent; border: none; outline: none; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem; font-family: inherit;">
+                        
+                        <button class="btn btn-sm btn-outline" id="btn-toggle-advanced-params" type="button" title="Configure Domain, Word Count & Citations" style="margin-right: 0.5rem; display: flex; align-items: center; gap: 6px; padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.82rem;">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span class="desktop-only-text">Options</span>
+                        </button>
+
                         <button class="btn btn-primary" id="btn-blank-generate" style="padding: 0.6rem 1.35rem; border-radius: 10px; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; font-size: 0.9rem; cursor: pointer;">
                             <span>Generate</span>
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -337,7 +340,49 @@
                     <!-- Hidden file input triggered by plus icon -->
                     <input type="file" id="home-restructure-file-input" accept=".pdf,.docx,.txt" style="display: none;">
 
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.5rem;">
+                    <!-- Advanced Generation Configuration Box (Collapsible / Toggleable) -->
+                    <div id="home-advanced-options" class="hidden" style="text-align: left; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; animation: fadeIn 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.5rem;">
+                            <span style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-sliders" style="color: var(--accent-purple);"></i> Generation Parameters
+                            </span>
+                            <span style="font-size: 0.78rem; color: var(--text-muted);">Customizes arXiv discovery &amp; section depth</span>
+                        </div>
+                        <div class="form-row" style="margin-bottom: 0.75rem;">
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <label for="home-gen-domain" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Research Domain (optional)</label>
+                                <input type="text" id="home-gen-domain" class="research-input" placeholder="e.g., Computer Vision, Biomedical Engineering" maxlength="200" autocomplete="off" style="padding: 0.55rem 0.85rem; font-size: 0.88rem;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0.5rem;">
+                                <label for="home-gen-length" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Paper Length</label>
+                                <select id="home-gen-length" class="research-select" style="padding: 0.55rem 0.85rem; font-size: 0.88rem;">
+                                    <option value="short">Short (~3,000 words)</option>
+                                    <option value="medium" selected>Medium (~6,000 words)</option>
+                                    <option value="long">Long (~9,000 words)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="home-gen-refs" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">References Count</label>
+                                <select id="home-gen-refs" class="research-select" style="padding: 0.55rem 0.85rem; font-size: 0.88rem;">
+                                    <option value="10" selected>10 references (Standard)</option>
+                                    <option value="15">15 references (In-depth)</option>
+                                    <option value="20">20 references (Comprehensive)</option>
+                                    <option value="30">30 references (Survey level)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end; margin-bottom: 0; padding-bottom: 8px;">
+                                <label class="checkbox-label" style="font-size: 0.85rem;">
+                                    <input type="checkbox" id="home-gen-ieee" checked>
+                                    <span>Apply Official IEEE formatting</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggested Research Topics -->
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
                         <span style="font-size: 0.82rem; color: var(--text-secondary);">Suggested topics:</span>
                         <button class="suggestion-tag-btn" data-topic="Deep Reinforcement Learning in Autonomous Robotics">Deep RL in Robotics</button>
                         <button class="suggestion-tag-btn" data-topic="Graph Neural Networks for Drug Discovery and Molecular Property Prediction">GNNs in Drug Discovery</button>
@@ -900,72 +945,8 @@
                 </section>
             </div>
 
-        <!-- ===== NEW RESEARCH VIEWS ===== -->
-
-        <!-- ==================== GENERATE PAPER VIEW ==================== -->
-        <div class="workspace-view hidden" id="generate-paper-view" style="padding: 24px 24px 80px 24px;">
-            <div class="research-view-header">
-                <div>
-                    <h2 class="research-view-title">Generate Research Paper</h2>
-                    <p class="research-view-subtitle">Enter a topic and Lemma AI will generate a complete IEEE-structured paper with real citations from arXiv and Semantic Scholar.</p>
-                </div>
-            </div>
-
-            <div class="research-form-card">
-                <div class="form-group">
-                    <label for="gen-topic">Research Topic <span class="required">*</span></label>
-                    <input type="text" id="gen-topic" class="research-input"
-                        placeholder="e.g., Deep Learning for Medical Image Segmentation"
-                        maxlength="500" autocomplete="off">
-                    <span class="input-hint">Be specific for better results. Include domain if applicable.</span>
-                </div>
-
-                <div class="form-group">
-                    <label for="gen-domain">Research Domain (optional)</label>
-                    <input type="text" id="gen-domain" class="research-input"
-                        placeholder="e.g., Computer Vision, Biomedical Engineering, Cybersecurity"
-                        maxlength="200" autocomplete="off">
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="gen-length">Paper Length</label>
-                        <select id="gen-length" class="research-select">
-                            <option value="short">Short (~3,000 words)</option>
-                            <option value="medium" selected>Medium (~6,000 words)</option>
-                            <option value="long">Long (~9,000 words)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="gen-refs">References Count</label>
-                        <select id="gen-refs" class="research-select">
-                            <option value="10" selected>10 references (Standard)</option>
-                            <option value="15">15 references (In-depth)</option>
-                            <option value="20">20 references (Comprehensive)</option>
-                            <option value="30">30 references (Survey level)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="gen-ieee" checked>
-                        <span>Apply IEEE formatting</span>
-                    </label>
-                </div>
-
-                <div class="form-actions">
-                    <button class="btn btn-primary btn-lg" id="btn-generate-paper">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                        Generate Research Paper
-                    </button>
-                    <span class="form-note">Generation takes 3–8 minutes depending on length and available resources.</span>
-                </div>
-            </div>
-        </div>
+        <!-- ===== RESEARCH VIEWS ===== -->
+        <!-- Note: Generate Paper is now integrated directly into dashboard-home-view -->
 
         <!-- ==================== RESTRUCTURE VIEW ==================== -->
         <div class="workspace-view hidden" id="restructure-view" style="padding: 28px; overflow-y: auto;">
@@ -1384,8 +1365,8 @@ Minimum 50 characters required. For best results, paste the full document text."
     <div class="toast-container" id="toast-container"></div>
 
     <script src="assets/js/config.js?v=35"></script>
-    <script src="assets/js/app.js?v=43"></script>
-    <script src="assets/js/research.js?v=46"></script>
+    <script src="assets/js/app.js?v=44"></script>
+    <script src="assets/js/research.js?v=47"></script>
     <script src="assets/js/mobile-ui.js?v=35"></script>
     <script src="assets/js/ads-config.js?v=1"></script>
 </body>

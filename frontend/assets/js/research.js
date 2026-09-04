@@ -96,7 +96,7 @@
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         const viewNavMap = {
             'dashboard-home-view': 'nav-dashboard',
-            'generate-paper-view': 'nav-generate',
+            'generate-paper-view': 'nav-dashboard',
             'restructure-view': 'nav-restructure',
             'simcheck-view': 'nav-simcheck',
             'simresults-view': 'nav-simcheck',
@@ -123,7 +123,7 @@
     // ---------------------------------------------------------------------------
     function initNavigation() {
         const navMap = {
-            'nav-generate': 'generate-paper-view',
+            'nav-generate': 'dashboard-home-view',
             'nav-restructure': 'restructure-view',
             'nav-simcheck': 'simcheck-view',
             'nav-mypapers': 'mypapers-view',
@@ -156,56 +156,7 @@
     }
 
     function initGeneratePaper() {
-        const btnGenerate = document.getElementById('btn-generate-paper');
-        if (!btnGenerate) return;
-
-        btnGenerate.addEventListener('click', async () => {
-            const topic = document.getElementById('gen-topic')?.value?.trim();
-            if (!topic || topic.length < 3) {
-                showToast('Please enter a research topic (at least 3 characters).', 'error');
-                return;
-            }
-
-            const domain = document.getElementById('gen-domain')?.value?.trim() || null;
-            const length = document.getElementById('gen-length')?.value || 'medium';
-            const numRefs = parseInt(document.getElementById('gen-refs')?.value || '10');
-            const ieeeFormat = document.getElementById('gen-ieee')?.checked ?? true;
-
-            try {
-                btnGenerate.disabled = true;
-                btnGenerate.textContent = 'Starting...';
-
-                const res = await fetch(`${apiBase()}/api/v1/research/generate`, {
-                    method: 'POST',
-                    headers: authHeaders(),
-                    body: JSON.stringify({
-                        topic,
-                        domain,
-                        length,
-                        num_references: numRefs,
-                        ieee_format: ieeeFormat,
-                    }),
-                });
-
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(formatApiErrorMessage(errData, res.status));
-                }
-
-                const data = await res.json();
-                state.currentJobId = data.job_id;
-                state.pollingJobType = 'generate';
-
-                showProgressView(`Generating: "${topic}"`, 'Your research paper is being generated...');
-                startPolling(data.job_id, 'research');
-
-            } catch (e) {
-                showToast(`Failed to start generation: ${e.message}`, 'error');
-            } finally {
-                btnGenerate.disabled = false;
-                btnGenerate.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg> Generate Research Paper`;
-            }
-        });
+        // Generate paper is unified into Dashboard Home
     }
 
     // ---------------------------------------------------------------------------
@@ -1664,7 +1615,11 @@
     function initMyPapers() {
         const newPaperBtn = document.getElementById('btn-new-paper');
         if (newPaperBtn) {
-            newPaperBtn.addEventListener('click', () => showViewGlobal('generate-paper-view'));
+            newPaperBtn.addEventListener('click', () => {
+                showViewGlobal('dashboard-home-view');
+                const promptInput = document.getElementById('blank-prompt-input');
+                if (promptInput) promptInput.focus();
+            });
         }
 
         // Wire Filter Tabs
@@ -1781,6 +1736,17 @@
         const generateBtn = document.getElementById('btn-blank-generate');
         const plusBtn = document.getElementById('btn-blank-new');
         const fileInput = document.getElementById('home-restructure-file-input');
+        const toggleOptionsBtn = document.getElementById('btn-toggle-advanced-params');
+        const advancedOptionsBox = document.getElementById('home-advanced-options');
+
+        // Toggle advanced options box
+        if (toggleOptionsBtn && advancedOptionsBox) {
+            toggleOptionsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                advancedOptionsBox.classList.toggle('hidden');
+                toggleOptionsBtn.classList.toggle('active');
+            });
+        }
 
         function handleGenerateSubmit() {
             const topic = promptInput ? promptInput.value.trim() : '';
@@ -1789,7 +1755,13 @@
                 if (promptInput) promptInput.focus();
                 return;
             }
-            startGenerateFromTopic(topic);
+
+            const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
+            const length = document.getElementById('home-gen-length')?.value || 'medium';
+            const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '10');
+            const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
+
+            startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);
         }
 
         if (promptInput) {
@@ -1829,7 +1801,13 @@
                 e.preventDefault();
                 const topic = btn.getAttribute('data-topic') || btn.textContent.trim();
                 if (promptInput) promptInput.value = topic;
-                startGenerateFromTopic(topic);
+                
+                const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
+                const length = document.getElementById('home-gen-length')?.value || 'medium';
+                const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '10');
+                const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
+
+                startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);
             });
         });
     }

@@ -252,8 +252,27 @@ body {
         display: none;
     }
 
-    .quick-new-btn span, .profile-name {
+    .quick-new-btn span, .profile-name, .desktop-only-text {
         display: none;
+    }
+
+    .blank-start-bar {
+        padding: 0.35rem 0.5rem;
+    }
+
+    .blank-start-bar input {
+        font-size: 0.88rem;
+        padding: 0.5rem 0.6rem;
+    }
+
+    .bar-plus-btn {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    #btn-blank-generate {
+        padding: 0.5rem 0.85rem !important;
+        font-size: 0.82rem !important;
     }
 
     .quick-new-btn {

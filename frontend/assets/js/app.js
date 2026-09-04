@@ -1046,7 +1046,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const navMap = {
             'dashboard-home-view': 'nav-dashboard',
             'dashboard-workspace': 'nav-plagiarism',
-            'generate-paper-view': 'nav-generate',
+            'generate-paper-view': 'nav-dashboard',
             'restructure-view': 'nav-restructure',
             'simcheck-view': 'nav-simcheck',
             'simresults-view': 'nav-simcheck',
@@ -1078,10 +1078,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tabId = item.id;
 
-            if (tabId === "nav-dashboard") {
+            if (tabId === "nav-dashboard" || tabId === "nav-generate") {
                 showView("dashboard-home-view");
-            } else if (tabId === "nav-generate") {
-                showView("generate-paper-view");
             } else if (tabId === "nav-restructure") {
                 showView("restructure-view");
             } else if (tabId === "nav-simcheck") {
