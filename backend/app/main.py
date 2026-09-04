@@ -91,6 +91,13 @@ async def startup_event():
     import logging
     _startup_logger = logging.getLogger("startup")
     try:
+        from app.services.database import DatabaseService
+        DatabaseService.initialize_db()
+        _startup_logger.info("Database schemas and migrations checked.")
+    except Exception as e:
+        _startup_logger.warning(f"Could not run DatabaseService.initialize_db: {e}")
+
+    try:
         from app.services.paper_store import PaperStore
         PaperStore.ensure_db_table()
         _startup_logger.info("research_papers table initialized.")

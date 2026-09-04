@@ -188,6 +188,25 @@ def _upsert_oauth_user(email: str, full_name: str, provider: str, provider_id: s
     """Create or return existing user for OAuth social logins."""
     with DatabaseService.get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Ensure columns exist dynamically on live database
+            cur.execute("""
+                DO $$ 
+                BEGIN 
+                    BEGIN
+                        ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+                    EXCEPTION WHEN others THEN NULL; END;
+                    BEGIN
+                        ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(32) DEFAULT 'email';
+                    EXCEPTION WHEN others THEN NULL; END;
+                    BEGIN
+                        ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id TEXT;
+                    EXCEPTION WHEN others THEN NULL; END;
+                    BEGIN
+                        ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+                    EXCEPTION WHEN others THEN NULL; END;
+                END $$;
+            """)
+
             cur.execute("SELECT * FROM users WHERE email = %s", (email.lower().strip(),))
             user = cur.fetchone()
 
