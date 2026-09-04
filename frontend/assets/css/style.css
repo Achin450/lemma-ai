@@ -3325,20 +3325,39 @@ mark.mark-hybrid {
 #paper-progress-view .progress-stages {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 0.45rem 0.65rem;
-    padding: 0.75rem 0;
+    gap: 0.65rem 0.85rem;
+    padding: 0.85rem 0;
     border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     text-align: left;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    width: 100%;
 }
 
 #paper-progress-view .progress-stage {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.45rem;
-    font-size: 0.74rem;
-    color: var(--text-muted);
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    color: #64748b;
     min-width: 0;
+    transition: all 0.2s ease;
+}
+
+#paper-progress-view .progress-stage.active {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+#paper-progress-view .progress-stage.done {
+    color: #e2e8f0 !important;
+    font-weight: 500;
+}
+
+#paper-progress-view .progress-stage.pending {
+    color: #64748b !important;
 }
 
 #paper-progress-view .progress-stage span {
@@ -3348,9 +3367,39 @@ mark.mark-hybrid {
 }
 
 #paper-progress-view .stage-dot {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     flex-shrink: 0;
+    transition: all 0.25s ease;
+}
+
+#paper-progress-view .stage-dot.pending,
+.stage-dot.pending {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1.5px solid #475569 !important;
+    box-shadow: none !important;
+}
+
+#paper-progress-view .stage-dot.active,
+.stage-dot.active {
+    background: #3b82f6 !important;
+    border: 1.5px solid #60a5fa !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.8) !important;
+    animation: stagePulse 1.4s ease-in-out infinite;
+}
+
+#paper-progress-view .stage-dot.done,
+.stage-dot.done {
+    background: #10b981 !important;
+    border: 1.5px solid #34d399 !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6) !important;
+    animation: none;
+}
+
+@keyframes stagePulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 6px rgba(59, 130, 246, 0.6); }
+    50% { transform: scale(1.22); box-shadow: 0 0 14px rgba(59, 130, 246, 1); }
 }
 
 /* Right Side: Live Paper Stage */
@@ -3570,51 +3619,24 @@ mark.mark-hybrid {
 }
 
 .progress-stages {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem 0.85rem;
+    padding: 0.85rem 0;
     border-top: 1px solid var(--border-color);
-    overflow: hidden;
-    scrollbar-width: none;
-}
-
-.progress-stages::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
+    overflow: visible;
+    text-align: left;
+    width: 100%;
 }
 
 .progress-stage {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    min-width: 60px;
-}
-
-.stage-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--border-color);
-    transition: var(--transition-fast);
-}
-
-.stage-dot.pending {
-    background: var(--border-color);
-}
-
-.stage-dot.active {
-    background: var(--accent-blue);
-    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
-}
-
-.stage-dot.done {
-    background: var(--accent-purple);
-    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    color: #64748b;
+    min-width: 0;
 }
 
 /* ==========================================================================

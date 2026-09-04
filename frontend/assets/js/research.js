@@ -755,13 +755,17 @@
 
         stages.forEach((stage, idx) => {
             const dot = document.getElementById(`stage-${stage}-dot`);
+            const stageEl = document.getElementById(`stage-${stage}`);
             if (!dot) return;
             if (pct >= thresholds[idx]) {
                 dot.className = 'stage-dot done';
+                if (stageEl) stageEl.className = 'progress-stage done';
             } else if (pct >= (thresholds[idx - 1] || 0)) {
                 dot.className = 'stage-dot active';
+                if (stageEl) stageEl.className = 'progress-stage active';
             } else {
                 dot.className = 'stage-dot pending';
+                if (stageEl) stageEl.className = 'progress-stage pending';
             }
         });
     }
@@ -780,8 +784,9 @@
         if (pctText) pctText.textContent = '0%';
         if (stepText) stepText.textContent = 'Starting...';
 
-        // Reset dots
+        // Reset dots and stage elements
         document.querySelectorAll('.stage-dot').forEach(d => d.className = 'stage-dot pending');
+        document.querySelectorAll('.progress-stage').forEach(s => s.className = 'progress-stage pending');
 
         // Reset split layout state (show box on left, paper on right)
         const progressView = document.getElementById('paper-progress-view');
