@@ -1251,8 +1251,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         menuToggleBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            if (window.innerWidth < 768) {
-                // Mobile: slide-in drawer
+            if (window.innerWidth <= 1024) {
+                // Tablet/Mobile: slide-in drawer
                 sidebarPanel.classList.toggle("open");
                 overlay.classList.toggle("active");
             } else {
@@ -1267,7 +1267,23 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         overlay.addEventListener("click", () => {
-            if (window.innerWidth < 768) {
+            sidebarPanel.classList.remove("open");
+            overlay.classList.remove("active");
+        });
+
+        // Auto-close sidebar on link navigation on tablet/mobile
+        document.querySelectorAll(".sidebar .nav-item a").forEach(link => {
+            link.addEventListener("click", () => {
+                if (window.innerWidth <= 1024) {
+                    sidebarPanel.classList.remove("open");
+                    overlay.classList.remove("active");
+                }
+            });
+        });
+
+        // Ensure clean state if window resized past 1024px
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 1024) {
                 sidebarPanel.classList.remove("open");
                 overlay.classList.remove("active");
             }

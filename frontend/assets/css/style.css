@@ -336,7 +336,7 @@ body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    padding: 2rem 2.5rem 50px;
+    padding: clamp(1rem, 2vw, 2rem) clamp(1rem, 2.5vw, 2.5rem) 50px;
     overflow-y: auto;
     height: 100vh;
     max-height: 100vh;
@@ -592,7 +592,7 @@ body {
  * ------------------------------------------------------------- */
 .content-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 360px);
     gap: 1.5rem;
     width: 100%;
     max-width: 1300px;
@@ -601,6 +601,13 @@ body {
     align-items: start;
     flex-grow: 1;
     min-height: 0;
+}
+
+@media (max-width: 1080px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
 }
 
 /* Panel Defaults */
@@ -2384,6 +2391,14 @@ mark.mark-hybrid {
     /* Space for health footer */
 }
 
+@media (max-width: 1080px) {
+    .workspace-split {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 2.5rem;
+    }
+}
+
 .primary-column,
 .secondary-column {
     display: flex;
@@ -3252,12 +3267,12 @@ mark.mark-hybrid {
     flex-direction: row;
     align-items: stretch;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: clamp(1rem, 2vw, 1.5rem);
     width: 100%;
     max-width: 1550px;
     height: calc(100vh - 75px);
     margin: 0 auto;
-    padding: 1rem 1.5rem;
+    padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
     box-sizing: border-box;
     overflow: hidden;
     position: relative;
@@ -3266,8 +3281,8 @@ mark.mark-hybrid {
 
 /* Left Side: Generation Progress Box (Clean, Non-Clipping, Auto-Fitting) */
 #paper-progress-view .progress-view-card {
-    width: 360px;
-    min-width: 340px;
+    width: clamp(300px, 24vw, 360px);
+    min-width: 280px;
     max-width: 380px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -3438,7 +3453,7 @@ mark.mark-hybrid {
     background: #ffffff;
     color: #000000;
     border-radius: 6px;
-    padding: 2.75rem 3.25rem;
+    padding: clamp(1.25rem, 3.5vw, 2.75rem);
     box-sizing: border-box;
     font-family: "Times New Roman", Times, serif;
     font-size: 10pt;
@@ -3893,7 +3908,7 @@ body.in-paper-editor .main-content {
     min-height: 100%;
     background: #ffffff !important;
     color: #0f172a;
-    padding: 4rem 3.5rem 6rem;
+    padding: clamp(1.5rem, 4vw, 4rem) clamp(1.25rem, 3.5vw, 3.5rem) 5rem;
     border-radius: 6px;
     box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.25);
     font-family: 'Times New Roman', Times, 'Nimbus Roman No9 L', serif;
@@ -5383,5 +5398,60 @@ body.in-paper-editor .main-content {
     outline: 2px solid #818cf8 !important;
     background: rgba(99, 102, 241, 0.08) !important;
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
+}
+
+/* ==========================================================================
+   LAPTOP & COMPACT SCREEN RESPONSIVE SYSTEM (<= 1280px)
+   ========================================================================== */
+@media (max-width: 1280px) {
+    .sidebar {
+        width: 240px;
+        padding: 1.5rem 1.15rem 3rem;
+    }
+
+    .app-container.collapsed .sidebar {
+        margin-left: -240px;
+    }
+
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .content-grid {
+        gap: 1.25rem;
+    }
+
+    .paper-editor-body {
+        grid-template-columns: 200px minmax(0, 1fr) 250px;
+    }
+
+    .paper-editor-title {
+        max-width: 360px;
+    }
+
+    .features-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .landing-header {
+        padding: 0 2rem;
+    }
+}
+
+/* Modal, Card & Table Bounds across all screens */
+.pro-modal-card {
+    max-width: min(92vw, 480px) !important;
+}
+
+.profile-dropdown-menu {
+    max-width: min(90vw, 280px) !important;
+}
+
+.reports-table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
