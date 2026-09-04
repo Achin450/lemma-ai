@@ -310,7 +310,16 @@ async def oauth_callback(provider: str, code: Optional[str] = None, error: Optio
                 )
                 if not token_res.is_success:
                     logger.error(f"Google token exchange failed: {token_res.text}")
-                    return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote('Google authorization failed.')}")
+                    err_msg = "Google authorization failed."
+                    try:
+                        err_data = token_res.json()
+                        err_desc = err_data.get("error_description") or err_data.get("error")
+                        if err_desc:
+                            err_msg = f"Google error: {err_desc}"
+                    except Exception:
+                        if token_res.text:
+                            err_msg = f"Google error: {token_res.text[:100]}"
+                    return RedirectResponse(url=f"{frontend_base}/login.html?error={urllib.parse.quote(err_msg)}")
 
                 token_json = token_res.json()
                 google_access_token = token_json.get("access_token")
