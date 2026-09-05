@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     
     # Redis & Celery
     REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_ALWAYS_EAGER: bool = False
+    CELERY_ALWAYS_EAGER: bool = os.getenv("CELERY_ALWAYS_EAGER", "true").lower() in ("true", "1")
     
     # Ollama settings
     OLLAMA_URL: str = "http://127.0.0.1:11434"
