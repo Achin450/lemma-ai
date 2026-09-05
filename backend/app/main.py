@@ -40,6 +40,7 @@ from app.routers.federation import router as federation_router
 # NEW: Research Paper Assistant routers
 from app.routers.research import router as research_router
 from app.routers.plagiarism import router as plagiarism_check_router
+from app.routers.novelty import router as novelty_router
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -81,6 +82,7 @@ app.include_router(federation_router)
 # NEW: Research Paper Assistant
 app.include_router(research_router)
 app.include_router(plagiarism_check_router)
+app.include_router(novelty_router)
 
 # ---------------------------------------------------------------------------
 # Startup event — ensure new DB tables exist

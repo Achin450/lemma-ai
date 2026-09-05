@@ -101,6 +101,7 @@
             'simcheck-view': 'nav-simcheck',
             'simresults-view': 'nav-simcheck',
             'mypapers-view': 'nav-mypapers',
+            'novelty-view': 'nav-novelty',
         };
         const navId = viewNavMap[viewId];
         if (navId) {

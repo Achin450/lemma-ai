@@ -109,6 +109,17 @@
                             <span>My Papers</span>
                         </a>
                     </li>
+                    <li class="nav-item" id="nav-novelty">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #10b981;">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            <span>Novelty Advisor</span>
+                            <span class="badge" style="margin-left: auto; font-size: 0.65rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; padding: 1px 5px; font-weight: 700;">NEW</span>
+                        </a>
+                    </li>
                 </ul>
 
                 <div class="nav-section-title">Core Items</div>
@@ -1332,6 +1343,205 @@ Minimum 50 characters required. For best results, paste the full document text."
                 </div>
             </div>
         </div>
+
+        <!-- ============================================================ -->
+        <!-- NOVELTY ADVISOR WORKSPACE                                     -->
+        <!-- ============================================================ -->
+        <div class="workspace-view hidden" id="novelty-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+            <!-- Header -->
+            <div class="novelty-header-section" style="margin-bottom: 1.75rem;">
+                <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; padding: 4px 14px; margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-sparkles" style="color: #10b981; font-size: 0.85rem;"></i>
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #10b981; letter-spacing: 0.5px;">LEMMA INNOVATE • PEER REVIEW DEFENSE ENGINE</span>
+                </div>
+                <h2 style="font-size: 2.1rem; font-weight: 800; margin: 0 0 0.5rem; background: linear-gradient(135deg, var(--text-primary), #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Research Novelty Advisor &amp; Acceptance Predictor
+                </h2>
+                <p style="font-size: 0.95rem; color: var(--text-secondary); max-width: 780px; margin: 0; line-height: 1.55;">
+                    Reverse-engineer peer review before submission. Quantify your paper's 5-dimensional novelty, simulate Reviewer 2 adversarial critiques, benchmark against arXiv prior art, and polish IEEE/ACM contribution statements.
+                </p>
+            </div>
+
+            <!-- Input & Configuration Card -->
+            <div class="novelty-input-card glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Paper Title (Optional)</label>
+                        <input type="text" id="novelty-title-input" class="research-input" placeholder="e.g. Linear-State Attention for Scalable Representation Learning" style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.9rem; font-size: 0.9rem; border-radius: 9px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Scientific Domain</label>
+                        <select id="novelty-domain-select" class="research-select" style="width: 100%; box-sizing: border-box; padding: 0.65rem 0.9rem; font-size: 0.9rem; border-radius: 9px;">
+                            <option value="Artificial Intelligence & Machine Learning" selected>Artificial Intelligence &amp; Machine Learning</option>
+                            <option value="Computer Vision & Robotics">Computer Vision &amp; Robotics</option>
+                            <option value="Natural Language Processing & Speech">Natural Language Processing &amp; Speech</option>
+                            <option value="Biomedical & Healthcare Informatics">Biomedical &amp; Healthcare Informatics</option>
+                            <option value="Cybersecurity & Distributed Systems">Cybersecurity &amp; Distributed Systems</option>
+                            <option value="General Computer Science & Engineering">General Computer Science &amp; Engineering</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Dual Input Area: Textarea + File Dropzone -->
+                <div style="margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">Abstract, Introduction, or Draft Manuscript</label>
+                        <button type="button" id="btn-novelty-sample" class="btn btn-sm btn-outline" style="font-size: 0.78rem; padding: 3px 10px; border-radius: 6px;">
+                            <i class="fa-solid fa-file-lines"></i> Load Sample Abstract
+                        </button>
+                    </div>
+                    <textarea id="novelty-input-text" class="research-input" rows="5" placeholder="Paste your research abstract, problem formulation, methodology, or full text here (minimum 40 characters)..." style="width: 100%; box-sizing: border-box; padding: 0.85rem; font-size: 0.9rem; border-radius: 10px; resize: vertical; line-height: 1.5;"></textarea>
+                </div>
+
+                <!-- Dropzone for PDF/DOCX/TXT -->
+                <div class="novelty-dropzone" id="novelty-dropzone" style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 1.25rem; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); transition: var(--transition-fast); margin-bottom: 1.5rem;">
+                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: #10b981; margin-bottom: 0.5rem; display: block;"></i>
+                    <span id="novelty-dropzone-text" style="font-size: 0.88rem; color: var(--text-secondary);">
+                        Or drag &amp; drop your paper file here (<strong style="color: var(--text-primary);">.pdf, .docx, .txt</strong> up to 50MB)
+                    </span>
+                    <input type="file" id="novelty-file-input" accept=".pdf,.docx,.txt" style="display: none;">
+                </div>
+
+                <!-- Action Button Bar -->
+                <div style="display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+                    <button class="btn btn-primary" id="btn-novelty-analyze" style="padding: 0.75rem 1.8rem; font-size: 0.95rem; font-weight: 700; border-radius: 10px; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 15px rgba(16,185,129,0.3); cursor: pointer;">
+                        <i class="fa-solid fa-compass"></i>
+                        <span>Audit Novelty &amp; Defensibility</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="novelty-loading-state" class="hidden" style="text-align: center; padding: 3rem 1rem; background: var(--bg-secondary); border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 2rem;">
+                <div class="novelty-spinner" style="width: 50px; height: 50px; border: 4px solid rgba(16,185,129,0.2); border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem;"></div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Executing Peer Review Simulation...</h3>
+                <p id="novelty-loading-step-text" style="font-size: 0.9rem; color: var(--text-secondary); max-width: 520px; margin: 0 auto;">Extracting core claims and mathematical formulations...</p>
+            </div>
+
+            <!-- Empty Placeholder -->
+            <div id="novelty-empty-state" style="text-align: center; padding: 4rem 1rem; background: var(--bg-secondary); border-radius: 16px; border: 1px dashed var(--border-color);">
+                <i class="fa-solid fa-award" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
+                <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem;">No Manuscript Analyzed Yet</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 1.5rem;">
+                    Paste an abstract or upload a paper above to generate a 5-D novelty radar, simulate Reviewer 2 critiques, and test conference venue fit.
+                </p>
+            </div>
+
+            <!-- Results Container -->
+            <div id="novelty-results-container" class="hidden">
+                <!-- Executive Hero Banner -->
+                <div class="novelty-hero-banner glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
+                    <!-- Circular Meter -->
+                    <div style="display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <div class="novelty-circular-meter" id="novelty-circular-meter" style="width: 130px; height: 130px; border-radius: 50%; background: conic-gradient(#10b981 280deg, rgba(255,255,255,0.06) 0deg); display: flex; align-items: center; justify-content: center; position: relative; box-shadow: 0 0 25px rgba(16,185,129,0.25);">
+                            <div style="width: 106px; height: 106px; background: var(--bg-primary); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <span id="novelty-score-number" style="font-size: 2.1rem; font-weight: 800; color: var(--text-primary); line-height: 1;">--%</span>
+                                <span style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Novelty Index</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Executive Info -->
+                    <div style="flex-grow: 1; min-width: 280px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                            <span id="novelty-tier-badge" class="novelty-tier-pill" style="font-size: 0.82rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; border: 1px solid #10b981; color: #10b981; background: rgba(16,185,129,0.12);">Substantial Contribution</span>
+                            <span id="novelty-detected-domain" style="font-size: 0.8rem; color: var(--text-muted);"><i class="fa-solid fa-tag"></i> Artificial Intelligence</span>
+                        </div>
+                        <h3 id="novelty-doc-title" style="font-size: 1.35rem; font-weight: 700; margin: 0 0 0.5rem; color: var(--text-primary);">Document Title</h3>
+                        <p id="novelty-executive-verdict" style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55; margin: 0;"></p>
+                    </div>
+                </div>
+
+                <!-- 5-D Novelty Section: Radar Chart + Dimension Breakdown Cards -->
+                <div style="display: grid; grid-template-columns: 360px 1fr; gap: 1.75rem; margin-bottom: 2.25rem; align-items: start;">
+                    <!-- Left: SVG Radar Chart -->
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; text-align: center;">
+                        <h4 style="font-size: 0.98rem; font-weight: 700; margin: 0 0 1rem; color: var(--text-primary); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-chart-pie" style="color: #10b981;"></i> 5-D Novelty Vector
+                        </h4>
+                        <div style="display: flex; justify-content: center; align-items: center; min-height: 320px;">
+                            <svg id="novelty-radar-svg" width="320" height="320" viewBox="0 0 320 320"></svg>
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.5rem;">
+                            Vertices map relative strength across peer-review acceptance axes.
+                        </span>
+                    </div>
+
+                    <!-- Right: Dimension List Cards -->
+                    <div id="novelty-dimensions-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Injected dynamically via novelty.js -->
+                    </div>
+                </div>
+
+                <!-- Four-Tab Deep Dive Experience -->
+                <div class="novelty-deep-dive-card glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <!-- Tab Buttons -->
+                    <div class="novelty-tabs-bar" style="display: flex; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; overflow-x: auto;">
+                        <button class="btn-tab novelty-tab-btn active" data-tab="attacks">
+                            <i class="fa-solid fa-shield-halved"></i> Reviewer 2 Defense
+                        </button>
+                        <button class="btn-tab novelty-tab-btn" data-tab="priorart">
+                            <i class="fa-solid fa-scale-balanced"></i> Prior Art Delta Matrix
+                        </button>
+                        <button class="btn-tab novelty-tab-btn" data-tab="venue">
+                            <i class="fa-solid fa-building-columns"></i> Venue Fit &amp; Acceptance Odds
+                        </button>
+                        <button class="btn-tab novelty-tab-btn" data-tab="contributions">
+                            <i class="fa-solid fa-pen-nib"></i> Contribution Polisher
+                        </button>
+                        <button class="btn-tab novelty-tab-btn" data-tab="roadmap">
+                            <i class="fa-solid fa-route"></i> Elevation Roadmap
+                        </button>
+                    </div>
+
+                    <!-- Tab Panes -->
+                    <!-- Pane 1: Reviewer 2 Attacks -->
+                    <div class="novelty-tab-pane" id="novelty-pane-attacks">
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="margin: 0 0 4px; font-size: 1.1rem; font-weight: 700;">Simulated Adversarial Peer-Review Attacks</h4>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Anticipates the sharpest objections reviewers will lodge against your paper's novelty, paired with concrete counter-rebuttals to patch into the manuscript.</p>
+                        </div>
+                        <div id="novelty-attacks-container" style="display: flex; flex-direction: column; gap: 1.25rem;"></div>
+                    </div>
+
+                    <!-- Pane 2: Prior Art Delta Matrix -->
+                    <div class="novelty-tab-pane hidden" id="novelty-pane-priorart">
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="margin: 0 0 4px; font-size: 1.1rem; font-weight: 700;">arXiv &amp; Semantic Scholar Prior Art Comparison</h4>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Direct contrast between closest published baseline papers and your unique scientific delta.</p>
+                        </div>
+                        <div id="novelty-priorart-container" style="overflow-x: auto;"></div>
+                    </div>
+
+                    <!-- Pane 3: Venue Fit & Acceptance Odds -->
+                    <div class="novelty-tab-pane hidden" id="novelty-pane-venue">
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="margin: 0 0 4px; font-size: 1.1rem; font-weight: 700;">Conference &amp; Journal Venue Calibration</h4>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Calculates acceptance odds for Tier 1, 2, and 3 conferences with actionable gates to level up.</p>
+                        </div>
+                        <div id="novelty-venue-container"></div>
+                    </div>
+
+                    <!-- Pane 4: Contribution Polisher -->
+                    <div class="novelty-tab-pane hidden" id="novelty-pane-contributions">
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="margin: 0 0 4px; font-size: 1.1rem; font-weight: 700;">IEEE &amp; ACM Contribution Statement Generator</h4>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Transforms passive claims into publication-ready contribution bullet points for Section I.</p>
+                        </div>
+                        <div id="novelty-contributions-container"></div>
+                    </div>
+
+                    <!-- Pane 5: Elevation Roadmap -->
+                    <div class="novelty-tab-pane hidden" id="novelty-pane-roadmap">
+                        <div style="margin-bottom: 1.25rem;">
+                            <h4 style="margin: 0 0 4px; font-size: 1.1rem; font-weight: 700;">Novelty Elevation Roadmap</h4>
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Strategic phases to convert an incremental manuscript into a standout submission.</p>
+                        </div>
+                        <div id="novelty-roadmap-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
         </main>
 
         <!-- Sticky On-Device Engine Status Monitor -->
@@ -1367,6 +1577,7 @@ Minimum 50 characters required. For best results, paste the full document text."
     <script src="assets/js/config.js?v=35"></script>
     <script src="assets/js/app.js?v=44"></script>
     <script src="assets/js/research.js?v=47"></script>
+    <script src="assets/js/novelty.js?v=1"></script>
     <script src="assets/js/mobile-ui.js?v=35"></script>
     <script src="assets/js/ads-config.js?v=1"></script>
 </body>

@@ -5464,4 +5464,530 @@ body.in-paper-editor .main-content {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   NOVELTY ADVISOR & ACCEPTANCE PREDICTOR STYLING
+   ========================================================================== */
+.novelty-dim-card {
+    background: var(--bg-card, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.15rem 1.35rem;
+    transition: var(--transition-fast, all 0.2s ease);
+}
+
+.novelty-dim-card:hover {
+    border-color: rgba(16, 185, 129, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.novelty-dim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    gap: 1rem;
+}
+
+.novelty-dim-header h4 {
+    margin: 0 0 3px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.dim-summary {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.dim-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    border: 1px solid currentColor;
+}
+
+.dim-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+
+.dim-progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dim-strengths-vulns {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding-top: 0.65rem;
+}
+
+.dim-sub-list {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.dim-sub-list .sub-label.strength {
+    color: #10b981;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.dim-sub-list .sub-label.vuln {
+    color: #f59e0b;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Reviewer 2 Attack Cards */
+.novelty-attack-card {
+    background: var(--bg-card, rgba(255, 255, 255, 0.025));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 14px;
+    padding: 1.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    transition: var(--transition-fast, all 0.2s ease);
+}
+
+.novelty-attack-card:hover {
+    border-color: rgba(239, 68, 68, 0.35);
+}
+
+.attack-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.attack-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.attack-pill.high {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.attack-pill.medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.attack-category {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.novelty-attack-card h4 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.reviewer-quote-box {
+    background: rgba(239, 68, 68, 0.04);
+    border-left: 3px solid #ef4444;
+    border-radius: 0 8px 8px 0;
+    padding: 0.85rem 1rem;
+}
+
+.quote-header {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quote-text {
+    margin: 0;
+    font-size: 0.88rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.defense-rebuttal-box {
+    background: rgba(16, 185, 129, 0.04);
+    border-left: 3px solid #10b981;
+    border-radius: 0 8px 8px 0;
+    padding: 0.85rem 1rem;
+}
+
+.rebuttal-header {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #10b981;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.rebuttal-text {
+    margin: 0 0 0.5rem;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    line-height: 1.55;
+}
+
+.patch-location {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.patch-location code {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent-purple, #a855f7);
+    font-family: monospace;
+}
+
+/* Prior Art Delta Table */
+.delta-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    text-align: left;
+}
+
+.delta-table th {
+    padding: 0.85rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.delta-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+.delta-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.delta-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 2px 0 6px;
+}
+
+.delta-risk-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+.delta-risk-badge.high {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.delta-risk-badge.medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.delta-link {
+    font-size: 0.75rem;
+    color: var(--accent-blue, #3b82f6);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.delta-link:hover {
+    text-decoration: underline;
+}
+
+.prior-core-text {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+}
+
+.author-delta-text {
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 500;
+    background: rgba(16, 185, 129, 0.04);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+/* Venue Fit Card */
+.venue-fit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.venue-fit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.venue-tier-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 3px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.venue-fit-header h3 {
+    margin: 0 0 4px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.venue-readiness {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    max-width: 540px;
+}
+
+.venue-prob-circle {
+    text-align: center;
+    min-width: 120px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1.5px solid #10b981;
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.prob-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #10b981;
+    line-height: 1;
+}
+
+.prob-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.venue-recommended-list h4, .venue-gates-box h4 {
+    font-size: 0.92rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    color: var(--text-primary);
+}
+
+.venue-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.venue-chip {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.venue-gates-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.venue-gates-list li {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.65rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.venue-gates-list li i {
+    color: #10b981;
+    font-size: 0.85rem;
+}
+
+/* Polished Contributions Styling */
+.contribution-tones-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.btn-tone {
+    background: var(--bg-primary, #0d0d12);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.55rem 1.1rem;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-fast, all 0.2s ease);
+}
+
+.btn-tone:hover {
+    border-color: #10b981;
+    color: var(--text-primary);
+}
+
+.btn-tone.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.contribution-content-box {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.5rem;
+}
+
+.contribution-headline {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.contribution-bullets {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.bullet-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    line-height: 1.55;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-left: 2.5px solid #10b981;
+}
+
+.bullet-item i {
+    font-size: 0.65rem;
+    color: #10b981;
+}
+
+.btn-copy-contrib {
+    padding: 0.65rem 1.35rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Roadmap Step Cards */
+.roadmap-step-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.step-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 8px;
+}
+
+.roadmap-step-card h4 {
+    margin: 0 0 6px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.roadmap-step-card p {
+    margin: 0;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
 

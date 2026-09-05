@@ -1087,6 +1087,8 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (tabId === "nav-mypapers") {
                 showView("mypapers-view");
                 if (window.loadMyPapers) window.loadMyPapers();
+            } else if (tabId === "nav-novelty") {
+                showView("novelty-view");
             } else if (tabId === "nav-plagiarism") {
                 showView("dashboard-workspace");
             } else if (tabId === "nav-aichat") {

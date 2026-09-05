@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: lemma-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt && python -m spacy download en_core_web_sm
+    startCommand: python start_server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CELERY_ALWAYS_EAGER
+        value: "true"
+      - key: OLLAMA_URL
+        value: "http://localhost:11434"
+      - key: DATABASE_URL
+        value: "sqlite:///./lemma.db"
+      - key: PORT
+        value: "10000"
