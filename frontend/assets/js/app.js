@@ -1089,6 +1089,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (window.loadMyPapers) window.loadMyPapers();
             } else if (tabId === "nav-novelty") {
                 showView("novelty-view");
+            } else if (tabId === "nav-funding") {
+                showView("funding-view");
+                if (window.loadFundingDirectory) window.loadFundingDirectory();
             } else if (tabId === "nav-plagiarism") {
                 showView("dashboard-workspace");
             } else if (tabId === "nav-aichat") {

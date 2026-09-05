@@ -5990,4 +5990,38 @@ body.in-paper-editor .main-content {
     line-height: 1.45;
 }
 
+/* ============================================================ */
+/* PUBLISHING GRANTS & BOUNTIES DIRECTORY STYLES                */
+/* ============================================================ */
+.funding-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.funding-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15) !important;
+}
+
+.currency-toggle-btn {
+    transition: all 0.2s ease;
+}
+
+.currency-toggle-btn:hover:not(.active) {
+    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.funding-region-btn {
+    transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    #funding-cards-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
 

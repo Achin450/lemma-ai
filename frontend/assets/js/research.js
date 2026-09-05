@@ -102,6 +102,7 @@
             'simresults-view': 'nav-simcheck',
             'mypapers-view': 'nav-mypapers',
             'novelty-view': 'nav-novelty',
+            'funding-view': 'nav-funding',
         };
         const navId = viewNavMap[viewId];
         if (navId) {
