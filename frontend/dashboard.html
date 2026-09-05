@@ -1363,7 +1363,7 @@ Minimum 50 characters required. For best results, paste the full document text."
             </div>
 
             <!-- Input & Configuration Card -->
-            <div class="novelty-input-card glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="novelty-input-card glass-card" id="novelty-input-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
                     <div>
                         <label style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Paper Title (Optional)</label>
@@ -1429,6 +1429,18 @@ Minimum 50 characters required. For best results, paste the full document text."
 
             <!-- Results Container -->
             <div id="novelty-results-container" class="hidden">
+                <!-- Top Navigation & Action Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-circle-check"></i> AUDIT REPORT GENERATED
+                        </span>
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Peer-Review Simulation &amp; Acceptance Analysis</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline" id="btn-novelty-new-audit" style="display: flex; align-items: center; gap: 8px; padding: 7px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border-color: var(--border-color); background: var(--bg-secondary); color: var(--text-primary);">
+                        <i class="fa-solid fa-arrow-left"></i> Run Another Audit / Edit Input
+                    </button>
+                </div>
                 <!-- Executive Hero Banner -->
                 <div class="novelty-hero-banner glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;">
                     <!-- Circular Meter -->

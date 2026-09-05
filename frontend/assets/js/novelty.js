@@ -81,6 +81,23 @@
             btnAnalyze.addEventListener("click", triggerNoveltyAnalysis);
         }
 
+        // Return button to run another audit or edit inputs
+        const btnNewAudit = document.getElementById("btn-novelty-new-audit");
+        if (btnNewAudit) {
+            btnNewAudit.addEventListener("click", () => {
+                const inputCard = document.getElementById("novelty-input-card");
+                const results = document.getElementById("novelty-results-container");
+                if (results) results.classList.add("hidden");
+                if (inputCard) inputCard.classList.remove("hidden");
+                const noveltyView = document.getElementById("novelty-view");
+                if (noveltyView) {
+                    noveltyView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+
         // Tab switching within novelty view
         document.querySelectorAll(".novelty-tab-btn").forEach(btn => {
             btn.addEventListener("click", (e) => {
@@ -121,10 +138,13 @@
             return;
         }
 
+        const inputCard = document.getElementById("novelty-input-card");
         const loader = document.getElementById("novelty-loading-state");
         const results = document.getElementById("novelty-results-container");
         const emptyState = document.getElementById("novelty-empty-state");
 
+        // Hide generation input card immediately when analysis starts so screen is replaced
+        if (inputCard) inputCard.classList.add("hidden");
         if (loader) loader.classList.remove("hidden");
         if (results) results.classList.add("hidden");
         if (emptyState) emptyState.classList.add("hidden");
@@ -168,11 +188,19 @@
 
             if (loader) loader.classList.add("hidden");
             if (results) results.classList.remove("hidden");
+            // Screen content replaced: generation window stays hidden, scroll directly to report at top
+            const noveltyView = document.getElementById("novelty-view");
+            if (noveltyView) {
+                noveltyView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
             showToastMessage("Novelty & Defensibility audit completed!", "success");
 
         } catch (error) {
             console.error("Novelty analysis error:", error);
             if (loader) loader.classList.add("hidden");
+            if (inputCard) inputCard.classList.remove("hidden"); // restore input form on failure
             if (emptyState) emptyState.classList.remove("hidden");
             showToastMessage(`Analysis failed: ${error.message}`, "error");
         }
