@@ -10,7 +10,7 @@ class DatabaseService:
     def get_connection():
         """Returns a connection to the PostgreSQL database with a 5-second connection timeout."""
         db_url = os.environ.get("DATABASE_URL") or settings.DATABASE_URL
-        if db_url:
+        if db_url and not db_url.startswith("sqlite"):
             if db_url.startswith("postgres://"):
                 db_url = db_url.replace("postgres://", "postgresql://", 1)
             return psycopg2.connect(db_url, connect_timeout=5)
