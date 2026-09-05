@@ -60,7 +60,7 @@ async def analyze_novelty(
             )
         try:
             content = await file.read()
-            extracted_text = DocumentExtractorService.extract_text(content, file.filename)
+            extracted_text = DocumentExtractorService.extract_text(filename=file.filename, content=content)
             if not extracted_title:
                 extracted_title = file.filename.rsplit(".", 1)[0].replace("_", " ").title()
         except Exception as e:

@@ -40,6 +40,10 @@ class DocumentExtractorService:
         Extracts raw text from document content bytes based on file extension.
         Supports: PDF, DOCX, and TXT.
         """
+        # Gracefully handle swapped arguments if caller passed (content, filename)
+        if isinstance(filename, (bytes, bytearray)) and isinstance(content, str):
+            filename, content = content, filename
+
         cls.validate_file(filename, len(content))
         ext = Path(filename).suffix.lower().lstrip(".")
 
