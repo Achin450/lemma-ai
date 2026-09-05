@@ -25,7 +25,9 @@ class OnlineRetrieverService:
 
         try:
             nlp = SentenceSegmenterService.get_nlp()
-            doc = nlp(text)
+            # Cloud memory guard: cap to first 12,000 characters (Abstract/Intro) to prevent RAM explosion
+            scoped_text = text[:12000] if len(text) > 12000 else text
+            doc = nlp(scoped_text)
             
             # Group noun chunks by sentence index
             sentences = list(doc.sents)

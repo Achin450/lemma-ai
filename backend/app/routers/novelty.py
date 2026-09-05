@@ -80,6 +80,11 @@ async def analyze_novelty(
             detail="Please provide an abstract, research proposal, or upload a document with at least 30 characters."
         )
 
+    # Cloud memory protection: Focus on Abstract, Intro & Methodology (first 20,000 characters)
+    # This prevents spaCy parser memory explosion on large 20-50 page uploaded PDFs
+    if len(extracted_text) > 20000:
+        extracted_text = extracted_text[:20000]
+
     try:
         report = await NoveltyAdvisorService.analyze_novelty(
             text=extracted_text,
@@ -87,6 +92,8 @@ async def analyze_novelty(
             domain=domain,
             target_venue_tier=target_venue_tier
         )
+        import gc
+        gc.collect()
         return report
     except Exception as e:
         logger.exception(f"Novelty analysis failed: {e}")

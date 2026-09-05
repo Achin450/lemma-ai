@@ -14,6 +14,8 @@ Supports dual execution:
 """
 from __future__ import annotations
 
+import asyncio
+import gc
 import re
 import uuid
 import math
@@ -140,20 +142,29 @@ class NoveltyAdvisorService:
         """Fetch candidate prior art papers from arXiv or Semantic Scholar."""
         candidates = []
         try:
-            queries = OnlineRetrieverService.extract_search_queries(text, num_queries=4)
+            # Extract top 3 search queries from the first 8000 characters
+            queries = OnlineRetrieverService.extract_search_queries(text[:8000], num_queries=3)
             if not queries:
                 queries = [domain.split("&")[0].strip()]
             
-            # Fetch up to 4 candidates from arXiv
-            fetched = await OnlineRetrieverService.fetch_arxiv_candidates(queries[:2], max_results_per_query=2)
-            for item in fetched[:4]:
-                candidates.append({
-                    "title": item.get("title", "Prior Art in Domain"),
-                    "authors": item.get("author", "Academic Researcher et al."),
-                    "year": "2023" if "2023" in item.get("source", "") else "2024",
-                    "url": item.get("source", "https://arxiv.org"),
-                    "summary": item.get("title", "")
-                })
+            # Fetch up to 3 candidates from arXiv using correct query signature with strict timeout
+            for q in queries[:2]:
+                try:
+                    items = await asyncio.wait_for(
+                        OnlineRetrieverService.fetch_arxiv_candidates(query=q, limit=2),
+                        timeout=3.5
+                    )
+                    for item in items:
+                        if len(candidates) < 3:
+                            candidates.append({
+                                "title": item.get("title", "Prior Art in Domain"),
+                                "authors": item.get("author", "Academic Researcher et al."),
+                                "year": "2023" if "2023" in item.get("source", "") else "2024",
+                                "url": item.get("source", "https://arxiv.org"),
+                                "summary": item.get("title", "")
+                            })
+                except Exception as ex:
+                    logger.warning(f"Arxiv query '{q}' timeout/error: {ex}")
         except Exception as e:
             logger.warning(f"Could not fetch online prior art: {e}")
 
@@ -605,6 +616,7 @@ class NoveltyAdvisorService:
             elevation_roadmap=elevation_roadmap
         )
 
+        gc.collect()
         return report
 
     @classmethod
