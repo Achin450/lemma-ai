@@ -649,8 +649,10 @@ Example output:
             f"2. Maximize sentence length variance (Burstiness): alternate short, punchy statements (5-8 words) with nuanced, analytical compound sentences (25-35 words with semicolons and active verbs).\n"
             f"3. Strictly BAN robotic AI clichés: NEVER use 'In recent years', 'rapid proliferation', 'pivotal role', 'delve', 'testament to', 'multifaceted', 'furthermore', 'moreover', or 'it is important to note'.\n"
             f"4. Embed multiple real inline citations [1], [2], [3] naturally throughout the argument.\n"
-            f"5. If theoretical, include numbered equation notations like: a + b = γ (1)\n"
-            f"6. Do NOT output headings or markdown symbols (no **, no ##, no bullet lists).\n\n"
+            f"5. Scientific Formatting Requirements:\n"
+            f"   - If this section is Theoretical or Mathematical, include 1-2 centered LaTeX equations enclosed in double dollar signs with equation numbering at the end, for example: $$\\min_{{\\theta}} \\mathcal{{L}}(\\theta) + \\lambda \\Omega(\\theta) \\quad (1)$$\n"
+            f"   - If this section is Results, Evaluation, or Related Work, include an academic comparison table using Markdown table syntax (| Header 1 | Header 2 |) with clear numerical metrics (Accuracy, F1-Score, Latency).\n"
+            f"6. Do NOT output headings or bullet lists (use flowing academic paragraphs).\n\n"
             "Write the complete section content directly:"
         )
         try:
@@ -733,6 +735,12 @@ Example output:
                 return (
                     f"The quantitative results demonstrate that our proposed approach consistently surpasses existing baseline methodologies across all evaluated benchmark metrics for {topic} [{c1}]. "
                     f"On average, the framework achieves an 11.4% improvement in predictive accuracy and a 23.6% reduction in end-to-end inference latency compared to the strongest contemporary competitor [{c2}].\n\n"
+                    f"TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS\n\n"
+                    f"| Architecture / Model | Accuracy (%) | Macro F1-Score | Latency (ms) | Peak VRAM (MB) |\n"
+                    f"| :--- | :--- | :--- | :--- | :--- |\n"
+                    f"| Classical Baseline [{c1}] | 81.4% | 0.792 | 48.5 ms | 210 MB |\n"
+                    f"| Deep Neural SOTA [{c2}] | 89.8% | 0.885 | 36.2 ms | 480 MB |\n"
+                    f"| Proposed Paradigm (Ours) | 97.2% | 0.968 | 19.4 ms | 320 MB |\n\n"
                     f"TABLE I presents the detailed empirical comparison across all baseline architectures. "
                     f"Our model consistently achieves lower error margins while exhibiting superior resistance to input perturbations. "
                     f"Statistical significance testing via two-tailed Student's t-tests confirms that observed gains are statistically significant ($p < 0.001$).\n\n"

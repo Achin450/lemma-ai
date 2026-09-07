@@ -4072,40 +4072,253 @@ body.in-paper-editor .main-content {
 
 .paper-equation {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    text-align: center;
-    margin: 0.75rem 0;
-    padding: 0.4rem 0.6rem;
-    font-style: italic;
-    font-size: 0.86rem;
+    margin: 0.9rem 0;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
     background: #f8fafc;
-    border-radius: 4px;
-    border: 1px dashed #e2e8f0;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    break-inside: avoid;
+    overflow-x: auto;
 }
 
-.paper-table-box {
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    padding: 0.6rem;
-    margin: 0.85rem 0;
+.paper-equation .eq-body {
+    flex: 1;
     text-align: center;
-    border-radius: 4px;
 }
 
-.paper-table-header {
-    font-size: 0.75rem;
+.paper-equation .eq-num {
+    font-weight: 700;
+    font-family: 'Times New Roman', Times, serif;
+    color: #475569;
+    padding-left: 12px;
+    user-select: none;
+}
+
+/* IEEE Standard Booktabs Table */
+.paper-table-container {
+    margin: 1.25rem 0;
+    break-inside: avoid;
+    text-align: center;
+}
+
+.paper-table-caption {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     color: #0f172a;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
 }
 
-.paper-table-placeholder {
+.paper-table-subcaption {
     font-size: 0.72rem;
     font-style: italic;
+    color: #475569;
+    margin-bottom: 0.45rem;
+}
+
+.paper-table-ieee {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.76rem;
+    line-height: 1.35;
+    margin: 0 auto;
+    border-top: 1.5px solid #0f172a;
+    border-bottom: 1.5px solid #0f172a;
+}
+
+.paper-table-ieee th {
+    font-weight: 700;
+    padding: 6px 8px;
+    text-align: center;
+    border-bottom: 1px solid #0f172a;
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+
+.paper-table-ieee td {
+    padding: 5px 8px;
+    text-align: center;
+    color: #1e293b;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.paper-table-ieee tr:last-child td {
+    border-bottom: none;
+}
+
+.paper-table-ieee tr.highlight-row td {
+    font-weight: 700;
+    background-color: rgba(99, 102, 241, 0.06);
+    color: #4338ca;
+}
+
+/* Interactive Paper Figure Box */
+.paper-interactive-figure-box {
+    margin: 1.5rem 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #f8fafc;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    break-inside: avoid;
+}
+
+.pif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e293b;
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid #334155;
+}
+
+.pif-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #a5b4fc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pif-badge {
+    background: #4338ca;
+    color: #e0e7ff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+}
+
+.pif-body {
+    padding: 0.85rem;
+}
+
+.pif-caption {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 0.78rem;
+    font-style: italic;
+    text-align: center;
     color: #64748b;
+    margin-top: 0.5rem;
+    padding: 0 0.5rem;
+}
+
+/* Nodes & Interactivity */
+.pif-svg-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.arch-node {
+    cursor: pointer;
+    transition: transform 0.2s, stroke 0.2s;
+}
+
+.arch-node:hover {
+    filter: brightness(1.15);
+}
+
+.arch-node.active rect {
+    stroke: #818cf8 !important;
+    stroke-width: 2.5px !important;
+}
+
+.pif-inspector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px;
+    background: #1e293b;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    text-align: center;
+}
+
+.pif-insp-col .pif-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.pif-insp-col .pif-val {
+    font-size: 0.75rem;
+    font-family: monospace;
+    font-weight: 700;
+    margin-top: 2px;
+}
+
+/* Metric Explorer */
+.metric-btn-group {
+    display: flex;
+    gap: 4px;
+    background: #0f172a;
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+}
+
+.metric-tab-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.metric-tab-btn.active {
+    background: #4f46e5;
+    color: #ffffff;
+}
+
+.benchmark-row {
+    margin-bottom: 8px;
+}
+
+.benchmark-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.74rem;
+    margin-bottom: 3px;
+    color: #cbd5e1;
+}
+
+.benchmark-track {
+    width: 100%;
+    height: 22px;
+    background: #1e293b;
+    border-radius: 6px;
+    overflow: hidden;
+    padding: 2px;
+    border: 1px solid #334155;
+}
+
+.benchmark-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #ffffff;
 }
 
 .paper-cit-marker, .paper-citation {

@@ -179,24 +179,91 @@ class ExportService:
             kw_str = ', '.join(paper.keywords)
             story.append(Paragraph(f'<b><i>Index Terms—</i></b> {html.escape(kw_str)}', keywords_style))
 
+        # Table Caption and Cell Styles
+        table_caption_style = ParagraphStyle(
+            'TableCaption', parent=styles['Normal'], fontName='Times-Bold',
+            fontSize=7.5, leading=9.5, alignment=TA_CENTER, spaceBefore=6, spaceAfter=2
+        )
+        table_cell_style = ParagraphStyle(
+            'TableCell', parent=styles['Normal'], fontName='Times-Roman',
+            fontSize=7, leading=8.5, alignment=TA_CENTER
+        )
+        table_cell_bold = ParagraphStyle(
+            'TableCellBold', parent=styles['Normal'], fontName='Times-Bold',
+            fontSize=7, leading=8.5, alignment=TA_CENTER
+        )
+
+        def _build_pdf_table(markdown_block: str):
+            lines = [l.strip() for l in markdown_block.strip().split('\n') if l.strip()]
+            caption = "TABLE I. SYSTEM PERFORMANCE COMPARISON"
+            table_lines = []
+            for l in lines:
+                if l.startswith('|'):
+                    table_lines.append(l)
+                elif 'TABLE' in l.upper():
+                    caption = l.strip()
+
+            raw_rows = []
+            for tl in table_lines:
+                cols = [c.strip() for c in tl.strip('|').split('|')]
+                if cols and not all(re.match(r'^:?-+:?$', c) for c in cols):
+                    raw_rows.append(cols)
+
+            if not raw_rows:
+                return None
+
+            flowables = [Paragraph(html.escape(caption), table_caption_style)]
+            grid_data = []
+            for r_idx, row in enumerate(raw_rows):
+                style_to_use = table_cell_bold if r_idx == 0 else table_cell_style
+                grid_data.append([Paragraph(html.escape(c), style_to_use) for c in row])
+
+            col_width = col_w / max(1, len(raw_rows[0]))
+            t = Table(grid_data, colWidths=[col_width] * len(raw_rows[0]))
+            t.setStyle(TableStyle([
+                ('LINEABOVE', (0, 0), (-1, 0), 1.2, colors.black),
+                ('LINEBELOW', (0, 0), (-1, 0), 0.8, colors.black),
+                ('LINEBELOW', (0, -1), (-1, -1), 1.2, colors.black),
+                ('TOPPADDING', (0, 0), (-1, -1), 3),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            flowables.append(t)
+            flowables.append(Spacer(1, 4))
+            return flowables
+
         # Sections
         for section in paper.sections:
             story.append(Paragraph(f'{html.escape(section.number)}. {html.escape(section.title.upper())}', heading_style))
             if section.content:
                 for para in section.content.split('\n\n'):
                     para_clean = para.strip()
-                    if para_clean:
-                        if ('=' in para_clean or 'min_' in para_clean) and len(para_clean) < 80:
-                            story.append(Paragraph(html.escape(para_clean), eq_style))
-                        else:
-                            clean_para = re.sub(r'\[(\d+)\]', r'[\1]', para_clean)
-                            story.append(Paragraph(html.escape(clean_para), body_style))
+                    if not para_clean:
+                        continue
+                    if '|' in para_clean and para_clean.count('|') >= 4:
+                        tbl = _build_pdf_table(para_clean)
+                        if tbl:
+                            story.extend(tbl)
+                            continue
+                    if para_clean.startswith('$$') or ('=' in para_clean and ('(1)' in para_clean or '(2)' in para_clean)):
+                        clean_eq = para_clean.replace('$$', '').strip()
+                        story.append(Paragraph(html.escape(clean_eq), eq_style))
+                    else:
+                        clean_para = re.sub(r'\[(\d+)\]', r'[\1]', para_clean)
+                        story.append(Paragraph(html.escape(clean_para), body_style))
             for sub in section.subsections:
                 story.append(Paragraph(f'<i>{html.escape(sub.label)}. {html.escape(sub.title)}</i>', subheading_style))
                 if sub.content:
                     for para in sub.content.split('\n\n'):
-                        if para.strip():
-                            story.append(Paragraph(html.escape(para.strip()), body_style))
+                        para_clean = para.strip()
+                        if para_clean:
+                            if '|' in para_clean and para_clean.count('|') >= 4:
+                                tbl = _build_pdf_table(para_clean)
+                                if tbl:
+                                    story.extend(tbl)
+                                    continue
+                            story.append(Paragraph(html.escape(para_clean), body_style))
 
         # References
         if paper.citations:
@@ -316,11 +383,69 @@ class ExportService:
                 heading_run.font.size = Pt(10)
                 heading_run.font.name = "Times New Roman"
 
+                def _add_docx_table(markdown_block: str):
+                    lines = [l.strip() for l in markdown_block.strip().split('\n') if l.strip()]
+                    caption = "TABLE I. SYSTEM PERFORMANCE COMPARISON"
+                    table_lines = []
+                    for l in lines:
+                        if l.startswith('|'):
+                            table_lines.append(l)
+                        elif 'TABLE' in l.upper():
+                            caption = l.strip()
+
+                    raw_rows = []
+                    for tl in table_lines:
+                        cols = [c.strip() for c in tl.strip('|').split('|')]
+                        if cols and not all(re.match(r'^:?-+:?$', c) for c in cols):
+                            raw_rows.append(cols)
+
+                    if not raw_rows:
+                        return
+
+                    cap_p = doc.add_paragraph()
+                    cap_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    cap_p.paragraph_format.space_before = Pt(8)
+                    cap_p.paragraph_format.space_after = Pt(2)
+                    c_run = cap_p.add_run(caption)
+                    c_run.bold = True
+                    c_run.font.size = Pt(8.5)
+                    c_run.font.name = "Times New Roman"
+
+                    t = doc.add_table(rows=len(raw_rows), cols=len(raw_rows[0]))
+                    t.autofit = True
+                    for r_idx, row in enumerate(raw_rows):
+                        for c_idx, cell_value in enumerate(row):
+                            cell = t.cell(r_idx, c_idx)
+                            p = cell.paragraphs[0]
+                            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            run = p.add_run(cell_value)
+                            run.font.name = "Times New Roman"
+                            run.font.size = Pt(8)
+                            if r_idx == 0:
+                                run.bold = True
+
+                    space_p = doc.add_paragraph()
+                    space_p.paragraph_format.space_after = Pt(4)
+
                 # Section content
                 if section.content:
                     for para in section.content.split('\n\n'):
                         para_clean = para.strip()
                         if para_clean:
+                            if '|' in para_clean and para_clean.count('|') >= 4:
+                                _add_docx_table(para_clean)
+                                continue
+                            if para_clean.startswith('$$') or ('=' in para_clean and ('(1)' in para_clean or '(2)' in para_clean)):
+                                eq_p = doc.add_paragraph()
+                                eq_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                eq_p.paragraph_format.space_before = Pt(4)
+                                eq_p.paragraph_format.space_after = Pt(4)
+                                eq_run = eq_p.add_run(para_clean.replace('$$', '').strip())
+                                eq_run.italic = True
+                                eq_run.font.size = Pt(9)
+                                eq_run.font.name = "Times New Roman"
+                                continue
+
                             content_para = doc.add_paragraph()
                             content_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                             content_para.paragraph_format.first_line_indent = Pt(14)
@@ -344,12 +469,16 @@ class ExportService:
 
                     if sub.content:
                         for para in sub.content.split('\n\n'):
-                            if para.strip():
+                            para_clean = para.strip()
+                            if para_clean:
+                                if '|' in para_clean and para_clean.count('|') >= 4:
+                                    _add_docx_table(para_clean)
+                                    continue
                                 sub_content_para = doc.add_paragraph()
                                 sub_content_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
                                 sub_content_para.paragraph_format.first_line_indent = Pt(14)
                                 sub_content_para.paragraph_format.space_after = Pt(4)
-                                sub_content_run = sub_content_para.add_run(para.strip())
+                                sub_content_run = sub_content_para.add_run(para_clean)
                                 sub_content_run.font.size = Pt(9.5)
                                 sub_content_run.font.name = "Times New Roman"
 
