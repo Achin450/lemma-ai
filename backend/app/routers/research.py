@@ -224,8 +224,12 @@ async def get_research_job_status(
     paper = PaperStore.load(job_id)
     paper_data = paper.model_dump() if paper else None
 
-    if res.state == "SUCCESS":
-        result = res.result or {}
+    # Extract live progress from paper store as ground truth fallback
+    stored_step = getattr(paper, "progress_step", None) if paper else None
+    stored_pct = getattr(paper, "progress_pct", None) if paper else None
+
+    if res.state == "SUCCESS" or (paper and paper.status == PaperStatus.completed):
+        result = (res.result or {}) if res.state == "SUCCESS" else {}
         return {
             "job_id": job_id,
             "status": "completed",
@@ -239,57 +243,50 @@ async def get_research_job_status(
             "paper": paper_data,
             "error": result.get("error"),
         }
-    elif res.state == "FAILURE":
+    elif res.state == "FAILURE" or (paper and paper.status == PaperStatus.failed):
         return {
             "job_id": job_id,
             "status": "failed",
-            "error": str(res.result) if res.result else "Unknown error occurred.",
+            "error": str(res.result) if (res.state == "FAILURE" and res.result) else (getattr(paper, "error", None) or "Task failed"),
             "paper": paper_data,
         }
     elif res.state == "PROGRESS":
         meta = res.info or {}
+        celery_pct = meta.get("pct", 0)
+        pct = max(celery_pct, stored_pct or 0)
+        step = stored_step or meta.get("step", "Processing...")
         return {
             "job_id": job_id,
             "status": "processing",
-            "progress_step": meta.get("step", "Processing..."),
-            "progress_pct": meta.get("pct", 0),
+            "progress_step": step,
+            "progress_pct": pct,
             "paper": paper_data,
         }
-    elif res.state in ("PENDING", "RECEIVED"):
-        # Also check if paper file exists (in case task completed outside Celery or is updating)
-        if paper and paper.status == PaperStatus.completed:
+    else:
+        # PENDING, RECEIVED, or background task without Celery
+        if paper and paper.status == PaperStatus.processing:
+            pct = stored_pct if stored_pct is not None else (35 if (paper.sections or paper.title) else 10)
+            step = stored_step or ("Generating paper structure..." if (paper.sections or paper.title) else "Analyzing research topic...")
             return {
                 "job_id": job_id,
-                "status": "completed",
-                "paper_id": job_id,
-                "title": paper.title,
-                "sections": len(paper.sections),
-                "citations": len(paper.citations),
-                "similarity_score": paper.similarity_score,
-                "progress_step": "Paper ready!",
-                "progress_pct": 100,
+                "status": "processing",
+                "progress_step": step,
+                "progress_pct": pct,
                 "paper": paper_data,
             }
         elif paper and (paper.sections or paper.title):
             return {
                 "job_id": job_id,
                 "status": "processing",
-                "progress_step": "Generating paper structure...",
-                "progress_pct": 35,
+                "progress_step": stored_step or "Generating paper structure...",
+                "progress_pct": stored_pct if stored_pct is not None else 35,
                 "paper": paper_data,
             }
         return {
             "job_id": job_id,
             "status": "pending",
-            "progress_step": "Waiting to start...",
-            "progress_pct": 0,
-            "paper": paper_data,
-        }
-    else:
-        return {
-            "job_id": job_id,
-            "status": "processing",
-            "progress_step": "Working...",
+            "progress_step": stored_step or "Analyzing research topic...",
+            "progress_pct": stored_pct if stored_pct is not None else 5,
             "paper": paper_data,
         }
 

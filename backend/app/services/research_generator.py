@@ -55,10 +55,25 @@ class ResearchGeneratorService:
                                called at each pipeline stage to report progress.
         """
         self.progress_callback = progress_callback
+        self._current_step: str = "Analyzing research topic..."
+        self._current_pct: int = 5
+        self._current_paper: Optional[ResearchPaper] = None
 
-    def _report_progress(self, step: str, pct: int):
-        """Report progress to callback if set."""
+    def _report_progress(self, step: str, pct: int, paper: Optional[ResearchPaper] = None):
+        """Report progress to callback if set, and immediately sync paper store."""
         logger.info(f"[Research Generator] {pct}% — {step}")
+        self._current_step = step
+        self._current_pct = pct
+
+        target_paper = paper or self._current_paper
+        if target_paper:
+            target_paper.progress_step = step
+            target_paper.progress_pct = pct
+            try:
+                PaperStore.save(target_paper)
+            except Exception as pe:
+                logger.warning(f"Could not persist paper progress update: {pe}")
+
         if self.progress_callback:
             try:
                 self.progress_callback(step, pct)
@@ -68,6 +83,8 @@ class ResearchGeneratorService:
     def _persist_intermediate(self, paper: ResearchPaper):
         """Save intermediate paper state so frontend can stream live updates."""
         try:
+            paper.progress_step = self._current_step
+            paper.progress_pct = self._current_pct
             PaperStore.save(paper)
         except Exception as e:
             logger.warning(f"Could not persist intermediate paper state: {e}")
@@ -86,7 +103,11 @@ class ResearchGeneratorService:
             domain=request.domain,
             status=PaperStatus.processing,
             paper_type=PaperType.generated,
+            progress_step="Analyzing research topic...",
+            progress_pct=5,
         )
+        self._current_paper = paper
+        self._persist_intermediate(paper)
 
         try:
             # === Stage 1: Topic Analysis (5-10%) ===

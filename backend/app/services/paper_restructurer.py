@@ -63,9 +63,24 @@ class PaperRestructurerService:
 
     def __init__(self, progress_callback: Optional[Callable[[str, int], None]] = None):
         self.progress_callback = progress_callback
+        self._current_step: str = "Extracting document structure..."
+        self._current_pct: int = 5
+        self._current_paper: Optional[ResearchPaper] = None
 
-    def _report_progress(self, step: str, pct: int):
+    def _report_progress(self, step: str, pct: int, paper: Optional[ResearchPaper] = None):
         logger.info(f"[Restructurer] {pct}% — {step}")
+        self._current_step = step
+        self._current_pct = pct
+
+        target_paper = paper or self._current_paper
+        if target_paper:
+            target_paper.progress_step = step
+            target_paper.progress_pct = pct
+            try:
+                PaperStore.save(target_paper)
+            except Exception:
+                pass
+
         if self.progress_callback:
             try:
                 self.progress_callback(step, pct)
@@ -94,7 +109,14 @@ class PaperRestructurerService:
             paper_id=paper_id,
             status=PaperStatus.processing,
             paper_type=PaperType.restructured,
+            progress_step="Extracting document structure...",
+            progress_pct=5,
         )
+        self._current_paper = paper
+        try:
+            PaperStore.save(paper)
+        except Exception:
+            pass
 
         try:
             # === Stage 1: Extract existing metadata (5%) ===

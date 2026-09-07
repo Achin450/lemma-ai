@@ -402,6 +402,9 @@
     // ---------------------------------------------------------------------------
     // Polling
     // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
+    // Polling & Live Streaming
+    // ---------------------------------------------------------------------------
     // Live Background Paper Stream & Typewriter Engine
     // ---------------------------------------------------------------------------
     const liveStreamState = {
@@ -431,19 +434,46 @@
 
             const targetText = item.fullText || '';
             const remaining = targetText.length - item.currentLen;
-            const step = Math.max(3, Math.min(22, Math.ceil(remaining / 8)));
+            const step = Math.max(4, Math.min(28, Math.ceil(remaining / 6)));
             item.currentLen = Math.min(targetText.length, item.currentLen + step);
 
             const slice = targetText.slice(0, item.currentLen);
             const isDone = item.currentLen >= targetText.length;
 
-            targetEl.innerHTML = formatContent(slice) + (isDone ? '' : '<span class="typing-caret"></span>');
+            try {
+                targetEl.innerHTML = formatContent(slice) + (isDone ? '' : '<span class="typing-caret"></span>');
+            } catch (err) {
+                targetEl.innerHTML = escHtml(slice) + (isDone ? '' : '<span class="typing-caret"></span>');
+            }
 
             if (isDone) {
                 liveStreamState.pendingTyping.shift();
-                if (typeof item.onComplete === 'function') item.onComplete();
+                if (typeof item.onComplete === 'function') {
+                    try { item.onComplete(); } catch (e) {}
+                }
             }
-        }, 25);
+        }, 22);
+    }
+
+    function flushTypewriterQueue() {
+        if (liveStreamState.typingInterval) {
+            clearInterval(liveStreamState.typingInterval);
+            liveStreamState.typingInterval = null;
+        }
+        while (liveStreamState.pendingTyping.length > 0) {
+            const item = liveStreamState.pendingTyping.shift();
+            if (item && item.targetEl && document.body.contains(item.targetEl)) {
+                try {
+                    item.targetEl.innerHTML = formatContent(item.fullText || '');
+                } catch (e) {
+                    item.targetEl.innerHTML = escHtml(item.fullText || '');
+                }
+                if (typeof item.onComplete === 'function') {
+                    try { item.onComplete(); } catch (e) {}
+                }
+            }
+        }
+        document.querySelectorAll('.typing-caret').forEach(el => el.remove());
     }
 
     function queueTyping(targetEl, fullText, onComplete) {
@@ -556,7 +586,7 @@
                         secEl.innerHTML = `
                             <h2 class="paper-section-heading-preview">
                                 ${escHtml(sec.number)}. ${escHtml((sec.title || '').toUpperCase())}
-                                <span class="sec-status-badge" id="sec-badge-${sec.number}"></span>
+                                <span class="sec-status-badge" id="sec-badge-${sec.number}"><span class="pending-sec-badge">[Queued in outline]</span></span>
                             </h2>
                             <div class="paper-section-content-preview" id="live-sec-content-${sec.number}">
                                 <div class="skeleton-text-block">
@@ -579,18 +609,16 @@
                             liveStreamState.renderedLengths[secKey] = sec.content.length;
                             activeSecFound = secEl;
                             if (badgeEl) {
-                                badgeEl.innerHTML = '<span class="writing-active-badge"><span class="live-pulsing-dot"></span> Typing Now...</span>';
+                                badgeEl.innerHTML = '<span class="writing-active-badge"><span class="live-pulsing-dot"></span> Streaming live...</span>';
                             }
                             queueTyping(contentEl, sec.content, () => {
-                                if (badgeEl) badgeEl.innerHTML = '';
+                                if (badgeEl) badgeEl.innerHTML = '<span class="sec-done-badge"><i class="fa-solid fa-check"></i> Complete</span>';
                             });
-                        } else if (!badgeEl?.innerHTML.includes('Typing Now')) {
-                            if (badgeEl) badgeEl.innerHTML = '';
                         }
                     } else {
                         // Pending in outline
                         if (badgeEl && !badgeEl.innerHTML) {
-                            badgeEl.innerHTML = '<span style="font-size:0.7rem; color:#94a3b8; font-weight:normal; text-transform:none; margin-left:6px;">[Pending outline]</span>';
+                            badgeEl.innerHTML = '<span class="pending-sec-badge">[Queued in outline]</span>';
                         }
                     }
                 });
@@ -625,11 +653,125 @@
     }
 
     // ---------------------------------------------------------------------------
-    // Polling
+    // Smooth Progress Engine & Polling
     // ---------------------------------------------------------------------------
+    const progressEngine = {
+        currentPct: 0,
+        targetPct: 5,
+        currentStep: 'Analyzing research topic...',
+        animTimer: null,
+        active: false,
+    };
+
+    function startProgressEngine(initialStep = 'Analyzing research topic...') {
+        stopProgressEngine();
+        progressEngine.currentPct = 0;
+        progressEngine.targetPct = 5;
+        progressEngine.currentStep = initialStep;
+        progressEngine.active = true;
+
+        const fill = document.getElementById('progress-bar-fill');
+        const pctText = document.getElementById('progress-pct-text');
+        const stepText = document.getElementById('progress-step-text');
+        if (fill) fill.style.width = '0%';
+        if (pctText) pctText.textContent = '0%';
+        if (stepText) stepText.textContent = initialStep;
+
+        updateStageDots(0);
+
+        let lastCreepTime = Date.now();
+        progressEngine.animTimer = setInterval(() => {
+            if (!progressEngine.active) return;
+
+            const now = Date.now();
+            // Smoothly glide towards target percentage
+            if (progressEngine.currentPct < progressEngine.targetPct) {
+                const diff = progressEngine.targetPct - progressEngine.currentPct;
+                const increment = Math.max(0.2, diff * 0.12);
+                progressEngine.currentPct = Math.min(progressEngine.targetPct, progressEngine.currentPct + increment);
+            } else if (progressEngine.currentPct < 96 && (now - lastCreepTime > 1200)) {
+                // Micro-advance so progress is never perceived as frozen while waiting for LLM
+                lastCreepTime = now;
+                const creepCeiling = Math.min(96, progressEngine.targetPct + 6);
+                if (progressEngine.currentPct < creepCeiling) {
+                    progressEngine.currentPct = Math.min(creepCeiling, progressEngine.currentPct + 0.35);
+                }
+            }
+
+            const displayPct = Math.round(progressEngine.currentPct);
+            if (fill) fill.style.width = `${progressEngine.currentPct.toFixed(1)}%`;
+            if (pctText) pctText.textContent = `${displayPct}%`;
+            if (stepText) stepText.textContent = progressEngine.currentStep;
+
+            updateStageDots(displayPct);
+        }, 50);
+    }
+
+    function setProgressTarget(pct, step) {
+        if (typeof pct === 'number' && !isNaN(pct)) {
+            progressEngine.targetPct = Math.max(progressEngine.targetPct, Math.min(100, pct));
+        }
+        if (step && typeof step === 'string' && step.trim()) {
+            progressEngine.currentStep = step;
+        }
+    }
+
+    function completeProgressEngine(finalStep = 'Paper ready!') {
+        progressEngine.targetPct = 100;
+        progressEngine.currentPct = 100;
+        progressEngine.currentStep = finalStep;
+
+        const fill = document.getElementById('progress-bar-fill');
+        const pctText = document.getElementById('progress-pct-text');
+        const stepText = document.getElementById('progress-step-text');
+        if (fill) fill.style.width = '100%';
+        if (pctText) pctText.textContent = '100%';
+        if (stepText) stepText.textContent = finalStep;
+
+        updateStageDots(100);
+        stopProgressEngine();
+    }
+
+    function stopProgressEngine() {
+        progressEngine.active = false;
+        if (progressEngine.animTimer) {
+            clearInterval(progressEngine.animTimer);
+            progressEngine.animTimer = null;
+        }
+    }
+
+    function updateStageDots(pct, type) {
+        const stageConfig = [
+            { id: 'analyze', start: 0, done: 15 },
+            { id: 'sources', start: 15, done: 35 },
+            { id: 'outline', start: 35, done: 45 },
+            { id: 'write', start: 45, done: 80 },
+            { id: 'citations', start: 80, done: 88 },
+            { id: 'similarity', start: 88, done: 98 },
+            { id: 'done', start: 98, done: 100 },
+        ];
+
+        stageConfig.forEach((s) => {
+            const dot = document.getElementById(`stage-${s.id}-dot`);
+            const stageEl = document.getElementById(`stage-${s.id}`);
+            if (!dot) return;
+
+            if (pct >= s.done) {
+                dot.className = 'stage-dot done';
+                if (stageEl) stageEl.className = 'progress-stage done';
+            } else if (pct >= s.start) {
+                dot.className = 'stage-dot active';
+                if (stageEl) stageEl.className = 'progress-stage active';
+            } else {
+                dot.className = 'stage-dot pending';
+                if (stageEl) stageEl.className = 'progress-stage pending';
+            }
+        });
+    }
+
     function startPolling(jobId, type) {
         stopPolling();
-        state.pollingTimer = setInterval(() => pollJobStatus(jobId, type), 2000);
+        state.pollingTimer = setInterval(() => pollJobStatus(jobId, type), 1800);
         // Poll immediately
         pollJobStatus(jobId, type);
     }
@@ -638,10 +780,6 @@
         if (state.pollingTimer) {
             clearInterval(state.pollingTimer);
             state.pollingTimer = null;
-        }
-        if (liveStreamState.typingInterval) {
-            clearInterval(liveStreamState.typingInterval);
-            liveStreamState.typingInterval = null;
         }
     }
 
@@ -655,7 +793,11 @@
             if (!res.ok) return;
 
             const data = await res.json();
-            updateProgressUI(data, type);
+            
+            // Advance progress target & step
+            if (typeof data.progress_pct === 'number') {
+                setProgressTarget(data.progress_pct, data.progress_step);
+            }
 
             // Stream background paper live if paper object is attached
             if (data.paper && type !== 'similarity') {
@@ -664,6 +806,13 @@
 
             if (data.status === 'completed') {
                 stopPolling();
+                completeProgressEngine('Paper ready!');
+                flushTypewriterQueue();
+
+                if (data.paper && type !== 'similarity') {
+                    updateLivePaperPreview(data.paper, 'Paper ready!', 100);
+                }
+
                 if (type === 'similarity') {
                     showSimResults(data.report, jobId);
                 } else {
@@ -671,13 +820,14 @@
                     const progressView = document.getElementById('paper-progress-view');
                     if (progressView) progressView.classList.add('generation-completed');
 
-                    // Small delay to let user see completed paper centered before opening editor
+                    // Delay to let user admire completed paper before opening editor
                     setTimeout(async () => {
                         await loadAndShowPaper(data.paper_id || jobId);
                     }, 1400);
                 }
             } else if (data.status === 'failed') {
                 stopPolling();
+                stopProgressEngine();
                 showToast(`Process failed: ${data.error || 'Unknown error'}`, 'error');
                 showViewGlobal('dashboard-home-view');
             }
@@ -686,60 +836,14 @@
         }
     }
 
-    function updateProgressUI(data, type) {
-        const pct = data.progress_pct || 0;
-        const step = data.progress_step || 'Processing...';
-
-        const fill = document.getElementById('progress-bar-fill');
-        const pctText = document.getElementById('progress-pct-text');
-        const stepText = document.getElementById('progress-step-text');
-
-        if (fill) fill.style.width = `${pct}%`;
-        if (pctText) pctText.textContent = `${pct}%`;
-        if (stepText) stepText.textContent = step;
-
-        // Update stage dots based on percentage
-        updateStageDots(pct, type);
-    }
-
-    function updateStageDots(pct, type) {
-        const stages = ['analyze', 'sources', 'outline', 'write', 'citations', 'similarity', 'done'];
-        const thresholds = [5, 30, 40, 80, 85, 88, 100];
-
-        stages.forEach((stage, idx) => {
-            const dot = document.getElementById(`stage-${stage}-dot`);
-            const stageEl = document.getElementById(`stage-${stage}`);
-            if (!dot) return;
-            if (pct >= thresholds[idx]) {
-                dot.className = 'stage-dot done';
-                if (stageEl) stageEl.className = 'progress-stage done';
-            } else if (pct >= (thresholds[idx - 1] || 0)) {
-                dot.className = 'stage-dot active';
-                if (stageEl) stageEl.className = 'progress-stage active';
-            } else {
-                dot.className = 'stage-dot pending';
-                if (stageEl) stageEl.className = 'progress-stage pending';
-            }
-        });
-    }
-
     function showProgressView(title, subtitle) {
         const titleEl = document.getElementById('progress-title');
         const subtitleEl = document.getElementById('progress-subtitle');
         if (titleEl) titleEl.textContent = title;
         if (subtitleEl) subtitleEl.textContent = subtitle;
 
-        // Reset progress
-        const fill = document.getElementById('progress-bar-fill');
-        const pctText = document.getElementById('progress-pct-text');
-        const stepText = document.getElementById('progress-step-text');
-        if (fill) fill.style.width = '0%';
-        if (pctText) pctText.textContent = '0%';
-        if (stepText) stepText.textContent = 'Starting...';
-
-        // Reset dots and stage elements
-        document.querySelectorAll('.stage-dot').forEach(d => d.className = 'stage-dot pending');
-        document.querySelectorAll('.progress-stage').forEach(s => s.className = 'progress-stage pending');
+        // Start Smooth Progress Engine
+        startProgressEngine(subtitle || 'Analyzing research topic and finding academic sources...');
 
         // Reset split layout state (show box on left, paper on right)
         const progressView = document.getElementById('paper-progress-view');
@@ -1735,6 +1839,8 @@
         if (cancelBtn) {
             cancelBtn.addEventListener('click', () => {
                 stopPolling();
+                stopProgressEngine();
+                flushTypewriterQueue();
                 showViewGlobal('dashboard-home-view');
                 showToast('Cancelled.', 'info');
             });

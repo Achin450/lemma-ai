@@ -51,14 +51,16 @@ def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
                 self.update_state(state="PROGRESS", meta={"step": step, "pct": pct, "paper_id": paper_id})
             except Exception:
                 pass
-        # Update the paper in store with processing status
+        # Update the paper in store with processing status, step, and pct
         try:
             paper = PaperStore.load(paper_id)
             if paper:
                 paper.status = PaperStatus.processing
+                paper.progress_step = step
+                paper.progress_pct = pct
                 PaperStore.save(paper)
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning(f"Could not persist paper progress update: {err}")
 
     try:
         # Ensure paper store DB table exists
@@ -158,6 +160,15 @@ def restructure_paper_task(self, paper_id: str, file_path: str, original_filenam
                 self.update_state(state="PROGRESS", meta={"step": step, "pct": pct, "paper_id": paper_id})
             except Exception:
                 pass
+        try:
+            paper = PaperStore.load(paper_id)
+            if paper:
+                paper.status = PaperStatus.processing
+                paper.progress_step = step
+                paper.progress_pct = pct
+                PaperStore.save(paper)
+        except Exception as err:
+            logger.warning(f"Could not persist restructure progress update: {err}")
 
     try:
         PaperStore.ensure_db_table()

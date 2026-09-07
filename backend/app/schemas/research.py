@@ -113,6 +113,8 @@ class ResearchPaper(BaseModel):
     similarity_score: Optional[float] = None   # Overall paper similarity score
     paper_type: PaperType = PaperType.generated
     status: PaperStatus = PaperStatus.pending
+    progress_step: Optional[str] = "Initializing..."
+    progress_pct: Optional[int] = 0
     topic: Optional[str] = None
     domain: Optional[str] = None
     error: Optional[str] = None

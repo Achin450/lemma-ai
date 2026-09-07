@@ -3328,6 +3328,37 @@ mark.mark-hybrid {
 
 #paper-progress-view .progress-track {
     margin: 1rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#paper-progress-view .progress-bar-outer {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+#paper-progress-view .progress-bar-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6);
+    border-radius: 999px;
+    transition: width 0.4s ease-out;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+}
+
+#paper-progress-view .progress-pct-text {
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #a5b4fc;
+    min-width: 40px;
+    text-align: right;
 }
 
 #paper-progress-view .progress-step-display {
@@ -3525,6 +3556,27 @@ mark.mark-hybrid {
     background: #10b981;
     box-shadow: 0 0 8px #10b981;
     animation: live-pulse-glow 1.5s infinite;
+}
+
+.pending-sec-badge {
+    font-size: 0.7rem;
+    color: #64748b;
+    font-weight: normal;
+    text-transform: none;
+    margin-left: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.sec-done-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #10b981;
+    margin-left: 6px;
+    text-transform: none;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @keyframes live-pulse-glow {
