@@ -176,10 +176,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // 1. Ollama / Cloud AI Engine status
                 const ollama = services.ollama || {};
-                if (ollama.status === "running") {
+                const models = ollama.available_models || ollama.models || [];
+                if (ollama.status === "running" || ollama.status === "online") {
                     hOllama.className = "health-item online-green";
-                    const firstModel = (ollama.models && ollama.models[0]) ? ollama.models[0].split(':')[0] : "Running";
-                    hOllamaText.textContent = firstModel.length > 22 ? "Online" : firstModel;
+                    const firstModel = models.length > 0 ? models[0].split(':')[0] : "Online";
+                    hOllamaText.textContent = firstModel.length > 20 ? "Online" : firstModel;
                 } else if (ollama.status === "no_models") {
                     hOllama.className = "health-item working-orange";
                     hOllamaText.textContent = "No Models";
@@ -1046,8 +1047,6 @@ document.addEventListener("DOMContentLoaded", () => {
             document.body.classList.remove('in-paper-editor');
             document.body.classList.remove('in-progress-view');
         }
-    }
-    window.showView = showView;
 
         // Update nav item active state
         navItems.forEach(n => n.classList.remove("active"));
