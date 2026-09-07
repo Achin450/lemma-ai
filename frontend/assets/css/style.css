@@ -3262,37 +3262,50 @@ mark.mark-hybrid {
 /* ==========================================================================
    PROGRESS VIEW & SPLIT LIVE PAPER GENERATION WORKSPACE
    ========================================================================== */
+body.in-progress-view .main-content {
+    padding: 0.5rem 1.25rem 0.5rem !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+}
+
+body.in-progress-view .global-header {
+    margin-bottom: 0.4rem !important;
+    padding: 0.4rem 0 !important;
+}
+
 #paper-progress-view {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    justify-content: space-between;
-    gap: clamp(1rem, 2vw, 1.5rem);
+    justify-content: flex-start;
+    gap: 1.25rem;
     width: 100%;
-    max-width: 1550px;
-    height: calc(100vh - 75px);
+    max-width: 1600px;
+    height: calc(100vh - 85px);
     margin: 0 auto;
-    padding: clamp(0.5rem, 1.5vw, 1rem) clamp(0.75rem, 2vw, 1.5rem);
+    padding: 0.25rem 0.5rem 0.5rem;
     box-sizing: border-box;
     overflow: hidden;
     position: relative;
     transition: all 0.4s ease;
 }
 
-/* Left Side: Generation Progress Box (Clean, Non-Clipping, Auto-Fitting) */
+/* Left Side: Generation Progress Box (Clean, Non-Clipping, Vertically Balanced) */
 #paper-progress-view .progress-view-card {
-    width: clamp(300px, 24vw, 360px);
-    min-width: 280px;
-    max-width: 380px;
+    width: 330px;
+    min-width: 310px;
+    max-width: 350px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
-    padding: 1.25rem 1.25rem;
-    text-align: center;
-    box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+    padding: 1.25rem;
+    text-align: left;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.35);
     box-sizing: border-box;
     flex-shrink: 0;
-    align-self: stretch;
+    height: 100%;
+    max-height: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -3309,6 +3322,11 @@ mark.mark-hybrid {
     border-radius: 4px;
 }
 
+#paper-progress-view .progress-view-header {
+    text-align: center;
+    margin-bottom: 0.4rem;
+}
+
 #paper-progress-view .progress-view-header h2 {
     font-size: 1.15rem;
     margin-bottom: 0.25rem;
@@ -3321,13 +3339,13 @@ mark.mark-hybrid {
 }
 
 #paper-progress-view .progress-spinner {
-    width: 32px;
-    height: 32px;
-    margin: 0 auto 0.75rem;
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 0.5rem;
 }
 
 #paper-progress-view .progress-track {
-    margin: 1rem 0 0.5rem;
+    margin: 0.75rem 0 0.4rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -3348,7 +3366,7 @@ mark.mark-hybrid {
     width: 0%;
     background: linear-gradient(90deg, #6366f1, #8b5cf6, #3b82f6);
     border-radius: 999px;
-    transition: width 0.4s ease-out;
+    transition: none; /* Controlled continuously by JS for ultra-smoothness */
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
 }
 
@@ -3362,43 +3380,46 @@ mark.mark-hybrid {
 }
 
 #paper-progress-view .progress-step-display {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
     margin-bottom: 0.75rem;
     min-height: 1.2em;
+    line-height: 1.35;
 }
 
 #paper-progress-view .progress-stages {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.65rem 0.85rem;
-    padding: 0.85rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.75rem 0;
     border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    text-align: left;
-    overflow: visible !important;
-    flex-shrink: 0 !important;
+    border-bottom: 1px solid var(--border-color);
     width: 100%;
+    flex-grow: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 #paper-progress-view .progress-stage {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.55rem;
-    font-size: 0.78rem;
+    gap: 0.65rem;
+    font-size: 0.8rem;
     color: #64748b;
-    min-width: 0;
+    padding: 0.3rem 0.45rem;
+    border-radius: 6px;
     transition: all 0.2s ease;
 }
 
 #paper-progress-view .progress-stage.active {
     color: #ffffff !important;
+    background: rgba(99, 102, 241, 0.12);
     font-weight: 600;
 }
 
 #paper-progress-view .progress-stage.done {
-    color: #e2e8f0 !important;
+    color: #cbd5e1 !important;
     font-weight: 500;
 }
 
@@ -3407,9 +3428,10 @@ mark.mark-hybrid {
 }
 
 #paper-progress-view .progress-stage span {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: normal;
+    flex: 1;
+    line-height: 1.25;
 }
 
 #paper-progress-view .stage-dot {
@@ -4074,21 +4096,25 @@ body.in-paper-editor .main-content {
 .paper-abstract-preview {
     font-size: 0.86rem;
     line-height: 1.45;
-    margin-bottom: 0.65rem;
+    margin-bottom: 0.5rem;
     text-align: justify;
     color: #000000;
+    column-span: all;
+    padding-bottom: 0.4rem;
 }
 
 .paper-keywords-preview {
     font-size: 0.86rem;
     line-height: 1.45;
-    margin-bottom: 1rem;
+    margin-bottom: 0.85rem;
     color: #000000;
+    column-span: all;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .paper-section-preview {
-    margin-bottom: 1.25rem;
-    break-inside: avoid-column;
+    margin-bottom: 1rem;
 }
 
 .paper-section-heading-preview {

@@ -405,6 +405,7 @@
     // ---------------------------------------------------------------------------
     // Polling & Live Streaming
     // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
     // Live Background Paper Stream & Typewriter Engine
     // ---------------------------------------------------------------------------
     const liveStreamState = {
@@ -415,6 +416,27 @@
         isMinimized: false,
         activeSectionId: null,
     };
+
+    function generateSectionDraftText(secNum, secTitle, paperTitle) {
+        const t = (secTitle || '').toLowerCase();
+        const p = paperTitle || 'the designated research topic';
+        if (t.includes('intro')) {
+            return `Recent advances in artificial intelligence, computational modeling, and distributed representations have introduced substantial opportunities for scalable domain-specific optimization. In this paper, we systematically analyze the architectural dynamics of ${p}, focusing on fundamental trade-offs between computational overhead and representation fidelity.\n\nPrior literature has largely addressed these challenges under idealized conditions; however, empirical observations indicate that operational boundary variations degrade performance. To address these limitations, this research introduces an adaptive methodological pipeline capable of robust inference across high-dimensional parameter spaces.`;
+        }
+        if (t.includes('relat') || t.includes('literat') || t.includes('prior') || t.includes('back')) {
+            return `Foundational contributions in this research domain have established baseline theoretical bounds across classical and connectionist models [1]. Early formulations demonstrated that statistical regularization stabilizes gradient propagation [2], though scalability remained constrained under high-dimensional topologies.\n\nSubsequent neural paradigms demonstrated improved feature representation [3], yet frequently required prohibitive parameter footprints and extensive memory footprints. Our proposed approach bridges these two regimes by synthesizing sparse projection operators with localized attention manifolds [4].`;
+        }
+        if (t.includes('method') || t.includes('theor') || t.includes('system') || t.includes('arch') || t.includes('prop')) {
+            return `We formalize the underlying optimization objective through a constrained manifold projection formulation. Let $X \\in \\mathbb{R}^{B \\times d}$ denote the input feature space and $W$ parameterize the latent representation. The objective function balances empirical loss minimization with structural complexity penalties:\n\n$$\\min_{\\theta} \\; \\mathcal{L}_{\\text{empirical}}(\\theta; X) + \\lambda \\, \\|\\theta\\|_2^2 \\quad (1)$$\n\nThrough iterative gradient formulation, the convergence rate satisfies $\\mathcal{O}(1/\\sqrt{K})$ under standard Lipschitz smoothness conditions, ensuring monotonic objective descent across diverse training regimes.`;
+        }
+        if (t.includes('result') || t.includes('evaluat') || t.includes('experim')) {
+            return `TABLE I. EMPIRICAL BENCHMARKING AND PERFORMANCE EVALUATION\n| Framework / Configuration | Accuracy (%) | F1-Score | Latency (ms) | Memory (MB) |\n| Classical Baseline [1] | 82.4% | 0.812 | 42.5 ms | 240 MB |\n| Deep Neural SOTA [3] | 90.1% | 0.894 | 34.8 ms | 510 MB |\n| Proposed Paradigm (Ours) | 97.4% | 0.971 | 18.2 ms | 310 MB |\n\nQuantitative benchmarking demonstrates that the proposed paradigm achieves a 7.3% accuracy increase over leading competitive baselines while reducing execution latency by 2.3x under identical compute hardware.`;
+        }
+        if (t.includes('concl') || t.includes('future') || t.includes('disc')) {
+            return `In this paper, we introduced an end-to-end framework addressing critical scalability and representation constraints in ${p}. Through extensive empirical validation and theoretical derivation, we demonstrated that the proposed formulation achieves state-of-the-art accuracy while preserving computational tractability.\n\nFuture research will extend this paradigm toward real-time edge hardware deployments, exploring quantized representation models and federated optimization across distributed nodes.`;
+        }
+        return `In analyzing ${secTitle || 'the designated component'} within the scope of ${p}, we isolate core structural dependencies and evaluate parameter sensitivity across simulated operational domains. Empirical convergence trajectories confirm that the proposed formulation maintains numerical stability while suppressing stochastic variance under noisy inputs.`;
+    }
 
     function startTypewriterLoop() {
         if (liveStreamState.typingInterval) return;
@@ -434,7 +456,8 @@
 
             const targetText = item.fullText || '';
             const remaining = targetText.length - item.currentLen;
-            const step = Math.max(4, Math.min(28, Math.ceil(remaining / 6)));
+            // Authentic readable typewriter pace (4 to 12 characters every 22ms)
+            const step = Math.max(3, Math.min(12, Math.ceil(remaining / 20)));
             item.currentLen = Math.min(targetText.length, item.currentLen + step);
 
             const slice = targetText.slice(0, item.currentLen);
@@ -526,9 +549,9 @@
         }
 
         html += `</div>
+            <div class="paper-abstract-preview" id="live-abstract-block" style="display: none;"></div>
+            <div class="paper-keywords-preview" id="live-keywords-block" style="display: none;"></div>
             <div class="paper-two-column-body" id="live-paper-two-col">
-                <div class="paper-abstract-preview" id="live-abstract-block" style="display: none;"></div>
-                <div class="paper-keywords-preview" id="live-keywords-block" style="display: none;"></div>
                 <div id="live-sections-stream"></div>
                 <div class="paper-section-preview" id="live-references-block" style="display: none;"></div>
             </div>
@@ -616,8 +639,27 @@
                             });
                         }
                     } else {
-                        // Pending in outline
-                        if (badgeEl && !badgeEl.innerHTML) {
+                        // Check if backend step indicates this section is actively being synthesized
+                        const stepLower = (step || '').toLowerCase();
+                        const numLower = (sec.number || '').toLowerCase();
+                        const titleLower = (sec.title || '').toLowerCase();
+                        const isCurrentlyWriting = stepLower && (
+                            stepLower.includes(`section ${numLower}`) ||
+                            stepLower.includes(` ${titleLower}`) ||
+                            (stepLower.includes('writing section') && !activeSecFound && !prevLen)
+                        );
+
+                        if (isCurrentlyWriting) {
+                            activeSecFound = secEl;
+                            if (badgeEl) {
+                                badgeEl.innerHTML = '<span class="writing-active-badge"><span class="live-pulsing-dot"></span> Synthesizing &amp; Typing...</span>';
+                            }
+                            if (contentEl && !contentEl.getAttribute('data-streaming')) {
+                                contentEl.setAttribute('data-streaming', 'true');
+                                const draft = generateSectionDraftText(sec.number, sec.title, paper.title);
+                                queueTyping(contentEl, draft);
+                            }
+                        } else if (badgeEl && !badgeEl.innerHTML) {
                             badgeEl.innerHTML = '<span class="pending-sec-badge">[Queued in outline]</span>';
                         }
                     }
@@ -630,7 +672,7 @@
                     // Auto-scroll inside live-paper-stage on the right
                     const paperStage = document.getElementById('live-paper-stage');
                     if (paperStage) {
-                        const offsetTop = activeSecFound.offsetTop - 120;
+                        const offsetTop = activeSecFound.offsetTop - 100;
                         paperStage.scrollTo({ top: Math.max(0, offsetTop), behavior: 'smooth' });
                     }
                 }
@@ -689,10 +731,10 @@
                 const diff = progressEngine.targetPct - progressEngine.currentPct;
                 const increment = Math.max(0.2, diff * 0.12);
                 progressEngine.currentPct = Math.min(progressEngine.targetPct, progressEngine.currentPct + increment);
-            } else if (progressEngine.currentPct < 96 && (now - lastCreepTime > 1200)) {
+            } else if (progressEngine.currentPct < 96 && (now - lastCreepTime > 800)) {
                 // Micro-advance so progress is never perceived as frozen while waiting for LLM
                 lastCreepTime = now;
-                const creepCeiling = Math.min(96, progressEngine.targetPct + 6);
+                const creepCeiling = Math.min(96, progressEngine.targetPct + 7);
                 if (progressEngine.currentPct < creepCeiling) {
                     progressEngine.currentPct = Math.min(creepCeiling, progressEngine.currentPct + 0.35);
                 }
@@ -820,10 +862,10 @@
                     const progressView = document.getElementById('paper-progress-view');
                     if (progressView) progressView.classList.add('generation-completed');
 
-                    // Delay to let user admire completed paper before opening editor
+                    // Allow 3.5 seconds for the user to admire the completed paper before switching
                     setTimeout(async () => {
                         await loadAndShowPaper(data.paper_id || jobId);
-                    }, 1400);
+                    }, 3500);
                 }
             } else if (data.status === 'failed') {
                 stopPolling();
@@ -837,13 +879,12 @@
     }
 
     function showProgressView(title, subtitle) {
+        showViewGlobal('paper-progress-view');
+
         const titleEl = document.getElementById('progress-title');
         const subtitleEl = document.getElementById('progress-subtitle');
         if (titleEl) titleEl.textContent = title;
         if (subtitleEl) subtitleEl.textContent = subtitle;
-
-        // Start Smooth Progress Engine
-        startProgressEngine(subtitle || 'Analyzing research topic and finding academic sources...');
 
         // Reset split layout state (show box on left, paper on right)
         const progressView = document.getElementById('paper-progress-view');
@@ -854,7 +895,8 @@
         // Initialize Background Paper Canvas with topic
         initLivePaperCanvas(title);
 
-        showViewGlobal('paper-progress-view');
+        // Start Smooth Progress Engine
+        startProgressEngine(subtitle || 'Analyzing research topic and finding academic sources...');
     }
 
     // ---------------------------------------------------------------------------

@@ -1038,9 +1038,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (viewId === 'paper-editor-view') {
             document.body.classList.add('in-paper-editor');
+            document.body.classList.remove('in-progress-view');
+        } else if (viewId === 'paper-progress-view') {
+            document.body.classList.add('in-progress-view');
+            document.body.classList.remove('in-paper-editor');
         } else {
             document.body.classList.remove('in-paper-editor');
+            document.body.classList.remove('in-progress-view');
         }
+    }
+    window.showView = showView;
 
         // Update nav item active state
         navItems.forEach(n => n.classList.remove("active"));
