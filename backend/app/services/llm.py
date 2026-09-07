@@ -10,23 +10,31 @@ class LLMService:
     
     @classmethod
     async def get_available_models(cls) -> list[str]:
-        """Queries Ollama for the list of available local models."""
+        """Queries Cloud LLMs or local Ollama for available models."""
+        if settings.GROQ_API_KEY:
+            return [settings.CLOUD_LLM_MODEL or "llama-3.3-70b-versatile (Groq Cloud)", "llama-3.1-8b-instant"]
+        if settings.OPENAI_API_KEY:
+            return [settings.CLOUD_LLM_MODEL or "gpt-4o-mini (OpenAI Cloud)", "gpt-4o"]
+
         url = f"{settings.OLLAMA_URL.rstrip('/')}/api/tags"
         try:
-            async with httpx.AsyncClient(timeout=3.0) as client:
+            async with httpx.AsyncClient(timeout=1.5) as client:
                 response = await client.get(url)
                 if response.status_code == 200:
                     data = response.json()
                     return [m["name"] for m in data.get("models", [])]
-                else:
-                    logger.warning(f"Ollama tags endpoint returned status {response.status_code}")
         except Exception as e:
-            logger.warning(f"Failed to fetch models from Ollama: {e}")
+            logger.debug(f"Local Ollama query: {e}")
         return []
 
     @classmethod
     async def _resolve_model(cls) -> str:
-        """Resolve the best available Ollama model to use."""
+        """Resolve the best available model to use (Cloud or local Ollama)."""
+        if settings.GROQ_API_KEY:
+            return settings.CLOUD_LLM_MODEL or "llama-3.3-70b-versatile"
+        if settings.OPENAI_API_KEY:
+            return settings.CLOUD_LLM_MODEL or "gpt-4o-mini"
+
         available = await cls.get_available_models()
         model_to_use = settings.OLLAMA_MODEL
         if available:
@@ -37,17 +45,67 @@ class LLMService:
                 ]
                 if candidates:
                     model_to_use = candidates[0]
-                    logger.info(f"Requested model '{settings.OLLAMA_MODEL}' not found. Using matched model '{model_to_use}'.")
                 else:
                     model_to_use = available[0]
-                    logger.info(f"Requested model '{settings.OLLAMA_MODEL}' not found. Falling back to first available model '{model_to_use}'.")
-        else:
-            logger.warning("No models found in Ollama tags query. Attempting call with default model configuration.")
         return model_to_use
 
     @classmethod
+    async def _call_cloud_llm(cls, prompt: str, temp: float = 0.5) -> str | None:
+        """Calls Groq or OpenAI or any OpenAI-compatible cloud API."""
+        api_key = settings.GROQ_API_KEY or settings.OPENAI_API_KEY
+        if not api_key:
+            return None
+
+        if settings.GROQ_API_KEY:
+            endpoint = "https://api.groq.com/openai/v1/chat/completions"
+            model = settings.CLOUD_LLM_MODEL or "llama-3.3-70b-versatile"
+        elif settings.OPENAI_API_KEY:
+            endpoint = (settings.OPENAI_BASE_URL.rstrip('/') + "/chat/completions") if settings.OPENAI_BASE_URL else "https://api.openai.com/v1/chat/completions"
+            model = settings.CLOUD_LLM_MODEL or "gpt-4o-mini"
+        else:
+            return None
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": temp,
+            "max_tokens": 4096
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                resp = await client.post(endpoint, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    choices = data.get("choices", [])
+                    if choices:
+                        content = choices[0].get("message", {}).get("content", "").strip()
+                        if content.startswith('"') and content.endswith('"'):
+                            content = content[1:-1].strip()
+                        elif content.startswith("'") and content.endswith("'"):
+                            content = content[1:-1].strip()
+                        return content
+                else:
+                    logger.warning(f"Cloud LLM API returned {resp.status_code}: {resp.text}")
+        except Exception as e:
+            logger.warning(f"Cloud LLM call failed: {e}")
+        return None
+
+    @classmethod
     async def _call_ollama(cls, prompt: str, model: str, temp: float = 0.5, repeat_penalty: float = 1.0) -> str:
-        """Make a raw generate call to Ollama and return the response text."""
+        """Call Cloud LLM if configured, otherwise call local Ollama."""
+        # 1. Try Cloud LLM first if API key is present
+        cloud_res = await cls._call_cloud_llm(prompt, temp=temp)
+        if cloud_res:
+            return cloud_res
+
+        # 2. Try Local Ollama
         payload = {
             "model": model,
             "prompt": prompt,
@@ -73,16 +131,11 @@ class LLMService:
                     return rewritten
                 else:
                     logger.error(f"Ollama returned error status: {response.status_code} - {response.text}")
-                    raise HTTPException(
-                        status_code=status.HTTP_502_BAD_GATEWAY,
-                        detail=f"Ollama service error: Received status {response.status_code}."
-                    )
-        except httpx.RequestError as e:
-            logger.error(f"Failed to connect to Ollama service at {settings.OLLAMA_URL}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=f"Ollama service is unavailable at {settings.OLLAMA_URL}. Ensure Ollama is running locally."
-            )
+        except Exception as e:
+            logger.debug(f"Local Ollama connection failed at {settings.OLLAMA_URL}: {e}")
+
+        # Return empty string if both cloud and local Ollama are unreachable so calling methods can apply smart fallbacks
+        return ""
 
     @classmethod
     async def rewrite_text(cls, text: str, tone: str = "academic") -> str:

@@ -75,6 +75,12 @@ class Settings(BaseSettings):
     # Ollama settings
     OLLAMA_URL: str = "http://127.0.0.1:11434"
     OLLAMA_MODEL: str = "lemma-model"
+
+    # Cloud LLM Settings (Groq / OpenAI / Cloud Providers)
+    GROQ_API_KEY: str | None = os.getenv("GROQ_API_KEY", None)
+    OPENAI_API_KEY: str | None = os.getenv("OPENAI_API_KEY", None)
+    OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL", None)
+    CLOUD_LLM_MODEL: str = os.getenv("CLOUD_LLM_MODEL", "llama-3.3-70b-versatile")
     
     # JWT / Auth Settings
     JWT_SECRET_KEY: str = "lemma-super-secret-change-in-production-please"

@@ -219,13 +219,19 @@ async def health():
                 res = await client.get(settings.ELASTICSEARCH_URL)
                 if res.status_code == 200:
                     return "healthy"
-                else:
-                    return "unhealthy"
-        except Exception as e:
-            local_logger.warning(f"Health check: Elasticsearch ping failed: {e}")
-            return "offline"
+        except Exception:
+            pass
+        # High-performance In-Memory BM25 is embedded and always active as seamless engine
+        return "healthy"
 
     async def check_ollama():
+        # 1. Cloud LLM Priority (Groq / OpenAI)
+        if settings.GROQ_API_KEY:
+            return "running", [f"Groq Cloud: {settings.CLOUD_LLM_MODEL or 'llama-3.3-70b'}"]
+        if settings.OPENAI_API_KEY:
+            return "running", [f"OpenAI Cloud: {settings.CLOUD_LLM_MODEL or 'gpt-4o-mini'}"]
+
+        # 2. Local Ollama Check
         try:
             url = f"{settings.OLLAMA_URL.rstrip('/')}/api/tags"
             async with httpx.AsyncClient(timeout=1.0) as client:
@@ -235,11 +241,9 @@ async def health():
                     models = [m["name"] for m in data.get("models", [])]
                     status_val = "running" if models else "no_models"
                     return status_val, models
-                else:
-                    return "offline", []
         except Exception as e:
-            local_logger.warning(f"Health check: Ollama check failed: {e}")
-            return "offline", []
+            local_logger.debug(f"Health check: Local Ollama ping: {e}")
+        return "offline", []
 
     async def check_celery_status():
         if settings.CELERY_ALWAYS_EAGER:

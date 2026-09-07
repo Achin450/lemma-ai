@@ -174,11 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const healthData = await response.json();
                 const services = healthData.services || {};
 
-                // 1. Ollama status
+                // 1. Ollama / Cloud AI Engine status
                 const ollama = services.ollama || {};
                 if (ollama.status === "running") {
                     hOllama.className = "health-item online-green";
-                    hOllamaText.textContent = "Running";
+                    const firstModel = (ollama.models && ollama.models[0]) ? ollama.models[0].split(':')[0] : "Running";
+                    hOllamaText.textContent = firstModel.length > 22 ? "Online" : firstModel;
                 } else if (ollama.status === "no_models") {
                     hOllama.className = "health-item working-orange";
                     hOllamaText.textContent = "No Models";
@@ -187,11 +188,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     hOllamaText.textContent = "Offline";
                 }
 
-                // 2. Elasticsearch status
+                // 2. Elasticsearch / Lexical BM25 status
                 const es = services.elasticsearch || {};
                 if (es.status === "healthy") {
                     hEs.className = "health-item healthy-green";
-                    hEsText.textContent = "Healthy";
+                    hEsText.textContent = "Active";
                 } else if (es.status === "unhealthy") {
                     hEs.className = "health-item working-orange";
                     hEsText.textContent = "Degraded";
