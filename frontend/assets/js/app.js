@@ -231,8 +231,13 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             healthConsecutiveFailures++;
             console.warn(`Health check attempt ${healthConsecutiveFailures} failed:`, error);
-            // Only update UI to offline if 3 consecutive checks fail, to avoid false alarms during heavy computation
-            if (healthConsecutiveFailures >= 3) {
+            if (healthConsecutiveFailures >= 1 && healthConsecutiveFailures < 4) {
+                // Render cloud is likely waking up from 15-min idle spin-down
+                hOllama.className = "health-item working-orange"; hOllamaText.textContent = "Waking up...";
+                hEs.className = "health-item working-orange"; hEsText.textContent = "Waking up...";
+                hDb.className = "health-item working-orange"; hDbText.textContent = "Waking up...";
+                hCelery.className = "health-item working-orange"; hCeleryText.textContent = "Waking up...";
+            } else if (healthConsecutiveFailures >= 4) {
                 hOllama.className = "health-item offline-red"; hOllamaText.textContent = "Offline";
                 hEs.className = "health-item offline-red"; hEsText.textContent = "Offline";
                 hDb.className = "health-item offline-red"; hDbText.textContent = "Offline";
