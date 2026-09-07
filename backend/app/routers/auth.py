@@ -252,7 +252,6 @@ async def oauth_login(provider: str, req: Request):
             "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": "openid email profile",
-            "access_type": "offline",
             "prompt": "select_account",
         }
         url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
