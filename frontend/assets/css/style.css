@@ -3299,38 +3299,33 @@ body.in-progress-view .global-header {
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--card-radius);
-    padding: 1.25rem;
+    padding: 1.1rem;
     text-align: left;
     box-shadow: 0 12px 36px rgba(0,0,0,0.35);
     box-sizing: border-box;
     flex-shrink: 0;
-    height: 100%;
+    height: auto;
     max-height: 100%;
     margin: 0;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    overflow: visible;
     transition: all 0.4s ease;
 }
 
-#paper-progress-view .progress-view-card::-webkit-scrollbar {
-    width: 5px;
-}
-#paper-progress-view .progress-view-card::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
+#paper-progress-view .workspace-ad-box {
+    display: none !important;
 }
 
 #paper-progress-view .progress-view-header {
     text-align: center;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 #paper-progress-view .progress-view-header h2 {
-    font-size: 1.15rem;
-    margin-bottom: 0.25rem;
-    line-height: 1.3;
+    font-size: 1.1rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.25;
 }
 
 #paper-progress-view .progress-view-header p {
@@ -3339,21 +3334,21 @@ body.in-progress-view .global-header {
 }
 
 #paper-progress-view .progress-spinner {
-    width: 28px;
-    height: 28px;
-    margin: 0 auto 0.5rem;
+    width: 26px;
+    height: 26px;
+    margin: 0 auto 0.4rem;
 }
 
 #paper-progress-view .progress-track {
-    margin: 0.75rem 0 0.4rem;
+    margin: 0.6rem 0 0.3rem;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.65rem;
 }
 
 #paper-progress-view .progress-bar-outer {
     flex: 1;
-    height: 10px;
+    height: 9px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 999px;
     overflow: hidden;
@@ -3371,43 +3366,42 @@ body.in-progress-view .global-header {
 }
 
 #paper-progress-view .progress-pct-text {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 700;
     font-family: monospace;
     color: #a5b4fc;
-    min-width: 40px;
+    min-width: 38px;
     text-align: right;
 }
 
 #paper-progress-view .progress-step-display {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.6rem;
     min-height: 1.2em;
-    line-height: 1.35;
+    line-height: 1.3;
 }
 
 #paper-progress-view .progress-stages {
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
-    padding: 0.75rem 0;
+    gap: 0.35rem;
+    padding: 0.5rem 0;
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     width: 100%;
-    flex-grow: 1;
-    overflow-y: auto;
-    scrollbar-width: thin;
+    flex-shrink: 0;
+    overflow: visible !important;
 }
 
 #paper-progress-view .progress-stage {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.65rem;
-    font-size: 0.8rem;
+    gap: 0.55rem;
+    font-size: 0.78rem;
     color: #64748b;
-    padding: 0.3rem 0.45rem;
+    padding: 0.22rem 0.4rem;
     border-radius: 6px;
     transition: all 0.2s ease;
 }

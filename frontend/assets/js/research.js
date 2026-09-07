@@ -530,6 +530,38 @@
             { dept: 'Dept. of Information Intelligence', org: 'Lemma AI Research Laboratory', loc: 'San Francisco, USA', email: 'author3@lemma.ai' }
         ];
 
+        const initialSections = [
+            { num: 'I', title: 'INTRODUCTION' },
+            { num: 'II', title: 'RELATED WORK & LITERATURE TAXONOMY' },
+            { num: 'III', title: 'SYSTEM ARCHITECTURE & PROPOSED METHODOLOGY' },
+            { num: 'IV', title: 'EXPERIMENTAL DESIGN & BENCHMARK DATASETS' },
+            { num: 'V', title: 'QUANTITATIVE RESULTS & PERFORMANCE EVALUATION' },
+            { num: 'VI', title: 'DISCUSSION, ABLATION & SENSITIVITY' },
+            { num: 'VII', title: 'CONCLUSION & FUTURE RESEARCH DIRECTIONS' }
+        ];
+
+        let sectionsHtml = '';
+        initialSections.forEach((s, idx) => {
+            const isFirst = idx === 0;
+            sectionsHtml += `
+                <div class="paper-section-preview ${isFirst ? 'section-writing-active' : ''}" id="live-sec-${s.num}">
+                    <h2 class="paper-section-heading-preview">
+                        ${s.num}. ${s.title}
+                        <span class="sec-status-badge" id="sec-badge-${s.num}">
+                            ${isFirst ? '<span class="writing-active-badge"><span class="live-pulsing-dot"></span> Synthesizing &amp; Typing...</span>' : '<span class="pending-sec-badge">[Queued in outline]</span>'}
+                        </span>
+                    </h2>
+                    <div class="paper-section-content-preview" id="live-sec-content-${s.num}">
+                        <div class="skeleton-text-block">
+                            <div class="skeleton-text-line" style="width: 95%;"></div>
+                            <div class="skeleton-text-line" style="width: 82%;"></div>
+                            <div class="skeleton-text-line" style="width: 88%;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
         let html = `
             <div class="paper-journal-meta">IEEE TRANSACTIONS ON COMPUTATIONAL INTELLIGENCE &amp; DATA RESEARCH — OFFICIAL CONFERENCE TEMPLATE</div>
             <h1 class="paper-title-preview" id="live-paper-title">${escHtml(topic || 'Synthesizing Research Topic...')}</h1>
@@ -549,15 +581,27 @@
         }
 
         html += `</div>
-            <div class="paper-abstract-preview" id="live-abstract-block" style="display: none;"></div>
-            <div class="paper-keywords-preview" id="live-keywords-block" style="display: none;"></div>
+            <div class="paper-abstract-preview" id="live-abstract-block">
+                <span class="ieee-run-in">Abstract—</span>This investigation addresses foundational and practical methodologies in the systematic formulation of ${escHtml(topic)}. By synthesizing recent academic literature and theoretical frameworks, we evaluate operational benchmarks, algorithmic constraints, and systemic performance bounds across distributed computational environments.
+            </div>
+            <div class="paper-keywords-preview" id="live-keywords-block">
+                <span class="ieee-run-in">Index Terms—</span>${escHtml(topic)}, machine learning architectures, algorithmic optimization, empirical benchmarking, performance bounds.
+            </div>
             <div class="paper-two-column-body" id="live-paper-two-col">
-                <div id="live-sections-stream"></div>
+                <div id="live-sections-stream">${sectionsHtml}</div>
                 <div class="paper-section-preview" id="live-references-block" style="display: none;"></div>
             </div>
         `;
 
         inner.innerHTML = html;
+
+        // Immediately start typewriter stream in Section I
+        const firstContentEl = document.getElementById('live-sec-content-I');
+        if (firstContentEl) {
+            firstContentEl.setAttribute('data-streaming', 'true');
+            const introDraft = generateSectionDraftText('I', 'INTRODUCTION', topic);
+            queueTyping(firstContentEl, introDraft);
+        }
     }
 
     function updateLivePaperPreview(paper, step, pct) {
@@ -731,10 +775,10 @@
                 const diff = progressEngine.targetPct - progressEngine.currentPct;
                 const increment = Math.max(0.2, diff * 0.12);
                 progressEngine.currentPct = Math.min(progressEngine.targetPct, progressEngine.currentPct + increment);
-            } else if (progressEngine.currentPct < 96 && (now - lastCreepTime > 800)) {
+            } else if (progressEngine.currentPct < 96 && (now - lastCreepTime > 600)) {
                 // Micro-advance so progress is never perceived as frozen while waiting for LLM
                 lastCreepTime = now;
-                const creepCeiling = Math.min(96, progressEngine.targetPct + 7);
+                const creepCeiling = Math.min(96, Math.max(progressEngine.targetPct + 12, progressEngine.currentPct + 1.2));
                 if (progressEngine.currentPct < creepCeiling) {
                     progressEngine.currentPct = Math.min(creepCeiling, progressEngine.currentPct + 0.35);
                 }
@@ -755,6 +799,8 @@
         }
         if (step && typeof step === 'string' && step.trim()) {
             progressEngine.currentStep = step;
+            const stepText = document.getElementById('progress-step-text');
+            if (stepText) stepText.textContent = step;
         }
     }
 
