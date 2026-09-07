@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const response = await fetch(API_HEALTH_URL, { signal: AbortSignal.timeout(10000) });
+            const response = await fetch(API_HEALTH_URL, { signal: AbortSignal.timeout(35000) });
             if (response.ok) {
                 healthConsecutiveFailures = 0;
                 const healthData = await response.json();
