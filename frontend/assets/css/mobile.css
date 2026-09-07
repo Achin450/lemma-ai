@@ -193,6 +193,10 @@ body {
         gap: 0.5rem !important;
     }
 
+    .paper-two-column-body {
+        column-count: 1 !important;
+    }
+
     .paper-editor-header {
         padding: 0.5rem 1rem !important;
         height: auto !important;

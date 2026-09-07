@@ -894,12 +894,12 @@
             const authorName = authors[i] || `Author ${i+1}`;
             const aff = defaultAffils[i];
             html += `
-                <div class="paper-author-card">
-                    <div class="author-name">${escHtml(authorName)}</div>
-                    <div class="author-dept">${aff.dept}</div>
-                    <div class="author-org">(${aff.org})</div>
-                    <div class="author-loc">${aff.loc}</div>
-                    <div class="author-email">${aff.email}</div>
+                <div class="paper-author-card" data-author-idx="${i}">
+                    <div class="author-name author-name-editable">${escHtml(authorName)}</div>
+                    <div class="author-dept author-field-editable">${aff.dept}</div>
+                    <div class="author-org author-field-editable">(${aff.org})</div>
+                    <div class="author-loc author-field-editable">${aff.loc}</div>
+                    <div class="author-email author-field-editable">${aff.email}</div>
                 </div>`;
         }
         html += `</div>`;
@@ -908,16 +908,17 @@
         html += `<div class="paper-two-column-body">`;
 
         // Abstract (Left column start)
-        if (paper.abstract) {
+        if (paper.abstract !== undefined && paper.abstract !== null) {
             html += `<div class="paper-abstract-preview" id="section-abstract">
-                <span class="ieee-run-in">Abstract—</span><span class="abstract-content-editable" id="paper-editable-abstract">${escHtml(paper.abstract)}</span>
+                <span class="ieee-run-in">Abstract—</span><span class="abstract-content-editable" id="paper-editable-abstract">${escHtml(paper.abstract || '')}</span>
             </div>`;
         }
 
         // Keywords / Index Terms
-        if (paper.keywords && paper.keywords.length) {
+        if (paper.keywords) {
+            const kwStr = Array.isArray(paper.keywords) ? paper.keywords.join(', ') : (paper.keywords || '');
             html += `<div class="paper-keywords-preview">
-                <span class="ieee-run-in">Index Terms—</span><span class="keywords-content-editable" id="paper-editable-keywords">${escHtml(paper.keywords.join(', '))}</span>
+                <span class="ieee-run-in">Index Terms—</span><span class="keywords-content-editable" id="paper-editable-keywords">${escHtml(kwStr)}</span>
             </div>`;
         }
 
@@ -930,14 +931,19 @@
             html += `<div class="paper-section-preview" id="section-${sec.number}" data-sec-idx="${idx}">
                 <h2 class="paper-section-heading-preview">
                     <span class="sec-num-label">${escHtml(sec.number)}. </span>
-                    <span class="sec-title-editable">${escHtml(sec.title.toUpperCase())}</span>
+                    <span class="sec-title-editable">${escHtml((sec.title || '').toUpperCase())}</span>
                     ${simLabel}
                 </h2>
-                <div class="paper-section-content-preview sec-content-editable">${formatContent(sec.content)}</div>`;
+                <div class="paper-section-content-preview sec-content-editable">${formatContent(sec.content || '')}</div>`;
 
-            (sec.subsections || []).forEach(sub => {
-                html += `<h3 class="paper-subsection-heading-preview"><i>${escHtml(sub.label)}. ${escHtml(sub.title)}</i></h3>
-                    <div class="paper-section-content-preview">${formatContent(sub.content)}</div>`;
+            (sec.subsections || []).forEach((sub, subIdx) => {
+                html += `<div class="paper-subsection-wrapper" data-sub-idx="${subIdx}">
+                    <h3 class="paper-subsection-heading-preview">
+                        <span class="sub-num-label"><i>${escHtml(sub.label)}. </i></span>
+                        <span class="sub-title-editable"><i>${escHtml(sub.title || '')}</i></span>
+                    </h3>
+                    <div class="paper-section-content-preview sub-content-editable">${formatContent(sub.content || '')}</div>
+                </div>`;
             });
 
             html += `</div>`;
@@ -948,9 +954,9 @@
             html += `<div class="paper-section-preview" id="section-references">
                 <h2 class="paper-section-heading-preview">REFERENCES</h2>
                 <div class="paper-references-list">`;
-            paper.citations.forEach(cit => {
+            paper.citations.forEach((cit, citIdx) => {
                 const refStr = buildRefString(cit);
-                html += `<p class="paper-ref-preview" id="ref-${cit.number}">${escHtml(refStr)}</p>`;
+                html += `<p class="paper-ref-preview ref-item-editable" data-ref-idx="${citIdx}" id="ref-${cit.number}">${escHtml(refStr)}</p>`;
             });
             html += `</div></div>`;
         }
@@ -1103,19 +1109,34 @@
         const titleEl = document.getElementById('paper-editable-title');
         const abstractEl = document.getElementById('paper-editable-abstract');
         const keywordsEl = document.getElementById('paper-editable-keywords');
+        const authorNames = document.querySelectorAll('.author-name-editable');
+        const authorFields = document.querySelectorAll('.author-field-editable');
         const secTitles = document.querySelectorAll('.sec-title-editable');
         const secContents = document.querySelectorAll('.sec-content-editable');
+        const subTitles = document.querySelectorAll('.sub-title-editable');
+        const subContents = document.querySelectorAll('.sub-content-editable');
+        const refItems = document.querySelectorAll('.ref-item-editable');
 
-        if (titleEl) titleEl.contentEditable = active ? "true" : "false";
-        if (abstractEl) abstractEl.contentEditable = active ? "true" : "false";
-        if (keywordsEl) keywordsEl.contentEditable = active ? "true" : "false";
+        const targets = [
+            titleEl,
+            abstractEl,
+            keywordsEl,
+            ...authorNames,
+            ...authorFields,
+            ...secTitles,
+            ...secContents,
+            ...subTitles,
+            ...subContents,
+            ...refItems
+        ].filter(Boolean);
 
-        secTitles.forEach(el => el.contentEditable = active ? "true" : "false");
-        secContents.forEach(el => el.contentEditable = active ? "true" : "false");
+        targets.forEach(el => {
+            el.contentEditable = active ? "true" : "false";
+        });
 
         if (active && titleEl) {
             titleEl.focus();
-            showToast('Editing mode active. Click any text to edit.', 'info');
+            showToast('Editing mode active. Click any section, heading, or paragraph to edit.', 'info');
         }
     }
 
@@ -1139,7 +1160,28 @@
                 ? keywordsEl.innerText.split(',').map(k => k.trim()).filter(Boolean)
                 : state.currentPaper.keywords;
 
-            // Collect sections
+            // Authors
+            const authorNameEls = document.querySelectorAll('.author-name-editable');
+            const newAuthors = [];
+            if (authorNameEls.length) {
+                authorNameEls.forEach(el => {
+                    const name = el.innerText.trim();
+                    if (name) newAuthors.push(name);
+                });
+            }
+
+            // References
+            const refEls = document.querySelectorAll('.ref-item-editable');
+            if (refEls.length && state.currentPaper.citations) {
+                refEls.forEach(el => {
+                    const cIdx = parseInt(el.getAttribute('data-ref-idx'), 10);
+                    if (state.currentPaper.citations[cIdx]) {
+                        state.currentPaper.citations[cIdx].custom_text = el.innerText.trim();
+                    }
+                });
+            }
+
+            // Collect sections and subsections
             const secPreviews = document.querySelectorAll('.paper-section-preview[data-sec-idx]');
             const newSections = [];
 
@@ -1149,10 +1191,30 @@
                 const contentDiv = secEl.querySelector('.sec-content-editable');
 
                 const origSec = (state.currentPaper.sections || [])[idx] || {};
+
+                // Subsections inside this section
+                const subWrappers = secEl.querySelectorAll('.paper-subsection-wrapper');
+                let newSubsections = [];
+                if (subWrappers.length) {
+                    subWrappers.forEach((subEl, sIdx) => {
+                        const origSub = (origSec.subsections || [])[sIdx] || {};
+                        const subTitleSpan = subEl.querySelector('.sub-title-editable');
+                        const subContentDiv = subEl.querySelector('.sub-content-editable');
+                        newSubsections.push({
+                            label: origSub.label || String.fromCharCode(65 + sIdx),
+                            title: subTitleSpan ? subTitleSpan.innerText.trim() : (origSub.title || ''),
+                            content: subContentDiv ? subContentDiv.innerText.trim() : (origSub.content || '')
+                        });
+                    });
+                } else if (origSec.subsections && origSec.subsections.length) {
+                    newSubsections = origSec.subsections;
+                }
+
                 newSections.push({
                     number: origSec.number || `SECTION_${idx+1}`,
                     title: titleSpan ? titleSpan.innerText.trim() : origSec.title,
-                    content: contentDiv ? contentDiv.innerText.trim() : origSec.content
+                    content: contentDiv ? contentDiv.innerText.trim() : (origSec.content || ''),
+                    subsections: newSubsections
                 });
             });
 
@@ -1160,6 +1222,7 @@
                 title: newTitle,
                 abstract: newAbstract,
                 keywords: newKeywords,
+                authors: newAuthors.length ? newAuthors : undefined,
                 sections: newSections.length ? newSections : undefined
             };
 
@@ -1175,6 +1238,19 @@
             }
 
             const updated = await res.json();
+
+            // Sync updated paper with client state (preserve subsections if backend didn't echo them)
+            if (payload.sections && updated.sections) {
+                updated.sections.forEach((s, i) => {
+                    if (payload.sections[i] && payload.sections[i].subsections && (!s.subsections || !s.subsections.length)) {
+                        s.subsections = payload.sections[i].subsections;
+                    }
+                });
+            }
+            if (state.currentPaper.citations) {
+                updated.citations = state.currentPaper.citations;
+            }
+
             state.currentPaper = updated;
 
             // Update header title in workspace
@@ -1182,6 +1258,7 @@
             if (topTitle) topTitle.textContent = updated.title || 'Research Paper';
 
             setEditMode(false);
+            renderPaperContent(state.currentPaper);
             showToast('Paper changes saved successfully! Ready to export.', 'success');
 
         } catch (e) {
@@ -1851,7 +1928,9 @@
     }
 
     function buildRefString(cit) {
-        if (!cit || !cit.source) return '';
+        if (!cit) return '';
+        if (cit.custom_text) return cit.custom_text;
+        if (!cit.source) return cit.text || '';
         const src = cit.source;
         const authors = (src.authors || []);
         let authorStr = 'Author(s) unknown';

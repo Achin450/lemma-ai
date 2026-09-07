@@ -417,12 +417,15 @@ async def update_paper(
                     sec.content = s_update.content.strip()
                 if s_update.number is not None:
                     sec.number = s_update.number.strip()
+                if s_update.subsections is not None:
+                    sec.subsections = s_update.subsections
                 new_sections.append(sec)
             else:
                 new_sec = PaperSection(
                     number=s_update.number or f"SECTION_{i+1}",
                     title=s_update.title or f"SECTION {i+1}",
-                    content=s_update.content or ""
+                    content=s_update.content or "",
+                    subsections=s_update.subsections or []
                 )
                 new_sections.append(new_sec)
         paper.sections = new_sections

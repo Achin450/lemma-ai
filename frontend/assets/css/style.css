@@ -4036,7 +4036,7 @@ body.in-paper-editor .main-content {
 
 .paper-section-preview {
     margin-bottom: 1.25rem;
-    break-inside: auto;
+    break-inside: avoid-column;
 }
 
 .paper-section-heading-preview {
@@ -5391,8 +5391,17 @@ body.in-paper-editor .main-content {
 }
 
 /* Editable element styling inside paper */
+.paper-preview-inner.editing-active .paper-two-column-body {
+    column-count: 1 !important;
+}
+
+.paper-preview-inner.editing-active a {
+    pointer-events: none !important;
+    cursor: text !important;
+}
+
 .paper-preview-inner.editing-active [contenteditable="true"] {
-    outline: 1px dashed rgba(99, 102, 241, 0.4);
+    outline: 1px dashed rgba(99, 102, 241, 0.45);
     border-radius: 4px;
     padding: 2px 4px;
     transition: all 0.15s ease;
@@ -5400,7 +5409,7 @@ body.in-paper-editor .main-content {
 }
 
 .paper-preview-inner.editing-active [contenteditable="true"]:hover {
-    outline: 1.5px solid rgba(99, 102, 241, 0.7);
+    outline: 1.5px solid rgba(99, 102, 241, 0.75);
     background: rgba(99, 102, 241, 0.05);
 }
 
@@ -5408,6 +5417,38 @@ body.in-paper-editor .main-content {
     outline: 2px solid #818cf8 !important;
     background: rgba(99, 102, 241, 0.08) !important;
     box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
+}
+
+.paper-preview-inner.editing-active .sec-content-editable,
+.paper-preview-inner.editing-active .sub-content-editable {
+    min-height: 28px;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.paper-preview-inner.editing-active .sec-content-editable:empty::before,
+.paper-preview-inner.editing-active .sub-content-editable:empty::before {
+    content: "Click to edit or add content...";
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.paper-preview-inner.editing-active .abstract-content-editable,
+.paper-preview-inner.editing-active .keywords-content-editable {
+    display: inline-block;
+    min-width: 120px;
+}
+
+.paper-preview-inner.editing-active .sub-title-editable,
+.paper-preview-inner.editing-active .sec-title-editable {
+    display: inline-block;
+    min-width: 60px;
+}
+
+.paper-preview-inner.editing-active .author-name-editable,
+.paper-preview-inner.editing-active .author-field-editable {
+    min-width: 50px;
+    display: inline-block;
 }
 
 /* ==========================================================================

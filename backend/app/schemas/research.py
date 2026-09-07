@@ -233,6 +233,7 @@ class PaperSectionUpdate(BaseModel):
     number: Optional[str] = None
     title: Optional[str] = None
     content: Optional[str] = None
+    subsections: Optional[List[PaperSubsection]] = None
 
 
 class PaperUpdateRequest(BaseModel):
