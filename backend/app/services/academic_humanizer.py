@@ -125,6 +125,11 @@ class AcademicHumanizerService:
             if not p_strip:
                 continue
 
+            # Preserve Markdown tables and table captions intact without mangling newlines or columns
+            if ("|" in p_strip and ("---" in p_strip or ":---" in p_strip)) or p_strip.startswith("|") or p_strip.startswith("TABLE ") or p_strip.startswith("Table "):
+                humanized_paragraphs.append(p_strip)
+                continue
+
             # Split into sentences while keeping punctuation
             sentences = re.split(r'(?<=[.!?])\s+', p_strip)
             if len(sentences) >= 4:

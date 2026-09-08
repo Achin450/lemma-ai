@@ -421,20 +421,31 @@
     function generateSectionDraftText(secNum, secTitle, paperTitle) {
         const t = (secTitle || '').toLowerCase();
         const p = paperTitle || 'the designated research topic';
+        const profile = typeof resolveDomainProfile === 'function' ? resolveDomainProfile(p) : null;
+        const domainName = profile ? profile.domain_name : 'Applied Science & Engineering';
+
         if (t.includes('intro')) {
-            return `Recent advances in artificial intelligence, computational modeling, and distributed representations have introduced substantial opportunities for scalable domain-specific optimization. In this paper, we systematically analyze the architectural dynamics of ${p}, focusing on fundamental trade-offs between computational overhead and representation fidelity.\n\nPrior literature has largely addressed these challenges under idealized conditions; however, empirical observations indicate that operational boundary variations degrade performance. To address these limitations, this research introduces an adaptive methodological pipeline capable of robust inference across high-dimensional parameter spaces.`;
+            return `Recent advances in ${domainName.toLowerCase()} have introduced substantial opportunities for scalable domain-specific optimization. In this paper, we systematically analyze the systemic dynamics of ${p}, focusing on fundamental trade-offs between operational overhead and representation fidelity.\n\nPrior literature has largely addressed these challenges under idealized conditions; however, empirical observations indicate that operational boundary variations degrade real-world performance. To address these limitations, this research introduces an adaptive methodological pipeline capable of robust inference across high-dimensional parameter spaces.`;
         }
         if (t.includes('relat') || t.includes('literat') || t.includes('prior') || t.includes('back')) {
-            return `Foundational contributions in this research domain have established baseline theoretical bounds across classical and connectionist models [1]. Early formulations demonstrated that statistical regularization stabilizes gradient propagation [2], though scalability remained constrained under high-dimensional topologies.\n\nSubsequent neural paradigms demonstrated improved feature representation [3], yet frequently required prohibitive parameter footprints and extensive memory footprints. Our proposed approach bridges these two regimes by synthesizing sparse projection operators with localized attention manifolds [4].`;
+            const t1 = profile && profile.table_1 ? `\n\nTABLE I. TAXONOMIC & ARCHITECTURAL COMPARISON OF PRECEDING METHODOLOGIES\n${profile.table_1}` : '';
+            return `Foundational contributions in this research domain have established baseline theoretical bounds across classical and contemporary formulations [1]. Early studies demonstrated that structured regularization stabilizes behavioral dynamics [2], though scalability remained constrained under high-dimensional topologies.\n\nSubsequent paradigms demonstrated improved feature representation [3], yet frequently required prohibitive parameter footprints and elevated computational complexity. Our proposed approach bridges these two regimes by synthesizing sparse projection operators with localized attention manifolds [4].${t1}`;
         }
         if (t.includes('method') || t.includes('theor') || t.includes('system') || t.includes('arch') || t.includes('prop')) {
-            return `We formalize the underlying optimization objective through a constrained manifold projection formulation. Let $X \\in \\mathbb{R}^{B \\times d}$ denote the input feature space and $W$ parameterize the latent representation. The objective function balances empirical loss minimization with structural complexity penalties:\n\n$$\\min_{\\theta} \\; \\mathcal{L}_{\\text{empirical}}(\\theta; X) + \\lambda \\, \\|\\theta\\|_2^2 \\quad (1)$$\n\nThrough iterative gradient formulation, the convergence rate satisfies $\\mathcal{O}(1/\\sqrt{K})$ under standard Lipschitz smoothness conditions, ensuring monotonic objective descent across diverse training regimes.`;
+            if (profile && profile.needs_equations && profile.equations && profile.equations.length) {
+                const eq1 = profile.equations[0];
+                const eq2 = profile.equations.length > 1 ? profile.equations[1] : '';
+                return `We formalize the underlying optimization objective through a constrained manifold projection formulation. Let $X \\in \\mathbb{R}^{B \\times d}$ denote the input feature space and $W$ parameterize the latent representation. The objective function balances empirical loss minimization with domain-specific regularization bounds:\n\n$$${eq1}$$\n\nThrough iterative gradient formulation, the convergence rate satisfies $\\mathcal{O}(1/\\sqrt{K})$ under standard Lipschitz smoothness conditions, ensuring monotonic objective descent across diverse training regimes.\n\n$$${eq2}$$\n\nAnalytical derivation confirms that asymptotic bounds remain uniform even under stochastic operational noise.`;
+            } else {
+                return `We establish a comprehensive analytical and procedural framework for ${p}. Rather than imposing idealized mathematical simplifications, this methodology systematically integrates empirical qualitative indicators, multi-stakeholder feedback, and longitudinal observational data.\n\nThe framework proceeds through three integrated phases: contextual baseline characterization, multi-factor interaction modeling, and translational outcome synthesis. Rigorous methodological triangulation ensures that nuanced operational subtleties and structural anomalies are preserved with high fidelity, establishing a reproducible foundation for empirical evaluation.`;
+            }
         }
         if (t.includes('result') || t.includes('evaluat') || t.includes('experim')) {
-            return `TABLE I. EMPIRICAL BENCHMARKING AND PERFORMANCE EVALUATION\n| Framework / Configuration | Accuracy (%) | F1-Score | Latency (ms) | Memory (MB) |\n| Classical Baseline [1] | 82.4% | 0.812 | 42.5 ms | 240 MB |\n| Deep Neural SOTA [3] | 90.1% | 0.894 | 34.8 ms | 510 MB |\n| Proposed Paradigm (Ours) | 97.4% | 0.971 | 18.2 ms | 310 MB |\n\nQuantitative benchmarking demonstrates that the proposed paradigm achieves a 7.3% accuracy increase over leading competitive baselines while reducing execution latency by 2.3x under identical compute hardware.`;
+            const t2 = profile && profile.table_2 ? `\n\nTABLE II. EMPIRICAL BENCHMARKING AND COMPARATIVE EVALUATION\n${profile.table_2}\n\n` : '\n\n';
+            return `Quantitative benchmarking demonstrates that the proposed paradigm achieves superior performance across all primary metrics in ${domainName}, outperforming leading competitive baselines with statistical significance (*p < 0.001).${t2}The observed gains confirm that the proposed architectural decoupling directly enhances stability and reduces latency across standardized evaluation environments.`;
         }
         if (t.includes('concl') || t.includes('future') || t.includes('disc')) {
-            return `In this paper, we introduced an end-to-end framework addressing critical scalability and representation constraints in ${p}. Through extensive empirical validation and theoretical derivation, we demonstrated that the proposed formulation achieves state-of-the-art accuracy while preserving computational tractability.\n\nFuture research will extend this paradigm toward real-time edge hardware deployments, exploring quantized representation models and federated optimization across distributed nodes.`;
+            return `In this paper, we introduced an end-to-end framework addressing critical scalability and representation constraints in ${p}. Through extensive empirical validation and theoretical derivation, we demonstrated that the proposed formulation achieves state-of-the-art performance while preserving computational tractability.\n\nFuture research will extend this paradigm toward real-time edge hardware deployments, exploring quantized representation models and federated optimization across distributed nodes.`;
         }
         return `In analyzing ${secTitle || 'the designated component'} within the scope of ${p}, we isolate core structural dependencies and evaluate parameter sensitivity across simulated operational domains. Empirical convergence trajectories confirm that the proposed formulation maintains numerical stability while suppressing stochastic variance under noisy inputs.`;
     }
@@ -689,7 +700,7 @@
                         if (!document.getElementById('live-fig-1') && (stUpper.includes('METHOD') || stUpper.includes('ARCHITECTURE') || stUpper.includes('DESIGN') || sec.number === 'IV' || sec.number === 'III')) {
                             const figBox = document.createElement('div');
                             figBox.id = 'live-fig-1';
-                            figBox.innerHTML = renderProfessionalArchFlowchart(paper.title);
+                            figBox.innerHTML = typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
                             secEl.appendChild(figBox);
                         }
 
@@ -697,7 +708,15 @@
                         if (!document.getElementById('live-fig-2') && (stUpper.includes('RESULT') || stUpper.includes('EVALUAT') || stUpper.includes('EXPERIMENT') || sec.number === 'VI' || sec.number === 'V')) {
                             const figBox = document.createElement('div');
                             figBox.id = 'live-fig-2';
-                            figBox.innerHTML = renderProfessionalBenchmarkChart(paper.title);
+                            figBox.innerHTML = typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
+                            secEl.appendChild(figBox);
+                        }
+
+                        // Attach Fig 3 (Convergence / Trajectory Chart) under Discussion / Ablation in live preview if not already present
+                        if (!document.getElementById('live-fig-3') && (stUpper.includes('DISCUSS') || stUpper.includes('ABLATION') || stUpper.includes('ANALYS') || stUpper.includes('LIMITATION') || sec.number === 'VII')) {
+                            const figBox = document.createElement('div');
+                            figBox.id = 'live-fig-3';
+                            figBox.innerHTML = typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
                             secEl.appendChild(figBox);
                         }
                     } else {
@@ -1139,6 +1158,7 @@
         // Sections (2-Column flow)
         let hasFig1 = false;
         let hasFig2 = false;
+        let hasFig3 = false;
         (paper.sections || []).forEach((sec, idx) => {
             const simLabel = sec.similarity_score !== null && sec.similarity_score !== undefined
                 ? `<span class="section-sim-indicator" style="color: ${scoreColor(sec.similarity_score)}; font-size: 0.75rem; font-weight: normal; margin-left: 8px;">(${Math.round(sec.similarity_score * 100)}% match)</span>`
@@ -1152,17 +1172,23 @@
                 </h2>
                 <div class="paper-section-content-preview sec-content-editable">${formatContent(sec.content || '')}</div>`;
 
-            // Insert Fig 1 (Black and White Professional Flowchart) in Methodology / Architecture section (once)
+            // Insert Fig 1 (Dynamic Domain Flowchart) in Methodology / Architecture section (once)
             const stUpper = (sec.title || '').toUpperCase();
             if (!hasFig1 && (stUpper.includes('METHOD') || stUpper.includes('ARCHITECTURE') || stUpper.includes('DESIGN') || sec.number === 'IV' || sec.number === 'III')) {
-                html += renderProfessionalArchFlowchart(paper.title);
+                html += typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
                 hasFig1 = true;
             }
 
-            // Insert Fig 2 (Black and White Professional Benchmark Chart) in Results / Evaluation section (once)
+            // Insert Fig 2 (Dynamic Domain Benchmark Chart) in Results / Evaluation section (once)
             if (!hasFig2 && (stUpper.includes('RESULT') || stUpper.includes('EVALUAT') || stUpper.includes('EXPERIMENT') || sec.number === 'VI' || sec.number === 'V')) {
-                html += renderProfessionalBenchmarkChart(paper.title);
+                html += typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
                 hasFig2 = true;
+            }
+
+            // Insert Fig 3 (Dynamic Convergence / Ablation Chart) in Discussion / Ablation / Analysis section (once)
+            if (!hasFig3 && (stUpper.includes('DISCUSS') || stUpper.includes('ABLATION') || stUpper.includes('ANALYS') || stUpper.includes('LIMITATION') || sec.number === 'VII')) {
+                html += typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
+                hasFig3 = true;
             }
 
             (sec.subsections || []).forEach((sub, subIdx) => {
@@ -2528,8 +2554,390 @@
             .replace(/"/g, '&quot;');
     }
 
-    function renderProfessionalArchFlowchart(topic) {
-        const cleanTopic = escHtml(topic ? topic.replace(/^Generating:\s*["']?|["']?$/g, '') : 'Proposed Methodology');
+    // ---------------------------------------------------------------------------
+    // Academic Domain Knowledge Profiles (8 Domains)
+    // ---------------------------------------------------------------------------
+    const DOMAIN_PROFILES = {
+        cv_imaging: {
+            domain_name: "Computer Vision & Medical Imaging",
+            keywords: ["vision", "image", "segmentation", "detection", "yolo", "cnn", "convolution", "visual", "mri", "ct scan", "radiology", "optical", "depth", "super-resolution"],
+            needs_equations: true,
+            equations: [
+                "\\mathcal{L}_{\\text{total}} = \\lambda_1 \\mathcal{L}_{\\text{Focal}}(p, y) + \\lambda_2 \\mathcal{L}_{\\text{GIoU}}(b, \\hat{b}) + \\lambda_3 \\mathcal{L}_{\\text{mask}} \\quad (1)",
+                "\\text{GIoU}(A, B) = \\frac{|A \\cap B|}{|A \\cup B|} - \\frac{|C \\setminus (A \\cup B)|}{|C|}, \\quad C = \\text{Hull}(A \\cup B) \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "FEATURE PYRAMID & ATTENTIVE MASK DECODER (×L)",
+                bypass_label: "Cross-Scale Lateral & Residual Skip Connections",
+                stages: [
+                    { name: "Image Stream", sub1: "Input Tensors", sub2: "X ∈ ℝ^(H×W×3)" },
+                    { name: "ResNet / Swin", sub1: "Multi-Scale Backbone", sub2: "Stages C2–C5" },
+                    { name: "Feature Pyramid", sub1: "FPN Top-Down Path", sub2: "Lateral 1×1 Convs" },
+                    { name: "Task Heads", sub1: "Decoupled Dense", sub2: "BBox & Mask Logits" },
+                    { name: "Composite Loss", sub1: "Focal + GIoU", sub2: "Eq. (1) & (2)" },
+                    { name: "Output", sub1: "Dense Masks", sub2: "ŷ ∈ 𝒴" }
+                ]
+            },
+            benchmark_y_label: "Empirical mAP@50:95 (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "ResNet-50 FPN [1]", value: 78.4 },
+                { label: "Swin-Base [2]", value: 84.1 },
+                { label: "YOLOv8-X [3]", value: 87.9 },
+                { label: "SAM Foundation", value: 91.2 },
+                { label: "Proposed (Ours)", value: 96.8 }
+            ],
+            table_1: `| Architectural Component | Backbone / Receptive Field | Feature Fusion Mechanism | Inference FPS (RTX 4090) | Model Parameters (M) |
+| :--- | :--- | :--- | :--- | :--- |
+| Baseline DarkNet-53 | Convolutional (7x7, 3x3) | Concatenation Path | 62.4 FPS | 61.5M |
+| Swin-Transformer FPN | Shifted-Window Self-Attention | Cross-Scale Lateral Fusion | 38.2 FPS | 87.8M |
+| Mask2Former Refinement | Multi-Scale Deformable Attn | Pixel-Wise Mask Queries | 31.5 FPS | 94.2M |
+| Proposed Dual-Branch (Ours) | Adaptive Cross-Covariance Attn | Hierarchical Top-Down + Lateral | 74.8 FPS | 52.4M |`,
+            table_2: `| Evaluated Method | Precision (%) | Recall (%) | Mean IoU (%) | mAP@50:95 (%) | Latency (ms) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| Faster R-CNN (ResNet-101) | 81.2 | 79.6 | 72.8 | 44.2 | 48.2 ms |
+| YOLOv8-Large | 88.5 | 86.1 | 79.4 | 52.9 | 14.1 ms |
+| SegFormer-B4 | 90.1 | 89.4 | 82.6 | 55.7 | 28.6 ms |
+| SwinV2-L + HTC++ | 92.4 | 91.8 | 85.3 | 58.9 | 36.4 ms |
+| **Proposed Framework (Ours)** | **96.8** | **95.2** | **91.7** | **64.5** | **12.3 ms** |`
+        },
+
+        nlp_speech: {
+            domain_name: "Natural Language Processing & Speech",
+            keywords: ["language", "nlp", "llm", "transformer", "bert", "gpt", "text", "translation", "speech", "dialogue", "summarization", "sentiment", "token", "prompt", "corpus"],
+            needs_equations: true,
+            equations: [
+                "\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{Q K^\\top}{\\sqrt{d_k}} + M_{\\text{causal}}\\right) V \\quad (1)",
+                "\\mathcal{L}_{\\text{NLL}}(\\theta) = -\\sum_{t=1}^{T} \\log P_\\theta(w_t \\mid w_{<t}) + \\alpha \\cdot \\mathcal{D}_{\\text{KL}}(\\pi_\\theta \\parallel \\pi_{\\text{ref}}) \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "CAUSAL TRANSFORMER & LATENT REASONING CORE (×L)",
+                bypass_label: "Pre-LayerNorm & Residual Skip Connection",
+                stages: [
+                    { name: "Input Corpus", sub1: "BPE Token Stream", sub2: "x ∈ 𝒱^L" },
+                    { name: "Embedding", sub1: "Token + Rotary", sub2: "W_e + RoPE" },
+                    { name: "FlashAttention", sub1: "Multi-Head QKV", sub2: "Softmax(QKᵀ/√d)" },
+                    { name: "SwiGLU MLP", sub1: "Gated Feed-Forward", sub2: "Low-Rank Proj." },
+                    { name: "DPO Objective", sub1: "NLL + KL Penalty", sub2: "Eq. (1) & (2)" },
+                    { name: "Generated Text", sub1: "Nucleus Sampling", sub2: "w_t ∈ 𝒱" }
+                ]
+            },
+            benchmark_y_label: "Empirical ROUGE-L Score (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "RoBERTa-Large [1]", value: 81.3 },
+                { label: "T5-3B Seq2Seq [2]", value: 86.2 },
+                { label: "Llama-3 8B [3]", value: 89.7 },
+                { label: "Mistral-Large", value: 92.4 },
+                { label: "Proposed (Ours)", value: 97.6 }
+            ],
+            table_1: `| Model Architecture | Context Window | Attention Variant | Activation Function | Total Parameters |
+| :--- | :--- | :--- | :--- | :--- |
+| BERT-Large Uncased | 512 tokens | Full Bi-directional Attn | GeLU | 340M |
+| LLaMA-2 7B Baseline | 4,096 tokens | Multi-Query Attn (MQA) | SwiGLU | 6.7B |
+| Mistral 7B Instruct | 8,192 tokens | Sliding Window Attn (SWA) | SwiGLU | 7.2B |
+| Proposed Context Engine (Ours) | 32,768 tokens | Recurrent Chunked FlashAttn | Dynamic SwiGLU | 4.8B |`,
+            table_2: `| Model Variant | BLEU-4 Score | ROUGE-1 / ROUGE-L | Perplexity (↓) | TruthfulQA Accuracy (%) |
+| :--- | :--- | :--- | :--- | :--- |
+| GPT-2 Baseline XL | 31.4 | 42.1 / 38.6 | 18.42 | 48.2% |
+| T5-11B Pre-trained | 39.7 | 51.3 / 47.8 | 11.25 | 62.4% |
+| Falcon-7B Instruct | 42.6 | 54.8 / 50.9 | 8.64 | 69.1% |
+| Llama-3 8B Fine-Tuned | 45.2 | 58.2 / 54.3 | 6.81 | 75.8% |
+| **Proposed Framework (Ours)** | **49.8** | **64.6 / 61.2** | **4.92** | **84.3%** |`
+        },
+
+        robotics_control: {
+            domain_name: "Robotics, Control Systems & Autonomous Vehicles",
+            keywords: ["robot", "robotics", "autonomous", "vehicle", "control", "lidar", "trajectory", "kinematics", "dynamics", "quadrotor", "manipulator", "slam", "actuator", "drone", "motion"],
+            needs_equations: true,
+            equations: [
+                "\\dot{\\mathbf{x}}(t) = f(\\mathbf{x}(t), \\mathbf{u}(t)) + \\mathbf{w}(t), \\quad \\mathbf{y}(t) = h(\\mathbf{x}(t)) + \\mathbf{v}(t) \\quad (1)",
+                "J(\\mathbf{u}) = \\int_{0}^{T} \\left( \\mathbf{x}^\\top Q \\mathbf{x} + \\mathbf{u}^\\top R \\mathbf{u} + \\Delta \\mathbf{x}^\\top P_f \\Delta \\mathbf{x} \\right) dt \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "MODEL PREDICTIVE CONTROL & TRAJECTORY OPTIMIZER (×L)",
+                bypass_label: "Lyapunov Stability Guarantee V(x) < 0",
+                stages: [
+                    { name: "Perception Ingress", sub1: "LiDAR & IMU Feed", sub2: "p ∈ ℝ^(N×3)" },
+                    { name: "EKF SLAM", sub1: "State Estimator", sub2: "x̂(t), P(t)" },
+                    { name: "Cost Map", sub1: "Occupancy Grid", sub2: "Obstacle V-Field" },
+                    { name: "Nonlinear MPC", sub1: "Kinematic Solvers", sub2: "min J(u) s.t. Bounds" },
+                    { name: "Feedback Filter", sub1: "Tube Disturbance", sub2: "Eq. (1) & (2)" },
+                    { name: "Actuation", sub1: "Torque Setpoints", sub2: "u(t) ∈ 𝒰" }
+                ]
+            },
+            benchmark_y_label: "Trajectory Success Rate (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "PID Controller [1]", value: 74.2 },
+                { label: "Linear Quadratic LQR [2]", value: 82.6 },
+                { label: "MPPI Path Integral [3]", value: 88.4 },
+                { label: "PPO Deep RL", value: 91.5 },
+                { label: "Proposed Tube-MPC (Ours)", value: 98.1 }
+            ],
+            table_1: `| Control Architecture | Sampling Rate (Hz) | Computation Time (ms) | Disturbance Rejection Range | Stability Proof |
+| :--- | :--- | :--- | :--- | :--- |
+| Classical Multi-PID | 1000 Hz | 0.12 ms | Low (Linear Only) | Routh-Hurwitz |
+| Pure-Pursuit Geometric | 100 Hz | 1.84 ms | Moderate (Velocity Bound) | Geometric Bound |
+| Standard Nonlinear MPC | 50 Hz | 18.50 ms | High (Input Constrained) | Control Lyapunov Function |
+| Proposed Tube-MPC (Ours) | 200 Hz | 4.20 ms | Exceptional (Bounded Noise) | Strict Input-to-State Stability |`,
+            table_2: `| Trajectory Benchmark | Tracking RMSE (m) | Cross-Track Error (cm) | Settling Time (s) | Obstacle Avoidance (%) |
+| :--- | :--- | :--- | :--- | :--- |
+| Dynamic Bicycle Model | 0.284 m | 14.2 cm | 3.42 s | 84.6% |
+| Stanley Steering Controller | 0.198 m | 9.8 cm | 2.81 s | 89.1% |
+| MPPI (500 Trajectories) | 0.126 m | 6.1 cm | 1.94 s | 93.4% |
+| SAC-Continuous RL | 0.115 m | 5.4 cm | 1.82 s | 94.7% |
+| **Proposed Method (Ours)** | **0.042 m** | **1.9 cm** | **0.95 s** | **99.2%** |`
+        },
+
+        cybersec_crypto: {
+            domain_name: "Cybersecurity, Cryptography & Blockchain",
+            keywords: ["security", "malware", "blockchain", "cryptography", "intrusion", "attack", "vulnerability", "encryption", "smart contract", "zero-knowledge", "phishing", "ddos", "ransomware", "privacy", "consensus"],
+            needs_equations: true,
+            equations: [
+                "\\text{Proof}_{\\text{ZK}} = \\pi \\in \\mathbb{G} : e(A, B) = e(\\alpha, \\beta) \\cdot e(x \\cdot \\gamma, \\delta) \\cdot e(C, \\mu) \\quad (1)",
+                "\\text{Entropy}(S) = -\\sum_{i=1}^{n} P(e_i) \\log_2 P(e_i) \\ge \\tau_{\\text{anomaly}} \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "ZERO-KNOWLEDGE VERIFIER & ANOMALY INFERENCE (×L)",
+                bypass_label: "Byzantine Fault Tolerant (BFT) State Consensus",
+                stages: [
+                    { name: "Packet Feed", sub1: "eBPF Event Stream", sub2: "Ingress SysCalls" },
+                    { name: "Merkle Ingestion", sub1: "Nonce & Hashes", sub2: "Root H(R)" },
+                    { name: "zk-SNARK Verifier", sub1: "Pairing Equations", sub2: "Succinct Proof π" },
+                    { name: "Anomaly Engine", sub1: "Graph Embeddings", sub2: "Entropy Divergence" },
+                    { name: "Defense Policy", sub1: "Automated Rules", sub2: "Eq. (1) & (2)" },
+                    { name: "Mitigation", sub1: "Firewall Drop", sub2: "Clean State" }
+                ]
+            },
+            benchmark_y_label: "Threat Detection Rate (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "Snort 3.0 IDS [1]", value: 72.5 },
+                { label: "Random Forest [2]", value: 83.4 },
+                { label: "Graph Neural Net [3]", value: 89.1 },
+                { label: "Transformer Autoenc", value: 93.0 },
+                { label: "Proposed Zero-Trust (Ours)", value: 98.7 }
+            ],
+            table_1: `| Security Protocol | Cryptographic Primitive | Proof Size (Bytes) | Verification Time (ms) | Quantum Resistance |
+| :--- | :--- | :--- | :--- | :--- |
+| ECDSA (secp256k1) | Elliptic Curve DLP | 64 Bytes | 1.12 ms | Vulnerable (Shor's) |
+| Groth16 zk-SNARK | Pairing-Friendly Curves | 128 Bytes | 2.45 ms | Vulnerable |
+| STARK Lattice-Based | Merkle Trees & Hashes | 45.2 KB | 8.70 ms | Post-Quantum Secure |
+| Proposed Hyb-Shield (Ours) | Dilithium5 + Low-Rank SNARK | 4.2 KB | 3.10 ms | Post-Quantum Secure |`,
+            table_2: `| Attack Category | Baseline IDS (%) | Snort 3.0 (%) | DeepLog LSTM (%) | Proposed System (Ours) (%) |
+| :--- | :--- | :--- | :--- | :--- |
+| Distributed Denial of Service (DDoS) | 84.1% | 88.5% | 94.2% | **99.6%** |
+| Zero-Day Exploit Injections | 59.3% | 63.8% | 81.5% | **96.4%** |
+| Ransomware Lateral Movement | 71.6% | 76.2% | 87.9% | **98.2%** |
+| Smart Contract Reentrancy | 68.4% | 72.1% | 86.4% | **99.1%** |
+| **Overall F1-Score** | **70.8%** | **75.1%** | **87.5%** | **98.3%** |`
+        },
+
+        biomedical_clinical: {
+            domain_name: "Biomedical, Clinical Healthcare & Epidemiology",
+            keywords: ["patient", "clinical", "health", "hospital", "cancer", "disease", "drug", "medicine", "medical", "nursing", "pathology", "diagnosis", "therapy", "healthcare", "public health", "treatment"],
+            needs_equations: false, // STRICTLY NO EQUATIONS FOR CLINICAL HEALTHCARE
+            equations: [],
+            arch_flowchart: {
+                module_title: "CLINICAL DECISION SUPPORT & PHENOTYPING ENGINE",
+                bypass_label: "Physician & Specialist Concordance Verification Loop",
+                stages: [
+                    { name: "Patient Cohort", sub1: "EHR Data Ingestion", sub2: "Vitals & Labs" },
+                    { name: "De-identification", sub1: "HIPAA Scrubbing", sub2: "Clean Longitudinal" },
+                    { name: "Multi-Modal Phenotype", sub1: "Pathology & Genomic", sub2: "Clinical Notes" },
+                    { name: "Risk Stratifier", sub1: "Guideline Rules", sub2: "Prognostic Score" },
+                    { name: "Expert Review", sub1: "Consensus Panel", sub2: "Evidence Triangulation" },
+                    { name: "Intervention", sub1: "Targeted Therapy", sub2: "Patient Outcome" }
+                ]
+            },
+            benchmark_y_label: "Clinical Diagnostic Sensitivity (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "SOFA Clinical Score [1]", value: 75.8 },
+                { label: "Logistic Regression [2]", value: 81.2 },
+                { label: "Survival Forests [3]", value: 86.7 },
+                { label: "Deep Phenotyper", value: 91.3 },
+                { label: "Proposed Clinical AI (Ours)", value: 97.4 }
+            ],
+            table_1: `| Clinical Cohort Subgroup | Sample Size (N) | Age Median (IQR) | Baseline Comorbidity Index | Follow-up Duration |
+| :--- | :--- | :--- | :--- | :--- |
+| Control Cohort (Standard Care) | N = 4,250 | 58.4 (46–71) | Charlson Index 1.8 | 24 Months |
+| High-Risk Stratified Cohort | N = 1,840 | 66.2 (54–78) | Charlson Index 3.9 | 24 Months |
+| Prospective Validation Cohort | N = 1,120 | 61.7 (50–74) | Charlson Index 2.4 | 18 Months |
+| Full Multicenter Study (Total) | N = 7,210 | 61.2 (49–73) | Charlson Index 2.5 | 24 Months |`,
+            table_2: `| Diagnostic Criteria | Sensitivity (%) | Specificity (%) | Positive Predictive Value | Area Under ROC (AUROC) |
+| :--- | :--- | :--- | :--- | :--- |
+| Standard Clinical Triage | 73.4% | 71.8% | 68.2% | 0.761 |
+| APACHE-IV Scoring System | 81.6% | 79.5% | 74.3% | 0.834 |
+| Multimodal Gradient Boost | 87.2% | 85.9% | 81.6% | 0.895 |
+| Deep Clinical Phenotyping | 91.8% | 90.4% | 86.7% | 0.932 |
+| **Proposed Clinical Paradigm (Ours)** | **97.4%** | **96.1%** | **93.8%** | **0.981** |`
+        },
+
+        distributed_iot: {
+            domain_name: "Distributed Systems, Cloud & IoT",
+            keywords: ["distributed", "cloud", "iot", "sensor", "latency", "throughput", "bandwidth", "edge", "kubernetes", "microservice", "stream", "serverless", "storage", "cluster", "networking"],
+            needs_equations: true,
+            equations: [
+                "W = \\frac{\\lambda}{\\mu(\\mu - \\lambda)} + \\frac{1}{\\mu}, \\quad \\text{Utilization } \\rho = \\frac{\\lambda}{c \\cdot \\mu} < 1 \\quad (1)",
+                "\\text{SLA}(\\tau) = \\mathbb{P}\\left(\\sum_{i=1}^{k} D_i^{\\text{edge}} + D^{\\text{core}} \\le \\tau_{\\text{deadline}}\\right) \\ge 1 - \\epsilon \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "DISTRIBUTED CONSENSUS & EVENT STREAM BROKER (×L)",
+                bypass_label: "Zero-Copy eBPF Stream & Auto-Failover Heartbeat",
+                stages: [
+                    { name: "IoT Ingress", sub1: "MQTT / CoAP Streams", sub2: "Sensors & Gateways" },
+                    { name: "Edge Filtering", sub1: "Local Deduplication", sub2: "Sub-ms Ingress" },
+                    { name: "Consensus Mesh", sub1: "Raft / Paxos Ring", sub2: "Log Replication" },
+                    { name: "Pod Orchestrator", sub1: "Dynamic Autoscaler", sub2: "Load Balancer" },
+                    { name: "State Storage", sub1: "LSM Tree Engine", sub2: "Eq. (1) & (2)" },
+                    { name: "Real-Time Telemetry", sub1: "Aggregated Analytics", sub2: "Sub-ms SLA" }
+                ]
+            },
+            benchmark_y_label: "Throughput Efficiency (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "Round-Robin Static [1]", value: 68.4 },
+                { label: "Least-Connections [2]", value: 79.2 },
+                { label: "Consistent Hash [3]", value: 85.8 },
+                { label: "Reinforcement Broker", value: 90.5 },
+                { label: "Proposed EdgeMesh (Ours)", value: 98.4 }
+            ],
+            table_1: `| Orchestration Framework | Protocol Overhead | Mean Heartbeat Interval | Failover Time (ms) | Max Node Concurrency |
+| :--- | :--- | :--- | :--- | :--- |
+| Apache ZooKeeper | TCP / Binary Jute | 2,000 ms | 1,450 ms | 500 Nodes |
+| HashiCorp Consul | Gossip Protocol + HTTP | 1,000 ms | 820 ms | 2,500 Nodes |
+| Standard Kubernetes CoreDNS | UDP / DNS Ingress | 1,500 ms | 640 ms | 5,000 Nodes |
+| Proposed EdgeMesh (Ours) | Zero-Copy eBPF + QUIC | 150 ms | 48 ms | 25,000 Nodes |`,
+            table_2: `| System Workload | Requests / Sec (RPS) | P50 Latency (ms) | P99 Latency (ms) | Packet Loss Rate (%) |
+| :--- | :--- | :--- | :--- | :--- |
+| Static Edge Broker | 24,000 RPS | 18.4 ms | 84.6 ms | 1.84% |
+| Envoy Service Proxy | 56,000 RPS | 8.2 ms | 38.1 ms | 0.42% |
+| Linkerd Service Mesh | 64,000 RPS | 6.8 ms | 31.5 ms | 0.28% |
+| Istio + Envoy Ambient | 72,000 RPS | 5.9 ms | 27.4 ms | 0.19% |
+| **Proposed System (Ours)** | **148,000 RPS** | **1.8 ms** | **7.6 ms** | **0.01%** |`
+        },
+
+        social_qualitative: {
+            domain_name: "Social Sciences, Education, Ethics & Public Policy",
+            keywords: ["education", "social", "policy", "ethics", "governance", "qualitative", "survey", "interview", "curriculum", "pedagogy", "society", "equity", "student", "teacher", "legal", "philosophical", "humanities", "workforce"],
+            needs_equations: false, // STRICTLY NO EQUATIONS FOR QUALITATIVE / POLICY STUDIES
+            equations: [],
+            arch_flowchart: {
+                module_title: "INDUCTIVE THEMATIC CODING & TRIANGULATION CORE",
+                bypass_label: "Inter-Rater Concordance & Reflexive Audit Loop",
+                stages: [
+                    { name: "Stakeholder Data", sub1: "Semi-Structured", sub2: "Interviews & Focus" },
+                    { name: "Open Coding", sub1: "Line-by-Line Tagging", sub2: "Empirical Corpus" },
+                    { name: "Axial Clustering", sub1: "Thematic Grouping", sub2: "Conceptual Nodes" },
+                    { name: "Triangulation", sub1: "Inter-Rater Review", sub2: "Cohen's Kappa Check" },
+                    { name: "Translational Policy", sub1: "Institutional Models", sub2: "Actionable Directives" },
+                    { name: "Longitudinal Audit", sub1: "Societal Evaluation", sub2: "Sustainable Impact" }
+                ]
+            },
+            benchmark_y_label: "Thematic Inter-Rater Consensus (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "Heuristic Review [1]", value: 64.0 },
+                { label: "Content Analysis [2]", value: 74.5 },
+                { label: "Double-Blind Coding [3]", value: 83.2 },
+                { label: "Delphi Expert Panel", value: 89.6 },
+                { label: "Proposed Reflexive Model (Ours)", value: 97.2 }
+            ],
+            table_1: `| Participant Cohort | Sampling Method | Sample Size (N) | Institutional Background | Data Source Mode |
+| :--- | :--- | :--- | :--- | :--- |
+| Higher Education Faculty | Stratified Purposive | N = 48 | Public & Private Universities | 60-min Semi-Structured Interviews |
+| Institutional Administrators | Expert Informant | N = 24 | Accreditation & Oversight Boards | In-depth Delphi Sessions |
+| Student Demographics | Random Systematic | N = 350 | Undergraduate & Graduate Diverse | Structured Open-Ended Surveys |
+| Pedagogical Designers | Snowball Sampling | N = 36 | EdTech & Instructional Centers | Multi-day Focus Groups |`,
+            table_2: `| Identified Thematic Dimension | Inter-Coder Agreement (Cohen's Kappa) | Occurrence Frequency (n) | Participant Agreement (%) | Policy Actionability Rating |
+| :--- | :--- | :--- | :--- | :--- |
+| Institutional Readiness & Equity | κ = 0.86 (Substantial) | n = 284 | 92.4% | High Priority |
+| Pedagogical Autonomy vs Automation | κ = 0.89 (Near Perfect) | n = 312 | 95.1% | Immediate Intervention |
+| Assessment Integrity & Verification | κ = 0.84 (Substantial) | n = 265 | 89.8% | High Priority |
+| Continuous Teacher Professional Dev. | κ = 0.91 (Near Perfect) | n = 340 | 97.6% | Foundational |
+| **Synthesis Composite Alignment** | **κ = 0.88 (Robust)** | **Total N = 1,201** | **94.2%** | **Comprehensive Policy** |`
+        },
+
+        ml_optimization: {
+            domain_name: "Machine Learning, Optimization & Computational Science",
+            keywords: ["optimization", "gradient", "loss", "convergence", "algorithm", "convex", "neural network", "deep learning", "hyperparameter", "stochastic", "reinforcement", "matrix", "tensor"],
+            needs_equations: true,
+            equations: [
+                "\\min_{\\theta \\in \\Theta} \\mathcal{F}(\\theta) \\triangleq \\mathbb{E}_{\\xi \\sim \\mathcal{D}} [f(\\theta; \\xi)] + \\frac{\\lambda}{2} \\|\\theta\\|_2^2 \\quad (1)",
+                "\\theta_{t+1} = \\theta_t - \\eta_t \\cdot \\left(\\frac{m_t}{\\sqrt{v_t} + \\epsilon}\\right) + \\beta (\\theta_t - \\theta_{t-1}) \\quad (2)"
+            ],
+            arch_flowchart: {
+                module_title: "ADAPTIVE GRADIENT & STOCHASTIC OPTIMIZATION ENGINE (×L)",
+                bypass_label: "Lipschitz Regularization & Momentum Feedback Loop",
+                stages: [
+                    { name: "Minibatch Data", sub1: "Stochastic Samples", sub2: "ξ ~ 𝒟 Shuffled" },
+                    { name: "Auto-Diff Graph", sub1: "Forward Activation", sub2: "Loss Function" },
+                    { name: "Backpropagation", sub1: "Exact Jacobians", sub2: "∇f(θ; ξ)" },
+                    { name: "Momentum Filter", sub1: "First & Second Moments", sub2: "m_t, v_t Decoupled" },
+                    { name: "Lipschitz Bound", sub1: "Weight Decay Term", sub2: "Eq. (1) & (2)" },
+                    { name: "Optimal Weights", sub1: "Converged Minima", sub2: "θ* ∈ Θ" }
+                ]
+            },
+            benchmark_y_label: "Empirical Benchmark Accuracy (%) [± 1σ]",
+            benchmark_bars: [
+                { label: "Vanilla SGD + Mom. [1]", value: 81.4 },
+                { label: "RMSprop Adaptive [2]", value: 86.2 },
+                { label: "AdamW Optimizer [3]", value: 90.1 },
+                { label: "Lion Evolutionary", value: 92.8 },
+                { label: "Proposed Optimizer (Ours)", value: 97.9 }
+            ],
+            table_1: `| Optimizer Formulation | Memory Complexity | Compute Per Step (FLOPs) | Hyperparameters Required | Theoretical Convergence Rate |
+| :--- | :--- | :--- | :--- | :--- |
+| Vanilla SGD + Momentum | O(d) | 2d | 2 (lr, momentum) | O(1 / sqrt(T)) Non-convex |
+| RMSprop Regularized | O(2d) | 4d | 3 (lr, alpha, eps) | O(log T / sqrt(T)) |
+| AdamW Decoupled Decay | O(3d) | 6d | 4 (lr, beta1, beta2, wd) | O(1 / sqrt(T)) Non-convex |
+| Proposed Preconditioned (Ours) | O(1.8d) | 3.5d | 2 (lr, adaptive_decay) | O(1 / T) Accelerated |`,
+            table_2: `| Benchmark Dataset | Batch Size | Iterations to Target | Final Loss (↓) | Validation Score (%) | Wall-Clock Time (min) |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| CIFAR-100 Benchmark | 256 | 18,400 | 0.428 | 84.6% | 42.5 min |
+| ImageNet-1k Subset | 1,024 | 45,000 | 0.812 | 81.2% | 184.0 min |
+| Wikitext-103 Corpus | 512 | 32,000 | 1.412 | 88.5% | 112.5 min |
+| GLUE Multi-Task Suite | 128 | 14,500 | 0.285 | 91.8% | 34.2 min |
+| **Proposed Optimizer (Ours)** | **1,024** | **12,800** | **0.142** | **97.9%** | **22.8 min** |`
+        }
+    };
+
+    function resolveDomainProfile(topic) {
+        if (!topic) return DOMAIN_PROFILES.ml_optimization;
+        const norm = topic.toLowerCase();
+        let bestKey = 'ml_optimization';
+        let maxScore = -1;
+
+        for (const [key, profile] of Object.entries(DOMAIN_PROFILES)) {
+            let score = 0;
+            for (const kw of profile.keywords) {
+                const regex = new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
+                if (regex.test(norm)) score += 3;
+                else if (norm.includes(kw)) score += 1;
+            }
+            if (score > maxScore) {
+                maxScore = score;
+                bestKey = key;
+            }
+        }
+
+        if (maxScore > 0) return DOMAIN_PROFILES[bestKey];
+
+        if (/survey|policy|social|teach|learn|ethic|impact|governance|humanities|pedagogy|school|university/.test(norm)) return DOMAIN_PROFILES.social_qualitative;
+        if (/patient|drug|cure|health|medic|cancer|clinical|hospital|biology|biomedical|nursing/.test(norm)) return DOMAIN_PROFILES.biomedical_clinical;
+        if (/crypto|security|attack|malware|privacy|blockchain|cipher|exploit|threat|ddos/.test(norm)) return DOMAIN_PROFILES.cybersec_crypto;
+        if (/robot|car|drive|path|fly|drone|control|actuator|trajectory|slam|manipulator/.test(norm)) return DOMAIN_PROFILES.robotics_control;
+        if (/cloud|iot|sensor|stream|network|distributed|cluster|latency|bandwidth/.test(norm)) return DOMAIN_PROFILES.distributed_iot;
+        if (/text|language|nlp|llm|speech|words|transformer|token|dialogue|sentiment/.test(norm)) return DOMAIN_PROFILES.nlp_speech;
+        if (/image|vision|segment|detect|pixel|camera|visual|cnn|yolo|optical|radiology/.test(norm)) return DOMAIN_PROFILES.cv_imaging;
+
+        return DOMAIN_PROFILES.ml_optimization;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Dynamic Figure 1: Architectural Flowchart (Domain-Specific SVG)
+    // ---------------------------------------------------------------------------
+    function renderDynamicArchFlowchart(topic) {
+        const cleanTopic = escHtml(topic ? topic.replace(/^Generating:\s*["']?|["']?$/g, '') : 'Proposed System');
+        const domain = resolveDomainProfile(topic);
+        const arch = domain.arch_flowchart;
+        const st = arch.stages;
+
         return `
         <div class="paper-figure-container" id="figure-arch-container">
             <div class="paper-figure-frame">
@@ -2543,9 +2951,9 @@
                     <!-- Clean Background -->
                     <rect width="100%" height="100%" fill="#ffffff" />
 
-                    <!-- Dashed Module Enclosure: Proposed Neural Core Layer -->
+                    <!-- Dashed Module Enclosure around Core Layers -->
                     <rect x="250" y="24" width="310" height="130" rx="3" fill="#fafafa" stroke="#374151" stroke-width="1.2" stroke-dasharray="5 3" />
-                    <text x="405" y="17" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">PROPOSED NEURAL ARCHITECTURE MODULE (×L)</text>
+                    <text x="405" y="17" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(arch.module_title)}</text>
 
                     <!-- Directional Flow Arrows -->
                     <line x1="95" y1="88" x2="128" y2="88" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowhead)" />
@@ -2554,61 +2962,99 @@
                     <line x1="535" y1="88" x2="588" y2="88" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowhead)" />
                     <line x1="680" y1="88" x2="708" y2="88" stroke="#111827" stroke-width="1.5" marker-end="url(#arrowhead)" />
 
-                    <!-- Residual Skip Connection -->
+                    <!-- Feedback / Bypass Connection -->
                     <path d="M 275 60 C 275 35, 520 35, 520 60" fill="none" stroke="#111827" stroke-width="1.2" stroke-dasharray="4 2" marker-end="url(#arrowhead)" />
-                    <text x="397" y="33" font-family="'Times New Roman', Times, serif" font-size="8.5" font-style="italic" fill="#4b5563" text-anchor="middle">Residual Bypass Connection [Add &amp; LayerNorm]</text>
+                    <text x="397" y="33" font-family="'Times New Roman', Times, serif" font-size="8.5" font-style="italic" fill="#4b5563" text-anchor="middle">${escHtml(arch.bypass_label)}</text>
 
-                    <!-- Block 1: Input Data -->
+                    <!-- Block 1: Ingress -->
                     <rect x="15" y="52" width="80" height="72" rx="2" fill="#f9fafb" stroke="#111827" stroke-width="1.5" />
-                    <text x="55" y="78" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">Input Stream</text>
-                    <text x="55" y="93" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">Raw Samples</text>
-                    <text x="55" y="106" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">x ∈ ℝᵈ</text>
+                    <text x="55" y="76" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[0].name)}</text>
+                    <text x="55" y="91" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">${escHtml(st[0].sub1)}</text>
+                    <text x="55" y="105" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">${escHtml(st[0].sub2)}</text>
 
-                    <!-- Block 2: Tokenization & Embedding -->
+                    <!-- Block 2: Conditioning / Backbone -->
                     <rect x="130" y="48" width="98" height="80" rx="2" fill="#f9fafb" stroke="#111827" stroke-width="1.5" />
-                    <text x="179" y="74" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">Preconditioning</text>
-                    <text x="179" y="89" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">&amp; Token Embedding</text>
-                    <text x="179" y="104" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">W_e ∈ ℝ^(V×d)</text>
-                    <text x="179" y="117" font-family="'Times New Roman', Times, serif" font-size="7.5" fill="#374151" text-anchor="middle">+ Rotary Pos. Enc.</text>
+                    <text x="179" y="73" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[1].name)}</text>
+                    <text x="179" y="89" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">${escHtml(st[1].sub1)}</text>
+                    <text x="179" y="104" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">${escHtml(st[1].sub2)}</text>
 
-                    <!-- Block 3: Dynamic Multi-Head Attention -->
+                    <!-- Block 3: Primary Processing Core -->
                     <rect x="270" y="58" width="118" height="60" rx="2" fill="#ffffff" stroke="#111827" stroke-width="1.5" />
-                    <text x="329" y="80" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">Dynamic Attention</text>
-                    <text x="329" y="94" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">Multi-Head (h=12)</text>
-                    <text x="329" y="106" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">Softmax(QKᵀ / √d)</text>
+                    <text x="329" y="79" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[2].name)}</text>
+                    <text x="329" y="93" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">${escHtml(st[2].sub1)}</text>
+                    <text x="329" y="106" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">${escHtml(st[2].sub2)}</text>
 
-                    <!-- Block 4: Feed-Forward Low-Rank Projection -->
+                    <!-- Block 4: Secondary Processing Core -->
                     <rect x="425" y="58" width="110" height="60" rx="2" fill="#ffffff" stroke="#111827" stroke-width="1.5" />
-                    <text x="480" y="80" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">Feed-Forward MLP</text>
-                    <text x="480" y="94" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">Low-Rank Kernel</text>
-                    <text x="480" y="106" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">GeLU Activation</text>
+                    <text x="480" y="79" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[3].name)}</text>
+                    <text x="480" y="93" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">${escHtml(st[3].sub1)}</text>
+                    <text x="480" y="106" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">${escHtml(st[3].sub2)}</text>
 
-                    <!-- Block 5: Objective & Loss -->
+                    <!-- Block 5: Optimization / Policy Validation -->
                     <rect x="590" y="50" width="90" height="76" rx="2" fill="#f9fafb" stroke="#111827" stroke-width="1.5" />
-                    <text x="635" y="74" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" text-anchor="middle">Optimization</text>
-                    <text x="635" y="89" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">&amp; Regularization</text>
-                    <text x="635" y="104" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">ℒ_task + λ·Ω(θ)</text>
-                    <text x="635" y="117" font-family="'Times New Roman', Times, serif" font-size="7.5" fill="#374151" text-anchor="middle">Eq. (1)</text>
+                    <text x="635" y="74" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[4].name)}</text>
+                    <text x="635" y="89" font-family="'Times New Roman', Times, serif" font-size="8.5" fill="#374151" text-anchor="middle">${escHtml(st[4].sub1)}</text>
+                    <text x="635" y="104" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#6b7280" text-anchor="middle">${escHtml(st[4].sub2)}</text>
 
-                    <!-- Block 6: Output Inference Head -->
+                    <!-- Block 6: Final Output -->
                     <rect x="710" y="58" width="45" height="60" rx="2" fill="#f3f4f6" stroke="#111827" stroke-width="1.5" />
-                    <text x="732" y="85" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">Output</text>
-                    <text x="732" y="101" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#374151" text-anchor="middle">ŷ ∈ 𝒴</text>
+                    <text x="732" y="84" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">${escHtml(st[5].name)}</text>
+                    <text x="732" y="99" font-family="'Times New Roman', Times, serif" font-size="8" font-style="italic" fill="#374151" text-anchor="middle">${escHtml(st[5].sub1)}</text>
                 </svg>
             </div>
             <div class="paper-figure-caption">
-                <strong>Fig. 1.</strong> Architectural flowchart and end-to-end computational pipeline of the proposed methodology for <em>${cleanTopic}</em>. Solid arrows denote forward computational propagation; dashed loops represent residual bypass connections.
+                <strong>Fig. 1.</strong> End-to-end procedural architecture and computational dataflow pipeline for <em>${cleanTopic}</em> (${escHtml(domain.domain_name)}). Solid arrows denote feed-forward progression; dashed paths indicate closed-loop residual feedback.
             </div>
         </div>`;
     }
 
-    function renderProfessionalBenchmarkChart(topic) {
+    // ---------------------------------------------------------------------------
+    // Dynamic Figure 2: Empirical Benchmark Comparison (Domain-Specific SVG)
+    // ---------------------------------------------------------------------------
+    function renderDynamicBenchmarkChart(topic) {
+        const domain = resolveDomainProfile(topic);
+        const bars = domain.benchmark_bars || [];
+        const yLabel = escHtml(domain.benchmark_y_label || 'Empirical Accuracy (%) [± 1σ]');
+
+        // Calculate dynamic bar heights based on values (scale 60% -> 100%)
+        const barCoords = [
+            { x: 100, fill: "#e5e7eb", hatched: false },
+            { x: 210, fill: "#9ca3af", hatched: false },
+            { x: 320, fill: "url(#hatchPattern)", hatched: true },
+            { x: 430, fill: "#d1d5db", hatched: false },
+            { x: 550, fill: "#111827", hatched: false, isOurs: true }
+        ];
+
+        let barsSvg = '';
+        bars.forEach((b, idx) => {
+            if (idx >= barCoords.length) return;
+            const coord = barCoords[idx];
+            const val = b.value || 80;
+            // map val (60 -> 100) to height (25 -> 138)
+            const h = Math.max(25, Math.min(138, ((val - 60) / 40) * 140));
+            const y = 170 - h;
+            const w = coord.isOurs ? 80 : 70;
+            const cx = coord.x + w / 2;
+
+            barsSvg += `
+                <!-- Bar ${idx + 1}: ${escHtml(b.label)} (${val}%) -->
+                <rect x="${coord.x}" y="${y.toFixed(1)}" width="${w}" height="${h.toFixed(1)}" fill="${coord.fill}" stroke="#111827" stroke-width="1.2" />
+                <!-- Error Bar (95% CI) -->
+                <line x1="${cx}" y1="${(y - 4).toFixed(1)}" x2="${cx}" y2="${(y + 4).toFixed(1)}" stroke="${coord.isOurs ? '#ffffff' : '#111827'}" stroke-width="1.2" />
+                <line x1="${(cx - 5).toFixed(1)}" y1="${(y - 4).toFixed(1)}" x2="${(cx + 5).toFixed(1)}" y2="${(y - 4).toFixed(1)}" stroke="${coord.isOurs ? '#ffffff' : '#111827'}" stroke-width="1.2" />
+                <line x1="${(cx - 5).toFixed(1)}" y1="${(y + 4).toFixed(1)}" x2="${(cx + 5).toFixed(1)}" y2="${(y + 4).toFixed(1)}" stroke="${coord.isOurs ? '#ffffff' : '#111827'}" stroke-width="1.2" />
+                <!-- Value Label Above -->
+                <text x="${cx}" y="${(y - 7).toFixed(1)}" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">${val}%${coord.isOurs ? '*' : ''}</text>
+                <!-- Baseline Label Below Axis -->
+                <text x="${cx}" y="185" font-family="'Times New Roman', Times, serif" font-size="8.5" ${coord.isOurs ? 'font-weight="bold"' : ''} fill="#111827" text-anchor="middle">${escHtml(b.label)}</text>
+            `;
+        });
+
         return `
         <div class="paper-figure-container" id="figure-benchmark-container">
             <div class="paper-figure-frame">
                 <svg viewBox="0 0 760 220" class="paper-figure-svg" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <!-- Diagonal Hatch Pattern for Deep Neural SOTA -->
                         <pattern id="hatchPattern" width="8" height="8" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
                             <line x1="0" y1="0" x2="0" y2="8" stroke="#111827" stroke-width="1.5" />
                         </pattern>
@@ -2618,9 +3064,7 @@
                     <rect width="100%" height="100%" fill="#ffffff" />
 
                     <!-- Cartesian Axes -->
-                    <!-- Y Axis -->
                     <line x1="75" y1="20" x2="75" y2="170" stroke="#111827" stroke-width="1.5" />
-                    <!-- X Axis -->
                     <line x1="75" y1="170" x2="720" y2="170" stroke="#111827" stroke-width="1.5" />
 
                     <!-- Y-Axis Ticks & Grid Lines -->
@@ -2641,56 +3085,142 @@
                     <text x="65" y="139" font-family="'Times New Roman', Times, serif" font-size="9" text-anchor="end" fill="#111827">70%</text>
 
                     <!-- Y-Axis Label (Rotated) -->
-                    <text x="-95" y="24" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="bold" fill="#111827" transform="rotate(-90)" text-anchor="middle">Empirical Accuracy (%) [± 1σ]</text>
+                    <text x="-95" y="24" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" transform="rotate(-90)" text-anchor="middle">${yLabel}</text>
 
-                    <!-- Bar 1: Classical Heuristic Baseline (81.42%) -->
-                    <rect x="120" y="95" width="85" height="75" fill="#e5e7eb" stroke="#111827" stroke-width="1.2" />
-                    <line x1="162.5" y1="91" x2="162.5" y2="99" stroke="#111827" stroke-width="1.2" />
-                    <line x1="156" y1="91" x2="169" y2="91" stroke="#111827" stroke-width="1.2" />
-                    <line x1="156" y1="99" x2="169" y2="99" stroke="#111827" stroke-width="1.2" />
-                    <text x="162.5" y="86" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">81.42%</text>
-                    <text x="162.5" y="185" font-family="'Times New Roman', Times, serif" font-size="9" fill="#111827" text-anchor="middle">Classical Heuristic [1]</text>
-
-                    <!-- Bar 2: Gradient Boosted Trees (86.15%) -->
-                    <rect x="260" y="78.5" width="85" height="91.5" fill="#9ca3af" stroke="#111827" stroke-width="1.2" />
-                    <line x1="302.5" y1="75" x2="302.5" y2="82" stroke="#111827" stroke-width="1.2" />
-                    <line x1="296" y1="75" x2="309" y2="75" stroke="#111827" stroke-width="1.2" />
-                    <line x1="296" y1="82" x2="309" y2="82" stroke="#111827" stroke-width="1.2" />
-                    <text x="302.5" y="70" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">86.15%</text>
-                    <text x="302.5" y="185" font-family="'Times New Roman', Times, serif" font-size="9" fill="#111827" text-anchor="middle">Gradient Boosted [2]</text>
-
-                    <!-- Bar 3: Deep Neural Network SOTA (89.84%) -->
-                    <rect x="400" y="65.6" width="85" height="104.4" fill="url(#hatchPattern)" stroke="#111827" stroke-width="1.2" />
-                    <line x1="442.5" y1="62" x2="442.5" y2="69" stroke="#111827" stroke-width="1.2" />
-                    <line x1="436" y1="62" x2="449" y2="62" stroke="#111827" stroke-width="1.2" />
-                    <line x1="436" y1="69" x2="449" y2="69" stroke="#111827" stroke-width="1.2" />
-                    <text x="442.5" y="57" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">89.84%</text>
-                    <text x="442.5" y="185" font-family="'Times New Roman', Times, serif" font-size="9" fill="#111827" text-anchor="middle">Deep Neural SOTA [3]</text>
-
-                    <!-- Bar 4: Proposed Paradigm (Ours) (97.24%) -->
-                    <rect x="540" y="39.7" width="85" height="130.3" fill="#111827" stroke="#111827" stroke-width="1.2" />
-                    <line x1="582.5" y1="36" x2="582.5" y2="43" stroke="#ffffff" stroke-width="1.5" />
-                    <line x1="576" y1="36" x2="589" y2="36" stroke="#ffffff" stroke-width="1.5" />
-                    <line x1="576" y1="43" x2="589" y2="43" stroke="#ffffff" stroke-width="1.5" />
-                    <text x="582.5" y="31" font-family="'Times New Roman', Times, serif" font-size="9.5" font-weight="bold" fill="#111827" text-anchor="middle">97.24%*</text>
-                    <text x="582.5" y="185" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" text-anchor="middle">Proposed (Ours)</text>
+                    <!-- Dynamic Bars -->
+                    ${barsSvg}
 
                     <!-- Legend Box -->
-                    <rect x="530" y="15" width="180" height="18" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8" />
-                    <rect x="535" y="19" width="10" height="10" fill="#111827" stroke="#111827" stroke-width="1" />
-                    <text x="550" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Ours</text>
-                    <rect x="575" y="19" width="10" height="10" fill="url(#hatchPattern)" stroke="#111827" stroke-width="1" />
-                    <text x="590" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">SOTA</text>
-                    <rect x="620" y="19" width="10" height="10" fill="#9ca3af" stroke="#111827" stroke-width="1" />
-                    <text x="635" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Ensemble</text>
-                    <rect x="675" y="19" width="10" height="10" fill="#e5e7eb" stroke="#111827" stroke-width="1" />
-                    <text x="690" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Heuristic</text>
+                    <rect x="520" y="15" width="190" height="18" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8" />
+                    <rect x="526" y="19" width="9" height="9" fill="#111827" stroke="#111827" stroke-width="1" />
+                    <text x="540" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Ours</text>
+                    <rect x="568" y="19" width="9" height="9" fill="url(#hatchPattern)" stroke="#111827" stroke-width="1" />
+                    <text x="582" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">SOTA</text>
+                    <rect x="612" y="19" width="9" height="9" fill="#9ca3af" stroke="#111827" stroke-width="1" />
+                    <text x="626" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Ensemble</text>
+                    <rect x="668" y="19" width="9" height="9" fill="#e5e7eb" stroke="#111827" stroke-width="1" />
+                    <text x="682" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#111827">Baseline</text>
                 </svg>
             </div>
             <div class="paper-figure-caption">
-                <strong>Fig. 2.</strong> Empirical benchmark comparison across standardized evaluation datasets. Solid black bar denotes the proposed paradigm; hatched and grayscale bars indicate competing baseline implementations. Error bars represent 95% confidence intervals (*p &lt; 0.001).
+                <strong>Fig. 2.</strong> Empirical comparative evaluation across standardized ${escHtml(domain.domain_name)} benchmarks. The solid black bar denotes the proposed paradigm; hatched and grayscale bars indicate competing baseline implementations. Error bars represent 95% confidence intervals (*p &lt; 0.001).
             </div>
         </div>`;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Dynamic Figure 3: Convergence & Operational Stability Trajectory (Domain-Specific SVG)
+    // ---------------------------------------------------------------------------
+    function renderDynamicConvergenceChart(topic) {
+        const cleanTopic = escHtml(topic ? topic.replace(/^Generating:\s*["']?|["']?$/g, '') : 'Proposed Framework');
+        const domain = resolveDomainProfile(topic);
+        const isMath = domain.needs_equations;
+
+        const yAxisLabel = isMath
+            ? "Validation Objective Loss ℒ(θ) [Log Scale]"
+            : "Consensus & Empirical Concordance (%)";
+        const xAxisLabel = isMath
+            ? "Optimization Epochs / Training Iterations (×10³)"
+            : "Longitudinal Observation Batches (Sampling Intervals)";
+
+        const yTicks = isMath
+            ? [{ y: 35, label: "1.20" }, { y: 75, label: "0.60" }, { y: 115, label: "0.20" }, { y: 150, label: "0.05" }]
+            : [{ y: 35, label: "100%" }, { y: 75, label: "80%" }, { y: 115, label: "60%" }, { y: 150, label: "40%" }];
+
+        const ticksSvg = yTicks.map(t => `
+            <line x1="70" y1="${t.y}" x2="75" y2="${t.y}" stroke="#111827" stroke-width="1.2" />
+            <line x1="75" y1="${t.y}" x2="720" y2="${t.y}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="3 3" />
+            <text x="65" y="${t.y + 4}" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="end" fill="#111827">${t.label}</text>
+        `).join('');
+
+        // Math domain: descent curve; Non-math domain: ascent curve
+        let baselinePath, proposedPath, confidenceBand, markerPoints;
+
+        if (isMath) {
+            // Loss descends
+            baselinePath = "M 80 40 Q 220 85, 360 102 T 680 118";
+            proposedPath = "M 80 40 Q 180 105, 340 138 T 680 152";
+            confidenceBand = "M 80 36 Q 180 98, 340 132 T 680 148 L 680 156 Q 500 154, 340 144 Q 180 112, 80 44 Z";
+            markerPoints = [
+                { cx: 80, cy: 40 }, { cx: 200, cy: 108 }, { cx: 340, cy: 138 }, { cx: 500, cy: 148 }, { cx: 680, cy: 152 }
+            ];
+        } else {
+            // Concordance climbs
+            baselinePath = "M 80 140 Q 220 115, 380 96 T 680 88";
+            proposedPath = "M 80 140 Q 220 72, 380 44 T 680 32";
+            confidenceBand = "M 80 136 Q 220 67, 380 39 T 680 27 L 680 37 Q 380 49, 220 77 Q 80 144, 80 144 Z";
+            markerPoints = [
+                { cx: 80, cy: 140 }, { cx: 220, cy: 72 }, { cx: 380, cy: 44 }, { cx: 530, cy: 35 }, { cx: 680, cy: 32 }
+            ];
+        }
+
+        const pointsSvg = markerPoints.map(p => `
+            <circle cx="${p.cx}" cy="${p.cy}" r="3.5" fill="#111827" stroke="#ffffff" stroke-width="1.2" />
+        `).join('');
+
+        return `
+        <div class="paper-figure-container" id="figure-convergence-container">
+            <div class="paper-figure-frame">
+                <svg viewBox="0 0 760 200" class="paper-figure-svg" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Background -->
+                    <rect width="100%" height="100%" fill="#ffffff" />
+
+                    <!-- Cartesian Axes -->
+                    <line x1="75" y1="20" x2="75" y2="160" stroke="#111827" stroke-width="1.5" />
+                    <line x1="75" y1="160" x2="720" y2="160" stroke="#111827" stroke-width="1.5" />
+
+                    <!-- Y-Axis Ticks & Grid Lines -->
+                    ${ticksSvg}
+
+                    <!-- X-Axis Ticks -->
+                    <line x1="80" y1="160" x2="80" y2="165" stroke="#111827" stroke-width="1.2" />
+                    <text x="80" y="176" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="middle" fill="#111827">0</text>
+                    <line x1="200" y1="160" x2="200" y2="165" stroke="#111827" stroke-width="1.2" />
+                    <text x="200" y="176" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="middle" fill="#111827">25</text>
+                    <line x1="340" y1="160" x2="340" y2="165" stroke="#111827" stroke-width="1.2" />
+                    <text x="340" y="176" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="middle" fill="#111827">50</text>
+                    <line x1="500" y1="160" x2="500" y2="165" stroke="#111827" stroke-width="1.2" />
+                    <text x="500" y="176" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="middle" fill="#111827">75</text>
+                    <line x1="680" y1="160" x2="680" y2="165" stroke="#111827" stroke-width="1.2" />
+                    <text x="680" y="176" font-family="'Times New Roman', Times, serif" font-size="8.5" text-anchor="middle" fill="#111827">100</text>
+
+                    <!-- Axis Labels -->
+                    <text x="-90" y="24" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="bold" fill="#111827" transform="rotate(-90)" text-anchor="middle">${yAxisLabel}</text>
+                    <text x="397" y="192" font-family="'Times New Roman', Times, serif" font-size="9" fill="#111827" text-anchor="middle">${xAxisLabel}</text>
+
+                    <!-- Shaded Empirical Confidence Interval Band (95% CI) -->
+                    <path d="${confidenceBand}" fill="#111827" fill-opacity="0.08" />
+
+                    <!-- Baseline Trajectory (Dashed Gray) -->
+                    <path d="${baselinePath}" fill="none" stroke="#9ca3af" stroke-width="1.8" stroke-dasharray="5 3" />
+
+                    <!-- Proposed Trajectory (Solid Dark Line) -->
+                    <path d="${proposedPath}" fill="none" stroke="#111827" stroke-width="2.2" />
+
+                    <!-- Marker Points -->
+                    ${pointsSvg}
+
+                    <!-- Legend Box -->
+                    <rect x="490" y="15" width="220" height="18" fill="#ffffff" stroke="#9ca3af" stroke-width="0.8" />
+                    <line x1="500" y1="24" x2="525" y2="24" stroke="#111827" stroke-width="2.2" />
+                    <circle cx="512.5" cy="24" r="3" fill="#111827" />
+                    <text x="532" y="27" font-family="'Times New Roman', Times, serif" font-size="8" font-weight="bold" fill="#111827">Proposed Paradigm (Ours)</text>
+                    <line x1="630" y1="24" x2="655" y2="24" stroke="#9ca3af" stroke-width="1.8" stroke-dasharray="4 2" />
+                    <text x="662" y="27" font-family="'Times New Roman', Times, serif" font-size="8" fill="#4b5563">Baseline</text>
+                </svg>
+            </div>
+            <div class="paper-figure-caption">
+                <strong>Fig. 3.</strong> Empirical convergence trajectory and operational stability profile for <em>${cleanTopic}</em> across iterative evaluation checkpoints. The proposed method exhibits accelerated stability and minimal stochastic variance compared to established baselines.
+            </div>
+        </div>`;
+    }
+
+    // Aliases for backwards-compatibility
+    function renderProfessionalArchFlowchart(topic) {
+        return renderDynamicArchFlowchart(topic);
+    }
+    function renderProfessionalBenchmarkChart(topic) {
+        return renderDynamicBenchmarkChart(topic);
     }
 
     function renderLatexFormula(latexStr) {
@@ -2704,6 +3234,9 @@
         return `<code>${escHtml(latexStr)}</code>`;
     }
 
+    // ---------------------------------------------------------------------------
+    // Professional IEEE Markdown Table Renderer
+    // ---------------------------------------------------------------------------
     function renderMarkdownTable(lines, captionText) {
         if (!lines || !lines.length) return '';
         const rows = lines.map(line => {
@@ -2716,28 +3249,35 @@
         const bodyRows = rows.slice(1);
 
         let tHtml = `<div class="paper-table-container">`;
-        tHtml += `<div class="paper-table-caption">${escHtml(captionText || 'TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS')}</div>`;
+        tHtml += `<div class="paper-table-caption">${captionText || 'TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS'}</div>`;
         tHtml += `<table class="paper-table-ieee"><thead><tr>`;
         headerCols.forEach(col => {
-            tHtml += `<th>${escHtml(col)}</th>`;
+            const cleanHeader = col.replace(/\*\*/g, '');
+            tHtml += `<th>${cleanHeader}</th>`;
         });
         tHtml += `</tr></thead><tbody>`;
 
-        bodyRows.forEach((rowCols, rIdx) => {
+        bodyRows.forEach((rowCols) => {
             const isHighlight = rowCols.some(c => c.toLowerCase().includes('ours') || c.toLowerCase().includes('proposed'));
             tHtml += `<tr class="${isHighlight ? 'highlight-row' : ''}">`;
             rowCols.forEach(col => {
-                tHtml += `<td>${escHtml(col)}</td>`;
+                let cell = col;
+                const isBold = (cell.startsWith('**') && cell.endsWith('**')) || (cell.startsWith('&lt;strong&gt;') && cell.endsWith('&lt;/strong&gt;'));
+                cell = cell.replace(/\*\*/g, '');
+                tHtml += `<td>${isBold ? '<strong>' + cell + '</strong>' : cell}</td>`;
             });
             tHtml += `</tr>`;
         });
 
         tHtml += `</tbody></table>`;
-        tHtml += `<div class="paper-table-footnote">* Denotes statistically significant superiority (Student's t-test, p &lt; 0.001). Values reported as mean ± standard deviation across 5 randomized trials.</div>`;
+        tHtml += `<div class="paper-table-footnote">* Denotes statistically significant superiority (Student's t-test, p &lt; 0.001). Reported values reflect empirical cross-validation distributions.</div>`;
         tHtml += `</div>`;
         return tHtml;
     }
 
+    // ---------------------------------------------------------------------------
+    // Enhanced Content Formatter (Tables, Equations & Qualitative Text)
+    // ---------------------------------------------------------------------------
     function formatContent(text) {
         if (!text) return '';
         let escaped = escHtml(text);
@@ -2751,6 +3291,25 @@
         for (let i = 0; i < rawBlocks.length; i++) {
             const trimmed = rawBlocks[i].trim();
             if (!trimmed) continue;
+
+            // Check if this block is a table caption preceding a markdown table block
+            if ((trimmed.startsWith('TABLE ') || trimmed.startsWith('Table ')) && !trimmed.includes('|')) {
+                if (i + 1 < rawBlocks.length && rawBlocks[i + 1].includes('|') && rawBlocks[i + 1].split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
+                    const tableBlock = rawBlocks[i + 1].trim();
+                    const tableLines = tableBlock.split('\n').filter(l => l.trim().startsWith('|'));
+                    processedBlocks.push(renderMarkdownTable(tableLines, trimmed));
+                    i++; // consume table block
+                    continue;
+                }
+                // Standalone table caption without subsequent markdown: synthesize topic table
+                const activePaperTitle = (window.currentPaper && window.currentPaper.title) || '';
+                const domain = resolveDomainProfile(activePaperTitle);
+                const tableNum = /TABLE\s+II/i.test(trimmed) ? 2 : 1;
+                const fallbackMarkdown = tableNum === 2 ? domain.table_2 : domain.table_1;
+                const tableLines = fallbackMarkdown.split('\n').filter(l => l.trim().startsWith('|'));
+                processedBlocks.push(renderMarkdownTable(tableLines, trimmed));
+                continue;
+            }
 
             // Check if block contains markdown table
             if (trimmed.includes('|') && trimmed.split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
@@ -2772,18 +3331,6 @@
                 }
                 const mathHtml = renderLatexFormula(eqBody);
                 processedBlocks.push(`<div class="paper-equation"><div class="eq-body">${mathHtml}</div><span class="eq-num">${escHtml(eqNum)}</span></div>`);
-                continue;
-            }
-
-            if (trimmed.startsWith('TABLE ') || trimmed.startsWith('Table ')) {
-                // Table header without markdown
-                const defaultTableRows = [
-                    ['Framework / Model', 'Accuracy (%)', 'F1-Score', 'Latency (ms)', 'Memory (MB)'],
-                    ['Classical Baseline [1]', '81.4%', '0.792', '48.5 ms', '210 MB'],
-                    ['Deep Neural SOTA [3]', '89.8%', '0.885', '36.2 ms', '480 MB'],
-                    ['Proposed Paradigm (Ours)', '97.2%', '0.968', '19.4 ms', '320 MB']
-                ];
-                processedBlocks.push(renderMarkdownTable(defaultTableRows.map(r => '| ' + r.join(' | ') + ' |'), trimmed));
                 continue;
             }
 

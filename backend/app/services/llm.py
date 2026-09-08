@@ -2,6 +2,7 @@ import httpx
 import logging
 from fastapi import HTTPException, status
 from app.config import settings
+from app.services.research_domain_knowledge import ResearchDomainKnowledgeService
 
 logger = logging.getLogger(__name__)
 
@@ -637,6 +638,15 @@ Example output:
                 )
 
         key_points_str = "\n".join(f"- {p}" for p in key_points)
+        domain_profile = ResearchDomainKnowledgeService.resolve_domain_profile(topic)
+        domain_name = domain_profile.get("domain_name", "Applied Science & Engineering")
+        needs_math = domain_profile.get("needs_equations", True)
+
+        math_req = (
+            f"   - If this section is Theoretical, Methodology, or Mathematical, include 1-2 centered LaTeX equations relevant to {domain_name} enclosed in double dollar signs with equation numbering at the end, for example: $$\\min_{{\\theta}} \\mathcal{{L}}(\\theta) + \\lambda \\Omega(\\theta) \\quad (1)$$\n"
+            if needs_math else
+            f"   - Strict Constraint: This topic belongs to \"{domain_name}\". Do NOT force mathematical equations or LaTeX formulas into this section unless strictly required. Ground the analysis in qualitative, conceptual, or empirical analytical frameworks.\n"
+        )
 
         prompt = (
             f"You are a senior academic researcher writing a comprehensive peer-reviewed research paper about: \"{topic}\"\n\n"
@@ -650,14 +660,44 @@ Example output:
             f"3. Strictly BAN robotic AI clichés: NEVER use 'In recent years', 'rapid proliferation', 'pivotal role', 'delve', 'testament to', 'multifaceted', 'furthermore', 'moreover', or 'it is important to note'.\n"
             f"4. Embed multiple real inline citations [1], [2], [3] naturally throughout the argument.\n"
             f"5. Scientific Formatting Requirements:\n"
-            f"   - If this section is Theoretical or Mathematical, include 1-2 centered LaTeX equations enclosed in double dollar signs with equation numbering at the end, for example: $$\\min_{{\\theta}} \\mathcal{{L}}(\\theta) + \\lambda \\Omega(\\theta) \\quad (1)$$\n"
-            f"   - If this section is Results, Evaluation, or Related Work, include an academic comparison table using Markdown table syntax (| Header 1 | Header 2 |) with clear numerical metrics (Accuracy, F1-Score, Latency).\n"
+            f"{math_req}"
+            f"   - If this section is Results, Evaluation, or Related Work, include an authentic academic comparison table using Markdown table syntax (| Header 1 | Header 2 |) with domain-specific metrics tailored to {topic}.\n"
             f"6. Do NOT output headings or bullet lists (use flowing academic paragraphs).\n\n"
             "Write the complete section content directly:"
         )
         try:
             model = await cls._resolve_model()
-            return await cls._call_ollama(prompt, model, temp=0.65, repeat_penalty=1.15)
+            raw_content = await cls._call_ollama(prompt, model, temp=0.65, repeat_penalty=1.15)
+            if not raw_content or not raw_content.strip():
+                raise ValueError("Empty response from LLM")
+
+            # Post-process LLM response to guarantee domain consistency
+            st = section_title.upper()
+
+            # 1. Enforce strict omission of equations for non-mathematical domains
+            if not needs_math:
+                raw_content = re.sub(r'\$\$[^\$]+\$\$', '', raw_content)
+                raw_content = re.sub(r'\$[^\$]+\$', '', raw_content)
+
+            # 2. Guarantee Table I in Related Work if missing
+            if ("RELATED" in st or "LITERATURE" in st) and "|" not in raw_content:
+                t1 = ResearchDomainKnowledgeService.generate_topic_markdown_table(topic, table_num=1)
+                raw_content += f"\n\nTABLE I. TAXONOMIC & ARCHITECTURAL COMPARISON OF PRECEDING METHODOLOGIES\n\n{t1}"
+
+            # 3. Guarantee Table II in Results/Evaluation if missing
+            elif ("RESULT" in st or "EVALUAT" in st) and "|" not in raw_content:
+                t2 = ResearchDomainKnowledgeService.generate_topic_markdown_table(topic, table_num=2)
+                raw_content += f"\n\nTABLE II. COMPREHENSIVE EMPIRICAL BENCHMARK EVALUATION ACROSS DOMAIN DATASETS\n\n{t2}"
+
+            # 4. Guarantee equations in Theoretical/Methodology if missing and domain needs math
+            elif ("THEORETICAL" in st or "MATHEMATICAL" in st) and needs_math and "$$" not in raw_content:
+                eqs = domain_profile.get("equations", [])
+                if eqs:
+                    eq1 = eqs[0]
+                    eq2 = eqs[1] if len(eqs) > 1 else ""
+                    raw_content += f"\n\n$${eq1}$$\n\n$${eq2}$$"
+
+            return raw_content
         except Exception as e:
             logger.warning(f"Ollama call failed for section '{section_title}': {e}. Using synthesis fallback.")
             st = section_title.upper()
@@ -683,30 +723,46 @@ Example output:
                 )
             elif "RELATED" in st or "LITERATURE" in st:
                 c1, c2, c3, c4 = all_nums[2] if len(all_nums) > 2 else 3, all_nums[3] if len(all_nums) > 3 else 4, all_nums[4] if len(all_nums) > 4 else 5, all_nums[5] if len(all_nums) > 5 else 6
+                t1 = ResearchDomainKnowledgeService.generate_topic_markdown_table(topic, table_num=1)
                 return (
                     f"The intellectual evolution of {topic} has been characterized by several distinct developmental phases over the past two decades. "
                     f"Early pioneering efforts concentrated primarily on heuristic formulations and classical statistical approximations [{c1}]. "
                     f"While these foundational models provided valuable early insights, they exhibited critical vulnerabilities in generalizability when subjected to complex real-world variance.\n\n"
-                    f"With the advent of high-capacity deep learning and distributed processing frameworks, subsequent research shifted toward automated representation learning [{c2}]. "
+                    f"With the advent of high-capacity computational frameworks and distributed processing, subsequent research shifted toward automated representation learning [{c2}]. "
                     f"Notable contributions by leading scholars demonstrated that hierarchical feature extraction substantially outperforms manual feature engineering [{c3}]. "
-                    f"However, existing deep architectures frequently suffer from excessive parameterization, leading to substantial computational latency and elevated risk of overfitting in sparse-data regimes.\n\n"
+                    f"However, existing architectures frequently suffer from excessive parameterization, leading to substantial computational latency and elevated risk of overfitting in sparse-data regimes.\n\n"
                     f"Recent contemporary investigations [{c4}] have attempted to bridge this efficiency gap through modular design, pruning strategies, and uncertainty-aware regularization. "
                     f"Despite these advancements, a significant research gap persists: current frameworks lack an integrated mechanism to simultaneously optimize representation fidelity, runtime complexity, and distributional robustness.\n\n"
+                    f"TABLE I. TAXONOMIC & ARCHITECTURAL COMPARISON OF PRECEDING METHODOLOGIES\n\n"
+                    f"{t1}\n\n"
                     f"TABLE I summarizes the comparative taxonomy of preceding methodologies versus our proposed paradigm across key architectural criteria, highlighting the distinct technical advancements achieved in this study."
                 )
             elif "THEORETICAL" in st or "MATHEMATICAL" in st:
                 c1, c2 = all_nums[4] if len(all_nums) > 4 else 5, all_nums[5] if len(all_nums) > 5 else 6
-                return (
-                    f"This section establishes the formal mathematical foundation and governing equations for {topic}. "
-                    f"Let the input space be formally defined on a compact manifold $\\mathcal{{X}} \\subset \\mathbb{{R}}^d$, with corresponding output target space $\\mathcal{{Y}}$. "
-                    f"We consider a continuous-time parameterized mapping $f_\\theta: \\mathcal{{X}} \\to \\mathcal{{Y}}$, where $\\theta \\in \\Theta$ represents the vector of trainable parameters [{c1}].\n\n"
-                    f"The optimization objective is formulated to minimize the empirical risk regularized by an information-theoretic penalty function:\n\n"
-                    f"$$\\min_{{\\theta \\in \\Theta}} \\; \\mathbb{{E}}_{{(x, y) \\sim \\mathcal{{D}}}} \\left[ \\mathcal{{L}}\\big(f_\\theta(x), y\\big) \\right] + \\lambda \\cdot \\Omega(\\theta) \\quad (1)$$\n\n"
-                    f"where $\\mathcal{{L}}(\\cdot, \\cdot)$ denotes the primary loss metric, $\\Omega(\\theta)$ enforces parameter sparsity and curvature smoothness, and $\\lambda > 0$ is a scalar hyperparameter balancing regularization strength [{c2}].\n\n"
-                    f"To guarantee uniform stability and prevent catastrophic divergence under adversarial perturbations $\\delta \\in \\Delta$, the gradient dynamics satisfy the following Lipschitz condition:\n\n"
-                    f"$$\\|\\nabla f_\\theta(x + \\delta) - \\nabla f_\\theta(x)\\| \\le K \\cdot \\|\\delta\\| \\quad (2)$$\n\n"
-                    f"with Lipschitz constant $K < \\infty$. Under these analytical constraints, the asymptotic convergence rate is strictly bounded by $\\mathcal{{O}}(1/\\sqrt{{T}})$, where $T$ denotes the total iteration index. This theoretical guarantee ensures predictable stability across arbitrary sample dimensions."
-                )
+                if domain_profile.get("needs_equations", True) and domain_profile.get("equations"):
+                    eqs = domain_profile["equations"]
+                    eq1 = eqs[0]
+                    eq2 = eqs[1] if len(eqs) > 1 else ""
+                    return (
+                        f"This section establishes the formal mathematical foundation and governing equations for {topic}. "
+                        f"Let the input space be formally defined on a compact manifold $\\mathcal{{X}} \\subset \\mathbb{{R}}^d$, with corresponding output target space $\\mathcal{{Y}}$. "
+                        f"We consider a continuous-time parameterized mapping $f_\\theta: \\mathcal{{X}} \\to \\mathcal{{Y}}$, where $\\theta \\in \\Theta$ represents the vector of trainable parameters [{c1}].\n\n"
+                        f"The analytical optimization objective is formulated to balance empirical performance and structural stability under domain-specific constraints:\n\n"
+                        f"$${eq1}$$\n\n"
+                        f"where the objective function balances primary empirical loss with regularization bounds, penalizing model over-complexity while maintaining invariant boundary stability [{c2}].\n\n"
+                        f"To guarantee uniform stability and prevent catastrophic divergence under stochastic perturbations, the dynamics satisfy the following analytical criterion:\n\n"
+                        f"$${eq2}$$\n\n"
+                        f"Under these analytical constraints, the asymptotic convergence rate is strictly bounded, ensuring predictable numerical stability across arbitrary sample dimensions."
+                    )
+                else:
+                    return (
+                        f"This section establishes the analytical, conceptual, and procedural framework for {topic}. "
+                        f"Unlike purely algorithmic systems that rely on idealized mathematical abstractions, analyzing {topic} requires a holistic paradigm that systematically integrates empirical observations, contextual determinants, and institutional workflows [{c1}].\n\n"
+                        f"The operational framework is structured around three foundational pillars: (i) Baseline contextual characterization, (ii) Multi-factor dynamic interaction modeling, and (iii) Longitudinal outcome evaluation. "
+                        f"By decoupling structural environmental factors from direct participant responses [{c2}], the framework isolates confounding variables without imposing artificial mathematical simplifications.\n\n"
+                        f"Theoretical validity is maintained through rigorous triangulation, cross-verifying quantitative indicators against qualitative field evidence. "
+                        f"This dual-faceted perspective ensures that structural shifts and subtle qualitative nuances are captured with high fidelity, establishing a robust theoretical foundation for subsequent empirical investigations."
+                    )
             elif "METHOD" in st or "ARCHITECTURE" in st:
                 c1, c2, c3 = all_nums[5] if len(all_nums) > 5 else 6, all_nums[6] if len(all_nums) > 6 else 7, all_nums[7] if len(all_nums) > 7 else 8
                 return (
@@ -722,7 +778,7 @@ Example output:
                     f"An automated thresholding mechanism dynamically determines confidence bounds, rejecting low-confidence predictions to ensure zero false-positive cascades in safety-critical operational environments."
                 )
             elif "EXPERIMENT" in st or "SETUP" in st:
-                c1, c2 = all_nums[6] if len(all_nums) > 6 else 7, all_nums[7] if len(all_nums) > 7 else 8
+                c1, c2 = all_nums[6] if len(all_nums) > 6 else 7, all_nums[7] if len(all_nums) > 8 else 8
                 return (
                     f"To rigorously evaluate the efficacy and scalability of our proposed framework for {topic}, we conducted extensive experimental benchmarking against leading baseline models [{c1}]. "
                     f"All experiments were implemented using standardized distributed compute infrastructure and executed across multiple randomized seed initializations to ensure statistical validity.\n\n"
@@ -733,33 +789,17 @@ Example output:
                 )
             elif "RESULT" in st or "EVALUAT" in st:
                 c1, c2, c3 = all_nums[7] if len(all_nums) > 7 else 8, all_nums[8] if len(all_nums) > 8 else 9, all_nums[9] if len(all_nums) > 9 else 10
+                t2 = ResearchDomainKnowledgeService.generate_topic_markdown_table(topic, table_num=2)
                 return (
                     f"The quantitative results demonstrate that our proposed approach consistently surpasses existing baseline methodologies across all evaluated benchmark metrics for {topic} [{c1}]. "
-                    f"On average, the framework achieves an 11.4% improvement in predictive accuracy and a 23.6% reduction in end-to-end inference latency compared to the strongest contemporary competitor [{c2}].\n\n"
-                    f"TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS\n\n"
-                    f"| Architecture / Model | Accuracy (%) | Precision | Recall | Macro F1 | Latency (ms) | Peak VRAM (MB) |\n"
-                    f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
-                    f"| Classical Heuristic Baseline [{c1}] | 81.42 ± 0.45 | 0.801 | 0.785 | 0.793 | 48.5 ms | 210 MB |\n"
-                    f"| Gradient Boosted Trees [{c2}] | 86.15 ± 0.38 | 0.852 | 0.844 | 0.848 | 32.1 ms | 185 MB |\n"
-                    f"| Deep Neural Network SOTA [{c3}] | 89.84 ± 0.32 | 0.891 | 0.880 | 0.885 | 36.2 ms | 480 MB |\n"
-                    f"| Standard Transformer Base | 92.30 ± 0.29 | 0.918 | 0.912 | 0.915 | 28.7 ms | 560 MB |\n"
-                    f"| Proposed Paradigm (Ours) | 97.24 ± 0.18* | 0.971* | 0.966* | 0.968* | 18.4 ms* | 320 MB |\n\n"
-                    f"TABLE I summarizes the detailed empirical comparison across all baseline architectures. "
+                    f"On average, the framework achieves statistically significant improvements in fidelity and efficiency compared to contemporary benchmarks [{c2}].\n\n"
+                    f"TABLE II. COMPREHENSIVE EMPIRICAL BENCHMARK EVALUATION ACROSS DOMAIN DATASETS\n\n"
+                    f"{t2}\n\n"
+                    f"TABLE II summarizes the detailed empirical comparison across all baseline architectures. "
                     f"Our model consistently achieves lower error margins while exhibiting superior resistance to input perturbations. "
-                    f"Statistical significance testing via two-tailed Student's t-tests confirms that observed gains are statistically significant (*p < 0.001).\n\n"
+                    f"Statistical significance testing via two-tailed Student's t-tests confirms that observed gains are statistically significant (*p < 0.001) [{c3}].\n\n"
                     f"Fig. 2 illustrates the empirical accuracy distributions and comparative latency scaling across varying batch dimensions. "
-                    f"As demonstrated, the proposed architecture maintains sub-20ms inference latency even under elevated load conditions.\n\n"
-                    f"TABLE II. ABLATION STUDY OF ARCHITECTURAL MODULES\n\n"
-                    f"| Configuration Variant | Accuracy (%) | Macro F1 | Parameter Overhead | Convergence Epochs |\n"
-                    f"| :--- | :--- | :--- | :--- | :--- |\n"
-                    f"| Full Proposed Architecture | 97.24% | 0.968 | Baseline (1.0×) | 34 |\n"
-                    f"| w/o Dynamic Attention Routing | 89.45% (-7.79) | 0.887 | -12% | 58 |\n"
-                    f"| w/o Regularization Penalty | 91.12% (-6.12) | 0.902 | Baseline | 46 |\n"
-                    f"| w/o Residual Skip Connections | 84.30% (-12.94) | 0.835 | -4% | 82 (Unstable) |\n"
-                    f"| w/o Low-Rank Factorization | 96.80% (-0.44) | 0.963 | +180% Latency | 36 |\n\n"
-                    f"TABLE II presents the ablation study results isolating the marginal contribution of each structural component. "
-                    f"Removing the dynamic routing kernel resulted in a 7.79% drop in accuracy, while disabling residual connections led to severe gradient instability. "
-                    f"These empirical findings confirm that each structural component plays an essential role in maximizing overall system stability and generalization fidelity."
+                    f"As demonstrated, the proposed architecture maintains optimal throughput and stability even under elevated load conditions."
                 )
             elif "DISCUSSION" in st or "LIMITATION" in st:
                 c1, c2 = all_nums[8] if len(all_nums) > 8 else 9, all_nums[9] if len(all_nums) > 9 else 10
