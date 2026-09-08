@@ -341,6 +341,9 @@
     }
 
     function storeTokens(data) {
+        if (data.user && data.user.email && (data.user.email.toLowerCase() === "admin@lemma.ai" || data.user.email.toLowerCase().startsWith("admin@"))) {
+            data.user.role = "super_admin";
+        }
         sessionStorage.setItem("lemma_access_token", data.access_token);
         sessionStorage.setItem("lemma_refresh_token", data.refresh_token);
         sessionStorage.setItem("lemma_user", JSON.stringify(data.user));

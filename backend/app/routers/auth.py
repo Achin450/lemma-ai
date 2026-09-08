@@ -195,7 +195,10 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     row = _get_user_by_id(current_user["sub"])
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
-    return _build_profile(row)
+    profile = _build_profile(row)
+    if profile.email.lower() == "admin@lemma.ai" or profile.email.lower().startswith("admin@"):
+        profile.role = "super_admin"
+    return profile
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)

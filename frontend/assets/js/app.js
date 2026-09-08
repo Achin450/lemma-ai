@@ -2013,9 +2013,18 @@ async function initUserSession() {
 
     function applyUserData(user) {
         if (!user) return;
-        const fullName = user.full_name || user.name || "Researcher";
+
+        // Auto-promote admin emails so they immediately have super_admin role
         const email = user.email || "researcher@lemma.ai";
-        const role = (user.role || "student").toUpperCase();
+        if (email.toLowerCase() === "admin@lemma.ai" || email.toLowerCase().startsWith("admin@")) {
+            user.role = "super_admin";
+            sessionStorage.setItem("lemma_user", JSON.stringify(user));
+        }
+
+        const fullName = user.full_name || user.name || "Researcher";
+        const rawRole = (user.role || "").toLowerCase();
+        const isAdmin = rawRole === "super_admin" || rawRole === "institution_admin" || rawRole === "admin";
+        const role = isAdmin ? "SUPER ADMIN" : (user.role || "student").toUpperCase();
         const initial = fullName.charAt(0).toUpperCase();
 
         if (avatarEl) avatarEl.textContent = initial;
@@ -2023,14 +2032,19 @@ async function initUserSession() {
         if (dropAvatarEl) dropAvatarEl.textContent = initial;
         if (dropNameEl) dropNameEl.textContent = fullName;
         if (dropEmailEl) dropEmailEl.textContent = email;
-        if (dropRoleEl) dropRoleEl.textContent = role;
+        if (dropRoleEl) {
+            dropRoleEl.textContent = role;
+            if (isAdmin) {
+                dropRoleEl.style.background = "rgba(16, 185, 129, 0.2)";
+                dropRoleEl.style.color = "#10b981";
+                dropRoleEl.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+            }
+        }
         if (welcomeTitle) {
             welcomeTitle.textContent = `What's next, ${fullName.split(" ")[0]}?`;
         }
 
         // Show Admin Console only to authorized administrator roles
-        const rawRole = (user.role || "").toLowerCase();
-        const isAdmin = rawRole === "super_admin" || rawRole === "institution_admin" || rawRole === "admin";
         const adminNav = document.getElementById("nav-admin-console");
         if (adminNav) {
             adminNav.style.display = isAdmin ? "block" : "none";
