@@ -283,11 +283,18 @@ def test_research_generator_pipeline():
 
     mock_section_text = "Medical image segmentation is vital for diagnosis [1]. Automated techniques improve accuracy."
     mock_abstract = "This paper surveys state-of-the-art deep learning methods for medical image segmentation."
+    mock_topic_analysis = {
+        "refined_topic": "Machine Learning for Medical Image Segmentation",
+        "keywords": ["Medical Imaging", "Segmentation"],
+        "suggested_sections": ["INTRODUCTION", "RELATED WORK", "METHODOLOGY AND ARCHITECTURES", "CONCLUSION"]
+    }
 
-    with patch("app.services.online_retriever.OnlineRetrieverService.get_online_candidates", new=AsyncMock(return_value=mock_candidates)), \
+    with patch.object(ResearchGeneratorService, "_retrieve_sources", new=AsyncMock(return_value=mock_candidates)), \
+         patch("app.services.llm.LLMService.analyze_topic", new=AsyncMock(return_value=mock_topic_analysis)), \
          patch("app.services.llm.LLMService.generate_paper_outline", new=AsyncMock(return_value=mock_outline)), \
          patch("app.services.llm.LLMService.generate_section", new=AsyncMock(return_value=mock_section_text)), \
          patch("app.services.llm.LLMService.generate_abstract", new=AsyncMock(return_value=mock_abstract)), \
+         patch.object(PaperStore, "_upsert_db_record", return_value=None), \
          patch.object(ResearchGeneratorService, "_run_similarity_check", new=AsyncMock(return_value=0.06)):
 
         generator = ResearchGeneratorService()

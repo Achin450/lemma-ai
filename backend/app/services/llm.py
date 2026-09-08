@@ -618,18 +618,21 @@ Example output:
         length_words = {"short": "500-750", "medium": "850-1100", "long": "1100-1400"}.get(length_target, "850-1100")
 
         source_context = ""
-        if sources and citation_map:
+        if sources:
             source_lines = []
-            for src in sources:
-                num = citation_map.get(src.get("title", ""))
-                if num:
-                    authors = ", ".join(src.get("authors", [])[:3])
-                    year = src.get("year", "")
-                    title = src.get("title", "")
-                    abstract_snippet = (src.get("abstract", "") or "")[:200]
-                    source_lines.append(
-                        f"[{num}] {authors} ({year}). \"{title}\". {abstract_snippet}"
-                    )
+            for idx, src in enumerate(sources):
+                title = src.get("title", "")
+                num = None
+                if citation_map:
+                    num = citation_map.get(title) or citation_map.get(title.strip().lower())
+                if not num:
+                    num = idx + 1
+                authors = ", ".join(src.get("authors", [])[:3])
+                year = src.get("year", "")
+                abstract_snippet = (src.get("abstract", "") or "")[:200]
+                source_lines.append(
+                    f"[{num}] {authors} ({year}). \"{title}\". {abstract_snippet}"
+                )
             if source_lines:
                 source_context = (
                     "\n\nAvailable sources to cite (use [N] notation for inline citations, "
@@ -658,7 +661,7 @@ Example output:
             f"1. Write an extensive {length_words} words in rigorous, authentic scholarly style.\n"
             f"2. Maximize sentence length variance (Burstiness): alternate short, punchy statements (5-8 words) with nuanced, analytical compound sentences (25-35 words with semicolons and active verbs).\n"
             f"3. Strictly BAN robotic AI clichés: NEVER use 'In recent years', 'rapid proliferation', 'pivotal role', 'delve', 'testament to', 'multifaceted', 'furthermore', 'moreover', or 'it is important to note'.\n"
-            f"4. Embed multiple real inline citations [1], [2], [3] naturally throughout the argument.\n"
+            f"4. Embed multiple real inline citations [1], [2], [3] naturally throughout the argument (include at least 2-4 citations per section referencing the available sources list above).\n"
             f"5. Scientific Formatting Requirements:\n"
             f"{math_req}"
             f"   - If this section is Results, Evaluation, or Related Work, include an authentic academic comparison table using Markdown table syntax (| Header 1 | Header 2 |) with domain-specific metrics tailored to {topic}.\n"
