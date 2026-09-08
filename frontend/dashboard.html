@@ -1186,6 +1186,13 @@ Minimum 50 characters required. For best results, paste the full document text."
                         <span class="similarity-badge-score" id="paper-similarity-score">—</span>
                     </div>
 
+                    <!-- Novelty Advisor Header Badge -->
+                    <div class="novelty-header-badge" id="paper-novelty-badge" title="Novelty Advisor Analysis">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span class="novelty-badge-label">Novelty</span>
+                        <span class="novelty-badge-score" id="paper-novelty-score">—</span>
+                    </div>
+
                     <!-- In-Place Manual Editing Controls -->
                     <button class="btn btn-sm btn-outline" id="btn-edit-paper" title="Edit Paper in-place">
                         <i class="fa-solid fa-pen-to-square"></i> <span>Edit Paper</span>
@@ -1250,6 +1257,25 @@ Minimum 50 characters required. For best results, paste the full document text."
 
                 <!-- Right sidebar: Section details + improve -->
                 <aside class="paper-editor-sidebar" id="paper-editor-sidebar">
+                    <!-- Novelty Advisor Intelligence Card -->
+                    <div class="paper-sidebar-card novelty-sidebar-card" id="paper-sidebar-novelty-card">
+                        <div class="novelty-sidebar-card-header">
+                            <h4><i class="fa-solid fa-sparkles" style="color: #10b981;"></i> Novelty Advisor</h4>
+                            <span class="novelty-score-pill-sm" id="sidebar-novelty-score-pill">—</span>
+                        </div>
+                        <p class="novelty-sidebar-verdict" id="sidebar-novelty-verdict">Analyzing manuscript originality...</p>
+                        <div class="novelty-claims-list-header">
+                            <span>Detected Novel Highlights</span>
+                            <span class="claims-count-badge" id="sidebar-novelty-claims-count">0</span>
+                        </div>
+                        <div class="novelty-claims-list" id="sidebar-novelty-claims-list">
+                            <div class="novelty-claim-empty">Analyzing core methodology, algorithms &amp; proofs...</div>
+                        </div>
+                        <button type="button" class="btn btn-full btn-outline" id="btn-open-full-novelty" style="margin-top: 10px; font-size: 0.78rem;">
+                            <i class="fa-solid fa-chart-pie"></i> View 5-D Radar &amp; Prior Art
+                        </button>
+                    </div>
+
                     <div class="paper-sidebar-card">
                         <h4>Section Details</h4>
                         <div id="section-detail-info">
@@ -1269,6 +1295,7 @@ Minimum 50 characters required. For best results, paste the full document text."
                         <div class="paper-info-row"><span>Sections</span><span id="paper-info-sections">—</span></div>
                         <div class="paper-info-row"><span>References</span><span id="paper-info-refs">—</span></div>
                         <div class="paper-info-row"><span>Similarity</span><span id="paper-info-similarity">—</span></div>
+                        <div class="paper-info-row"><span>Novelty</span><span id="paper-info-novelty" style="color: #10b981; font-weight: 600;">—</span></div>
                     </div>
                 </aside>
             </div>
@@ -1792,6 +1819,36 @@ Minimum 50 characters required. For best results, paste the full document text."
                 </div>
             </div>
         </footer>
+    </div>
+
+    <!-- FLOATING NOVELTY INTELLIGENCE POPOVER -->
+    <div class="novelty-inspector-popover" id="novelty-inspector-popover" style="display: none;">
+        <div class="popover-header">
+            <div class="popover-badge-group">
+                <span class="popover-dim-badge" id="popover-dim-badge">Methodological Innovation</span>
+                <span class="popover-score-pill" id="popover-score-pill"><i class="fa-solid fa-sparkles"></i> 94% Novel</span>
+            </div>
+            <button type="button" class="popover-close-btn" id="popover-close-btn">&times;</button>
+        </div>
+        <div class="popover-body">
+            <div class="popover-section">
+                <div class="popover-label"><i class="fa-solid fa-lightbulb" style="color: #10b981;"></i> Why It's Novel:</div>
+                <p class="popover-text" id="popover-why-novel">—</p>
+            </div>
+            <div class="popover-section">
+                <div class="popover-label"><i class="fa-solid fa-code-compare" style="color: #3b82f6;"></i> Prior Art Contrast:</div>
+                <p class="popover-text" id="popover-prior-contrast">—</p>
+            </div>
+            <div class="popover-section popover-warning-box">
+                <div class="popover-label"><i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i> Reviewer 2 Defense:</div>
+                <p class="popover-text" id="popover-reviewer-critique">—</p>
+            </div>
+        </div>
+        <div class="popover-footer">
+            <button type="button" class="popover-action-btn" id="btn-popover-open-novelty">
+                <span>Deep Dive in Novelty Advisor</span> <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Error/Notification Toast -->

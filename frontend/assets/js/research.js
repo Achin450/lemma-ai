@@ -30,6 +30,7 @@
         restructureFile: null,
         simcheckFile: null,
         currentSection: null,
+        currentPaperNoveltyReport: null,
     };
 
     // ---------------------------------------------------------------------------
@@ -979,10 +980,14 @@
             const paper = await res.json();
             state.currentPaper = paper;
             state.currentPaperId = paperId;
+            state.currentPaperNoveltyReport = null;
 
             renderPaperEditor(paper);
             showViewGlobal('paper-editor-view');
             showToast('Paper ready!', 'success');
+
+            // Asynchronously run Novelty Advisor audit and highlight novel claims
+            autoAnalyzePaperNovelty(paper);
 
         } catch (e) {
             showToast(`Could not load paper: ${e.message}`, 'error');
@@ -1187,6 +1192,11 @@
 
         html += `</div></div>`;
         wrapper.innerHTML = html;
+
+        // If novelty audit already exists and not editing, re-apply highlights
+        if (state.currentPaperNoveltyReport && !isEditMode) {
+            applyPaperNoveltyHighlights(state.currentPaperNoveltyReport.novelty_highlights || [], state.currentPaperNoveltyReport);
+        }
     }
 
     function scrollToSection(sectionId, paper) {
@@ -1569,6 +1579,384 @@
                 showViewGlobal('mypapers-view');
                 loadMyPapers();
             });
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Novelty Advisor Dashboard & Paper Integration
+    // ---------------------------------------------------------------------------
+    async function autoAnalyzePaperNovelty(paper) {
+        if (!paper) return;
+
+        // 1. Assemble manuscript text
+        let text = '';
+        if (paper.abstract) text += paper.abstract + '\n\n';
+        (paper.sections || []).forEach(sec => {
+            text += (sec.title || '') + '\n' + (sec.content || '') + '\n\n';
+            (sec.subsections || []).forEach(sub => {
+                text += (sub.title || '') + '\n' + (sub.content || '') + '\n\n';
+            });
+        });
+
+        // 2. Set loading states on UI
+        const badge = document.getElementById('paper-novelty-badge');
+        const scoreEl = document.getElementById('paper-novelty-score');
+        const infoNov = document.getElementById('paper-info-novelty');
+        const card = document.getElementById('paper-sidebar-novelty-card');
+        const pill = document.getElementById('sidebar-novelty-score-pill');
+        const verdict = document.getElementById('sidebar-novelty-verdict');
+        const claimsCount = document.getElementById('sidebar-novelty-claims-count');
+        const claimsList = document.getElementById('sidebar-novelty-claims-list');
+
+        if (badge) badge.style.display = 'inline-flex';
+        if (scoreEl) scoreEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        if (infoNov) infoNov.innerHTML = '<span style="color: #6ee7b7; font-size: 0.8rem;"><i class="fa-solid fa-spinner fa-spin"></i> Analyzing...</span>';
+        if (card) card.style.display = 'block';
+        if (pill) pill.textContent = 'Analyzing...';
+        if (verdict) verdict.textContent = 'Scanning arXiv & computing 5-D novelty vector...';
+        if (claimsCount) claimsCount.textContent = '...';
+        if (claimsList) {
+            claimsList.innerHTML = '<div class="novelty-claim-empty"><i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Identifying novel mechanisms & theoretical proofs...</div>';
+        }
+
+        if (text.trim().length < 50) {
+            if (scoreEl) scoreEl.textContent = '—';
+            if (infoNov) infoNov.textContent = '—';
+            if (pill) pill.textContent = '—';
+            if (verdict) verdict.textContent = 'Manuscript too brief for statistical novelty assessment.';
+            if (claimsList) claimsList.innerHTML = '<div class="novelty-claim-empty">Draft too short to evaluate novelty.</div>';
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('text', text);
+            if (paper.title) formData.append('title', paper.title);
+            formData.append('domain', paper.field || 'Artificial Intelligence & Machine Learning');
+
+            const res = await fetch(`${apiBase()}/api/v1/novelty/analyze`, {
+                method: 'POST',
+                headers: authHeadersFormData(),
+                body: formData,
+            });
+
+            if (!res.ok) {
+                console.warn('Novelty analysis returned status', res.status);
+                if (scoreEl) scoreEl.textContent = '—';
+                if (infoNov) infoNov.textContent = '—';
+                if (pill) pill.textContent = 'Unavailable';
+                if (verdict) verdict.textContent = 'Novelty audit could not be completed for this draft.';
+                return;
+            }
+
+            const report = await res.json();
+            paper.novelty_report = report;
+            state.currentPaperNoveltyReport = report;
+
+            // Update UI with report results
+            renderPaperNoveltyUI(report);
+
+            // Apply in-paper text highlights
+            applyPaperNoveltyHighlights(report.novelty_highlights || [], report);
+
+        } catch (err) {
+            console.error('Novelty audit error:', err);
+            if (scoreEl) scoreEl.textContent = '—';
+            if (infoNov) infoNov.textContent = '—';
+            if (pill) pill.textContent = 'Error';
+            if (verdict) verdict.textContent = 'Network or server error during novelty analysis.';
+        }
+    }
+
+    function renderPaperNoveltyUI(report) {
+        if (!report) return;
+
+        // 1. Header badge
+        const badge = document.getElementById('paper-novelty-badge');
+        const scoreEl = document.getElementById('paper-novelty-score');
+        if (badge) {
+            badge.style.display = 'inline-flex';
+            badge.title = `Novelty Index: ${report.overall_novelty_score}% (${report.novelty_tier}) - Click to inspect 5D Radar`;
+            badge.onclick = (e) => {
+                e.preventDefault();
+                if (window.lemmaNovelty) window.lemmaNovelty.showReportForPaper(report);
+            };
+        }
+        if (scoreEl) {
+            scoreEl.textContent = `${report.overall_novelty_score}%`;
+        }
+
+        // 2. Sidebar info row
+        const infoNov = document.getElementById('paper-info-novelty');
+        if (infoNov) {
+            infoNov.textContent = `${report.overall_novelty_score}% (${report.novelty_tier})`;
+            infoNov.title = report.executive_verdict;
+        }
+
+        // 3. Sidebar card
+        const card = document.getElementById('paper-sidebar-novelty-card');
+        const pill = document.getElementById('sidebar-novelty-score-pill');
+        const verdict = document.getElementById('sidebar-novelty-verdict');
+        const claimsCount = document.getElementById('sidebar-novelty-claims-count');
+        const claimsList = document.getElementById('sidebar-novelty-claims-list');
+
+        if (card) card.style.display = 'block';
+        if (pill) {
+            pill.textContent = `${report.overall_novelty_score}%`;
+            pill.title = report.novelty_tier;
+        }
+        if (verdict) {
+            verdict.textContent = report.executive_verdict || 'Distinct novel mechanisms detected.';
+        }
+
+        const highlights = report.novelty_highlights || [];
+        if (claimsCount) claimsCount.textContent = highlights.length;
+
+        if (claimsList) {
+            if (!highlights.length) {
+                claimsList.innerHTML = '<div class="novelty-claim-empty">No distinct novel claims flagged for this draft.</div>';
+            } else {
+                claimsList.innerHTML = highlights.map((hl) => `
+                    <div class="novelty-claim-item" data-claim-id="${hl.id}" title="Click to scroll to highlight in paper">
+                        <span class="novelty-claim-dot"></span>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <strong style="font-size: 0.72rem; color: #60a5fa; text-transform: uppercase;">${escHtml(hl.dimension_name)}</strong>
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #10b981;">${hl.novelty_score}%</span>
+                            </div>
+                            <div class="novelty-claim-text">${escHtml(hl.text_snippet)}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                claimsList.querySelectorAll('.novelty-claim-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const claimId = item.dataset.claimId;
+                        scrollToNoveltyHighlight(claimId, report);
+                    });
+                });
+            }
+        }
+
+        // 4. View 5-D Radar button
+        const btnFull = document.getElementById('btn-open-full-novelty');
+        if (btnFull) {
+            btnFull.onclick = (e) => {
+                e.preventDefault();
+                if (window.lemmaNovelty) window.lemmaNovelty.showReportForPaper(report);
+            };
+        }
+    }
+
+    function applyPaperNoveltyHighlights(highlights, report) {
+        if (!highlights || !highlights.length) return;
+
+        const abstractEl = document.getElementById('paper-editable-abstract');
+        const contentPreviews = document.querySelectorAll('.paper-section-content-preview');
+        const allContainers = [abstractEl, ...contentPreviews].filter(Boolean);
+
+        highlights.forEach(hl => {
+            let snippet = (hl.text_snippet || '').trim();
+            if (!snippet || snippet.length < 10) return;
+
+            for (const container of allContainers) {
+                if (container.querySelector(`[data-novelty-id="${hl.id}"]`)) continue;
+
+                const paragraphs = container.querySelectorAll('p.paper-paragraph');
+                const targets = paragraphs.length ? Array.from(paragraphs) : [container];
+
+                let matched = false;
+                for (const p of targets) {
+                    const text = p.textContent || '';
+                    const html = p.innerHTML;
+
+                    // 1. Try full exact match
+                    if (text.includes(snippet)) {
+                        const idx = html.indexOf(snippet);
+                        if (idx !== -1) {
+                            const repl = `<mark class="novelty-highlight" data-novelty-id="${hl.id}" tabindex="0">${snippet}<span class="novelty-sparkle-pill"><i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel</span></mark>`;
+                            p.innerHTML = html.slice(0, idx) + repl + html.slice(idx + snippet.length);
+                            matched = true;
+                            break;
+                        }
+                    }
+
+                    // 2. Try phrase match (first 8 words)
+                    const words = snippet.split(/\s+/);
+                    if (words.length >= 4) {
+                        const subPhrase = words.slice(0, Math.min(8, words.length)).join(' ');
+                        if (subPhrase.length > 15 && text.includes(subPhrase)) {
+                            const idx = html.indexOf(subPhrase);
+                            if (idx !== -1) {
+                                const repl = `<mark class="novelty-highlight" data-novelty-id="${hl.id}" tabindex="0">${subPhrase}<span class="novelty-sparkle-pill"><i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel</span></mark>`;
+                                p.innerHTML = html.slice(0, idx) + repl + html.slice(idx + subPhrase.length);
+                                matched = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (matched) break;
+            }
+        });
+
+        attachNoveltyHighlightEvents(report);
+    }
+
+    let popoverHoverTimeout = null;
+
+    function attachNoveltyHighlightEvents(report) {
+        const popover = document.getElementById('novelty-inspector-popover');
+        if (!popover) return;
+
+        document.querySelectorAll('.novelty-highlight').forEach(el => {
+            const id = el.dataset.noveltyId;
+            const hl = (report.novelty_highlights || []).find(h => h.id === id);
+            if (!hl) return;
+
+            el.onmouseenter = () => {
+                if (popoverHoverTimeout) clearTimeout(popoverHoverTimeout);
+                el.classList.add('active-highlight');
+                showNoveltyPopover(el, hl, report, false);
+            };
+
+            el.onmouseleave = () => {
+                el.classList.remove('active-highlight');
+                popoverHoverTimeout = setTimeout(() => {
+                    hideNoveltyPopover(false);
+                }, 300);
+            };
+
+            el.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.novelty-highlight').forEach(h => h.classList.remove('active-highlight'));
+                el.classList.add('active-highlight');
+                showNoveltyPopover(el, hl, report, true);
+            };
+        });
+
+        popover.onmouseenter = () => {
+            if (popoverHoverTimeout) clearTimeout(popoverHoverTimeout);
+        };
+
+        popover.onmouseleave = () => {
+            popoverHoverTimeout = setTimeout(() => {
+                hideNoveltyPopover(false);
+            }, 300);
+        };
+
+        const closeBtn = document.getElementById('popover-close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.stopPropagation();
+                hideNoveltyPopover(true);
+            };
+        }
+
+        const actionBtn = document.getElementById('btn-popover-open-novelty');
+        if (actionBtn) {
+            actionBtn.onclick = (e) => {
+                e.stopPropagation();
+                hideNoveltyPopover(true);
+                if (window.lemmaNovelty) {
+                    window.lemmaNovelty.showReportForPaper(report);
+                }
+            };
+        }
+    }
+
+    function showNoveltyPopover(targetEl, hl, report, isPinned = false) {
+        const popover = document.getElementById('novelty-inspector-popover');
+        if (!popover || !hl) return;
+
+        const dimBadge = document.getElementById('popover-dim-badge');
+        const scorePill = document.getElementById('popover-score-pill');
+        const whyNovel = document.getElementById('popover-why-novel');
+        const priorContrast = document.getElementById('popover-prior-contrast');
+        const reviewerCritique = document.getElementById('popover-reviewer-critique');
+
+        if (dimBadge) dimBadge.textContent = hl.dimension_name || 'Novel Innovation';
+        if (scorePill) scorePill.innerHTML = `<i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel`;
+        if (whyNovel) whyNovel.textContent = hl.why_novel || 'Distinct formulation identified.';
+        if (priorContrast) priorContrast.textContent = hl.prior_art_contrast || 'Standard literature relies on heuristic baselines.';
+        if (reviewerCritique) {
+            reviewerCritique.textContent = hl.reviewer_2_critique || hl.strengthen_tip || 'Provide complete parameter-matched ablations to preempt Reviewer 2 critique.';
+        }
+
+        // Positioning
+        const rect = targetEl.getBoundingClientRect();
+        const popoverWidth = 360;
+        const popoverHeight = 310;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let left = rect.left + (rect.width / 2) - (popoverWidth / 2);
+        left = Math.max(16, Math.min(left, viewportWidth - popoverWidth - 16));
+
+        let top = rect.bottom + 8;
+        if (top + popoverHeight > viewportHeight && rect.top - popoverHeight - 8 > 0) {
+            top = rect.top - popoverHeight - 8;
+        }
+
+        popover.style.left = `${left}px`;
+        popover.style.top = `${top}px`;
+        popover.style.display = 'block';
+
+        if (isPinned) {
+            popover.dataset.pinned = 'true';
+        }
+    }
+
+    function hideNoveltyPopover(force = false) {
+        const popover = document.getElementById('novelty-inspector-popover');
+        if (!popover) return;
+        if (!force && popover.dataset.pinned === 'true') return;
+        popover.style.display = 'none';
+        delete popover.dataset.pinned;
+        document.querySelectorAll('.novelty-highlight.active-highlight').forEach(el => el.classList.remove('active-highlight'));
+    }
+
+    function scrollToNoveltyHighlight(claimId, report) {
+        const el = document.querySelector(`.novelty-highlight[data-novelty-id="${claimId}"]`);
+        if (!el) {
+            showToast('Highlight found in section outline.', 'info');
+            return;
+        }
+
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.querySelectorAll('.novelty-highlight').forEach(h => h.classList.remove('active-highlight'));
+        el.classList.add('active-highlight');
+
+        const hl = (report.novelty_highlights || []).find(h => h.id === claimId);
+        if (hl) {
+            setTimeout(() => {
+                showNoveltyPopover(el, hl, report, true);
+            }, 300);
+        }
+    }
+
+    function initNoveltyInspectorGlobalEvents() {
+        document.addEventListener('click', (e) => {
+            const popover = document.getElementById('novelty-inspector-popover');
+            if (popover && popover.style.display !== 'none') {
+                if (!popover.contains(e.target) && !e.target.closest('.novelty-highlight') && !e.target.closest('.novelty-claim-item') && !e.target.closest('#paper-novelty-badge')) {
+                    hideNoveltyPopover(true);
+                }
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            hideNoveltyPopover(true);
+        });
+
+        const wrapper = document.getElementById('paper-preview-wrapper');
+        if (wrapper) {
+            wrapper.addEventListener('scroll', () => {
+                const popover = document.getElementById('novelty-inspector-popover');
+                if (popover && popover.style.display !== 'none' && popover.dataset.pinned !== 'true') {
+                    hideNoveltyPopover(true);
+                }
+            }, { passive: true });
         }
     }
 
@@ -2427,6 +2815,7 @@
         initMyPapers();
         initProgressCancel();
         initHomePromptBar();
+        initNoveltyInspectorGlobalEvents();
     }
 
     if (document.readyState === 'loading') {
@@ -2439,7 +2828,15 @@
     window.loadMyPapers = loadMyPapers;
     window.startGenerateFromTopic = startGenerateFromTopic;
     window.startRestructureFromFile = startRestructureFromFile;
-    window.lemmaResearch = { state, loadAndShowPaper, loadMyPapers, startGenerateFromTopic, startRestructureFromFile };
+    window.lemmaResearch = {
+        state,
+        loadAndShowPaper,
+        loadMyPapers,
+        startGenerateFromTopic,
+        startRestructureFromFile,
+        autoAnalyzePaperNovelty,
+        renderPaperNoveltyUI,
+    };
 
 })();
 

@@ -1067,6 +1067,8 @@ document.addEventListener("DOMContentLoaded", () => {
             'humanizer-workspace': 'nav-humanizer',
             'reports-workspace': 'nav-export',
             'citations-workspace': 'nav-citations',
+            'novelty-view': 'nav-novelty',
+            'funding-view': 'nav-funding',
         };
         const activeNavId = navMap[viewId];
         if (activeNavId) {

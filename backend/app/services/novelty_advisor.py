@@ -25,7 +25,7 @@ from typing import Optional, List, Dict, Any
 from app.schemas.novelty import (
     NoveltyDimensionScore, ReviewerAttack, PriorArtDelta,
     VenueFit, PolishedContribution, NoveltyReportResponse,
-    RebuttalResponse, PolishResponse
+    RebuttalResponse, PolishResponse, NoveltyHighlight
 )
 from app.services.llm import LLMService
 from app.services.online_retriever import OnlineRetrieverService
@@ -518,6 +518,168 @@ class NoveltyAdvisorService:
         return roadmap
 
     @classmethod
+    def _extract_novelty_highlights(
+        cls,
+        text: str,
+        dimensions: List[NoveltyDimensionScore],
+        claims: Dict[str, Any],
+        domain: str
+    ) -> List[NoveltyHighlight]:
+        """
+        Extracts specific sentences or formulation fragments that demonstrate novel
+        methodological, theoretical, empirical, or problem formulation contributions.
+        """
+        highlights: List[NoveltyHighlight] = []
+        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 25]
+
+        # Dimension score lookup
+        dim_map = {d.dimension_id: d for d in dimensions}
+        method_dim = dim_map.get("methodology")
+        theory_dim = dim_map.get("theory")
+        emp_dim = dim_map.get("empirical")
+        prob_dim = dim_map.get("problem")
+        cross_dim = dim_map.get("cross_domain")
+
+        used_sentences = set()
+
+        for s in sentences:
+            sl = s.lower()
+            if s in used_sentences:
+                continue
+
+            # 1. Methodological & Algorithmic Novelty
+            if any(k in sl for k in ["we propose", "we introduce", "our formulation", "our architecture", "we design", "novel mechanism", "new algorithm", "this work develops"]):
+                score = method_dim.score if method_dim else 88
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s,
+                    dimension_id="methodology",
+                    dimension_name="Methodological Innovation",
+                    novelty_score=min(98, score + 4),
+                    impact_level="Breakthrough" if score >= 85 else "Substantial",
+                    why_novel="Introduces a customized structural mechanism rather than reusing standard off-the-shelf primitives.",
+                    prior_art_contrast="Standard architectures rely on generic heuristic layers; this work explicitly adapts formulation for targeted efficiency.",
+                    reviewer_2_critique="Reviewers may argue this is a combination of known components unless ablation isolates this module.",
+                    strengthen_tip="Explicitly include a row in your Ablation Table isolating performance with vs without this exact mechanism."
+                ))
+                used_sentences.add(s)
+                if len(highlights) >= 5:
+                    break
+                continue
+
+            # 2. Theoretical Rigor & Guarantees
+            if any(k in sl for k in ["theorem", "lemma", "guarantee", "bound", "complexity", "o(n", "convergence", "proven", "formal proof"]):
+                score = theory_dim.score if theory_dim else 85
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s,
+                    dimension_id="theory",
+                    dimension_name="Theoretical Formulation",
+                    novelty_score=min(97, score + 5),
+                    impact_level="Breakthrough" if score >= 80 else "Substantial",
+                    why_novel="Provides formal mathematical grounding and analytical bounds rather than pure empirical trial-and-error.",
+                    prior_art_contrast="Existing literature predominantly demonstrates empirical behavior without strict asymptotic guarantees.",
+                    reviewer_2_critique="Reviewers will verify whether assumptions in the proof hold under non-asymptotic real-world distributions.",
+                    strengthen_tip="State all boundary conditions in a dedicated Proposition or Lemma appendix for immediate review clarity."
+                ))
+                used_sentences.add(s)
+                if len(highlights) >= 5:
+                    break
+                continue
+
+            # 3. Empirical & Benchmark Breakthrough
+            if any(k in sl for k in ["outperforms", "speedup", "reduction in", "state-of-the-art", "sota", "statistically significant", "p < 0.0", "competitive with"]):
+                score = emp_dim.score if emp_dim else 82
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s,
+                    dimension_id="empirical",
+                    dimension_name="Empirical Advantage",
+                    novelty_score=min(95, score + 3),
+                    impact_level="Substantial",
+                    why_novel="Quantifies a measurable performance delta over established baselines with rigorous benchmark evaluation.",
+                    prior_art_contrast="Exceeds current state-of-the-art reference models under identical computational constraints.",
+                    reviewer_2_critique="Reviewers will ask whether hyperparameter tuning was equally applied to competitive baselines.",
+                    strengthen_tip="Specify confidence intervals (mean ± std dev across 5 runs) to render empirical superiority indisputable."
+                ))
+                used_sentences.add(s)
+                if len(highlights) >= 5:
+                    break
+                continue
+
+            # 4. Problem Formulation & Scope
+            if any(k in sl for k in ["unexplored", "gap in literature", "unlike classical", "traditional methods fail", "previously overlooked", "in contrast to existing"]):
+                score = prob_dim.score if prob_dim else 80
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s,
+                    dimension_id="problem",
+                    dimension_name="Problem Formulation",
+                    novelty_score=min(94, score + 2),
+                    impact_level="Substantial",
+                    why_novel="Reframes an overlooked limitation in prior art into an actionable, formal research objective.",
+                    prior_art_contrast="Existing paradigms assume standard idealized assumptions; this paper tackles the real constraint directly.",
+                    reviewer_2_critique="Reviewers may question whether this constraint is sufficiently widespread in practical applications.",
+                    strengthen_tip="Cite 2-3 recent 2023-2024 industrial or empirical survey papers confirming that practitioners face this exact bottleneck."
+                ))
+                used_sentences.add(s)
+                if len(highlights) >= 5:
+                    break
+                continue
+
+            # 5. Cross-Domain / Hybrid
+            if any(k in sl for k in ["cross-domain", "bio-inspired", "physics-informed", "integrating", "hybrid formulation", "synergy"]):
+                score = cross_dim.score if cross_dim else 78
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s,
+                    dimension_id="cross_domain",
+                    dimension_name="Cross-Domain Innovation",
+                    novelty_score=min(92, score + 4),
+                    impact_level="Substantial",
+                    why_novel="Transfers principles across distinct scientific disciplines to circumvent conventional domain bottlenecks.",
+                    prior_art_contrast="Traditional approaches remain siloed within conventional domain boundaries.",
+                    reviewer_2_critique="Reviewers may scrutinize whether the cross-domain mapping is rigorous or metaphorical.",
+                    strengthen_tip="Provide a mapping table defining how constructs from the source domain directly translate to the target system."
+                ))
+                used_sentences.add(s)
+                if len(highlights) >= 5:
+                    break
+                continue
+
+        # If no explicit keyword was matched (e.g. short sample), create realistic highlights from first few sentences
+        if not highlights and sentences:
+            s0 = sentences[0]
+            highlights.append(NoveltyHighlight(
+                id=f"nov-{uuid.uuid4().hex[:8]}",
+                text_snippet=s0,
+                dimension_id="methodology",
+                dimension_name="Core Methodological Contribution",
+                novelty_score=method_dim.score if method_dim else 88,
+                impact_level="Substantial",
+                why_novel="Articulates the primary conceptual thesis and structural differentiation of the manuscript.",
+                prior_art_contrast="Deviates from baseline pipelines by establishing a specialized execution path.",
+                reviewer_2_critique="Reviewers will look for evidence that this approach generalizes beyond the tested configuration.",
+                strengthen_tip="Add cross-dataset evaluations to substantiate broad architectural utility."
+            ))
+            if len(sentences) > 1:
+                s1 = sentences[1]
+                highlights.append(NoveltyHighlight(
+                    id=f"nov-{uuid.uuid4().hex[:8]}",
+                    text_snippet=s1,
+                    dimension_id="empirical",
+                    dimension_name="Empirical Significance",
+                    novelty_score=emp_dim.score if emp_dim else 84,
+                    impact_level="Substantial",
+                    why_novel="Provides quantitative performance metrics and validation against contemporary benchmarks.",
+                    prior_art_contrast="Shows measurable accuracy or efficiency superiority against established foundation baselines.",
+                    reviewer_2_critique="Reviewer 2 may ask for additional latency and memory profiling alongside accuracy.",
+                    strengthen_tip="Include runtime FLOPs and inference latency benchmarks in the final results section."
+                ))
+
+        return highlights
+
+    @classmethod
     async def analyze_novelty(
         cls,
         text: str,
@@ -599,6 +761,9 @@ class NoveltyAdvisorService:
         # 8. Actionable Roadmap
         elevation_roadmap = cls._generate_elevation_roadmap(dimensions)
 
+        # 9. Extract in-manuscript highlight annotations
+        novelty_highlights = cls._extract_novelty_highlights(clean_text, dimensions, claims, detected_domain)
+
         report = NoveltyReportResponse(
             analysis_id=str(uuid.uuid4()),
             document_title=doc_title,
@@ -613,7 +778,8 @@ class NoveltyAdvisorService:
             prior_art_deltas=prior_art_deltas,
             venue_fit=venue_fit,
             polished_contributions=polished_contributions,
-            elevation_roadmap=elevation_roadmap
+            elevation_roadmap=elevation_roadmap,
+            novelty_highlights=novelty_highlights
         )
 
         gc.collect()

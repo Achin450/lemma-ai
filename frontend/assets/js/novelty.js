@@ -566,7 +566,51 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // Expose init globally
+    function showReportForPaper(reportData) {
+        if (!reportData) return;
+        noveltyData = reportData;
+
+        // Switch to Novelty view
+        if (typeof window.showView === 'function') {
+            window.showView("novelty-view");
+        } else {
+            document.querySelectorAll(".workspace-view").forEach(v => v.classList.add("hidden"));
+            const target = document.getElementById("novelty-view");
+            if (target) target.classList.remove("hidden");
+        }
+
+        const navNovelty = document.getElementById("nav-novelty");
+        if (navNovelty) {
+            document.querySelectorAll(".sidebar-nav li, .nav-item").forEach(el => el.classList.remove("active"));
+            navNovelty.classList.add("active");
+        }
+
+        const inputCard = document.getElementById("novelty-input-card");
+        const loader = document.getElementById("novelty-loading-state");
+        const results = document.getElementById("novelty-results-container");
+        const emptyState = document.getElementById("novelty-empty-state");
+
+        if (inputCard) inputCard.classList.add("hidden");
+        if (loader) loader.classList.add("hidden");
+        if (emptyState) emptyState.classList.add("hidden");
+        if (results) results.classList.remove("hidden");
+
+        renderNoveltyDashboard(reportData);
+
+        const noveltyView = document.getElementById("novelty-view");
+        if (noveltyView) {
+            noveltyView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    // Expose init and API globally
     window.initNoveltyAdvisor = initNoveltyAdvisor;
+    window.lemmaNovelty = {
+        showReportForPaper,
+        renderNoveltyDashboard,
+        getNoveltyData: () => noveltyData
+    };
     document.addEventListener("DOMContentLoaded", initNoveltyAdvisor);
 })();

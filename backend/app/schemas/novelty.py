@@ -74,6 +74,22 @@ class NoveltyAnalyzeRequest(BaseModel):
     target_venue_tier: Optional[str] = Field("Tier 1 & Tier 2", description="Desired venue tier")
 
 
+class NoveltyHighlight(BaseModel):
+    """Specific sentence or formulation identified with notable novelty."""
+    id: str
+    text_snippet: str
+    section_number: Optional[str] = None
+    section_title: Optional[str] = None
+    dimension_id: str = Field(..., description="'methodology', 'problem', 'theory', 'empirical', or 'cross_domain'")
+    dimension_name: str
+    novelty_score: int = Field(..., ge=0, le=100)
+    impact_level: str = Field(..., description="'Breakthrough', 'Substantial', or 'Moderate'")
+    why_novel: str
+    prior_art_contrast: str
+    reviewer_2_critique: Optional[str] = None
+    strengthen_tip: Optional[str] = None
+
+
 class NoveltyReportResponse(BaseModel):
     """Complete Novelty Advisor audit report."""
     analysis_id: str
@@ -102,6 +118,9 @@ class NoveltyReportResponse(BaseModel):
 
     # Actionable Elevation Roadmap
     elevation_roadmap: List[Dict[str, str]]
+
+    # In-Manuscript Highlight Annotations
+    novelty_highlights: List[NoveltyHighlight] = Field(default_factory=list)
 
 
 class RebuttalRequest(BaseModel):
