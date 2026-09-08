@@ -257,24 +257,39 @@ async def get_admin_overview(_: dict = Depends(get_admin_user)):
                 sub_counts = cur.fetchone() or {}
 
                 total_users = user_counts.get("total_users") or 0
-                total_inst = inst_counts.get("total_institutions") or 0
+                total_inst = inst_counts.get("total_institutions") or len(DEMO_INSTITUTIONS)
                 total_sub = sub_counts.get("total") or 0
 
-                if total_users > 0 or total_inst > 0 or total_sub > 0:
-                    return AdminOverviewStats(
-                        total_users=total_users,
-                        total_institutions=total_inst,
-                        total_submissions=total_sub,
-                        avg_plagiarism_score=round(float(sub_counts.get("avg_plag") or 0.12), 4),
-                        avg_ai_score=round(float(sub_counts.get("avg_ai") or 0.18), 4),
-                        flagged_high=sub_counts.get("flagged_high") or 0,
-                        flagged_medium=sub_counts.get("flagged_medium") or 0,
-                        clean=sub_counts.get("clean") or 0,
-                        total_seats_allocated=inst_counts.get("total_seats") or 0,
-                        total_seats_used=total_users,
-                        active_instructors=user_counts.get("instructors") or 0,
-                        active_students=user_counts.get("students") or 0,
-                    )
+                if total_sub == 0:
+                    total_sub = len(DEMO_SUBMISSIONS)
+                    flagged_high = sum(1 for s in DEMO_SUBMISSIONS if s["plagiarism_score"] >= 0.6)
+                    flagged_medium = sum(1 for s in DEMO_SUBMISSIONS if 0.3 <= s["plagiarism_score"] < 0.6)
+                    clean = sum(1 for s in DEMO_SUBMISSIONS if s["plagiarism_score"] < 0.3)
+                    avg_plag = 0.128
+                    avg_ai = 0.165
+                else:
+                    flagged_high = sub_counts.get("flagged_high") or 0
+                    flagged_medium = sub_counts.get("flagged_medium") or 0
+                    clean = sub_counts.get("clean") or 0
+                    avg_plag = round(float(sub_counts.get("avg_plag") or 0.12), 4)
+                    avg_ai = round(float(sub_counts.get("avg_ai") or 0.18), 4)
+
+                total_seats = inst_counts.get("total_seats") or sum(i["max_seats"] for i in DEMO_INSTITUTIONS)
+
+                return AdminOverviewStats(
+                    total_users=total_users,
+                    total_institutions=total_inst,
+                    total_submissions=total_sub,
+                    avg_plagiarism_score=avg_plag,
+                    avg_ai_score=avg_ai,
+                    flagged_high=flagged_high,
+                    flagged_medium=flagged_medium,
+                    clean=clean,
+                    total_seats_allocated=total_seats,
+                    total_seats_used=total_users,
+                    active_instructors=user_counts.get("instructors") or 0,
+                    active_students=user_counts.get("students") or max(0, total_users - (user_counts.get("instructors") or 0)),
+                )
     except Exception as e:
         logger.warning(f"Failed to query DB for admin overview (using fallback data): {e}")
 

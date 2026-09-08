@@ -217,6 +217,57 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Overview Quick Data Tables -->
+                    <div class="admin-two-col" style="margin-top: 1.5rem;">
+                        <!-- Recent Users Card -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3><i class="fa-solid fa-users" style="color: var(--accent-purple);"></i> Recent Registered Users</h3>
+                                <button class="btn-admin-secondary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="switchAdminTab('users')">
+                                    <span>View All</span> <i class="fa-solid fa-arrow-right" style="margin-left: 4px;"></i>
+                                </button>
+                            </div>
+                            <div class="admin-table-wrapper" style="margin-top: 1rem; border: none; background: transparent;">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="overview-users-preview-body">
+                                        <tr><td colspan="3" style="text-align:center; padding: 1.5rem;"><i class="fa-solid fa-spinner fa-spin"></i> Loading users...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Partner Institutions Card -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3><i class="fa-solid fa-building-columns" style="color: var(--accent-blue);"></i> Partner Institutions</h3>
+                                <button class="btn-admin-secondary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="switchAdminTab('institutions')">
+                                    <span>View All</span> <i class="fa-solid fa-arrow-right" style="margin-left: 4px;"></i>
+                                </button>
+                            </div>
+                            <div class="admin-table-wrapper" style="margin-top: 1rem; border: none; background: transparent;">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Institution</th>
+                                            <th>Code</th>
+                                            <th>Capacity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="overview-institutions-preview-body">
+                                        <tr><td colspan="3" style="text-align:center; padding: 1.5rem;"><i class="fa-solid fa-spinner fa-spin"></i> Loading institutions...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- TAB 2: INSTITUTIONS & SEATS -->
@@ -533,6 +584,7 @@
     </div>
 
     <!-- JavaScript Controller -->
+    <script src="/assets/js/config.js"></script>
     <script src="/assets/js/admin.js"></script>
 </body>
 
