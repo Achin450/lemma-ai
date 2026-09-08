@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 import re
@@ -114,3 +114,56 @@ class IntegrityMetrics(BaseModel):
     flagged_high: int      # plagiarism_score >= 0.6
     flagged_medium: int    # 0.3 <= plagiarism_score < 0.6
     clean: int             # plagiarism_score < 0.3
+
+
+class AdminOverviewStats(BaseModel):
+    total_users: int = 0
+    total_institutions: int = 0
+    total_submissions: int = 0
+    avg_plagiarism_score: float = 0.0
+    avg_ai_score: float = 0.0
+    flagged_high: int = 0
+    flagged_medium: int = 0
+    clean: int = 0
+    total_seats_allocated: int = 0
+    total_seats_used: int = 0
+    active_instructors: int = 0
+    active_students: int = 0
+
+
+class SubmissionAuditItem(BaseModel):
+    id: str
+    assignment_title: Optional[str] = "Research Paper Submission"
+    student_name: Optional[str] = "Anonymous Scholar"
+    student_email: Optional[str] = "scholar@university.edu"
+    institution_name: Optional[str] = "Institutional Repository"
+    plagiarism_score: float = 0.0
+    ai_score: float = 0.0
+    status: str = "completed"
+    submitted_at: str
+
+
+class AdminUserItem(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    role: str
+    institution_id: Optional[str] = None
+    institution_name: Optional[str] = None
+    email_verified: bool = False
+    submissions_count: int = 0
+    created_at: str
+
+
+class ApiKeyCreate(BaseModel):
+    label: str = Field(..., min_length=2, max_length=100)
+    expires_in_days: Optional[int] = 90
+
+
+class ApiKeyResponse(BaseModel):
+    id: str
+    label: str
+    raw_key: Optional[str] = None
+    key_prefix: str
+    created_at: str
+    expires_at: Optional[str] = None

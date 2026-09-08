@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lemma — Administration Console</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+
+<body>
+    <!-- Ambient Fog Effects -->
+    <div class="fog-overlay fog-1"></div>
+    <div class="fog-overlay fog-2"></div>
+
+    <div class="admin-app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="admin-brand">
+                <div class="admin-brand-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="admin-brand-text">
+                    <h1>Lemma</h1>
+                    <span class="admin-badge">Admin Console</span>
+                </div>
+            </div>
+
+            <ul class="admin-nav">
+                <div class="admin-nav-section-title">Dashboard</div>
+                <li class="admin-nav-item active" data-tab="overview">
+                    <button type="button">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Overview</span>
+                    </button>
+                </li>
+
+                <div class="admin-nav-section-title">Academic Network</div>
+                <li class="admin-nav-item" data-tab="institutions">
+                    <button type="button">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <span>Institutions &amp; Seats</span>
+                    </button>
+                </li>
+                <li class="admin-nav-item" data-tab="users">
+                    <button type="button">
+                        <i class="fa-solid fa-users-gear"></i>
+                        <span>User Directory &amp; Roles</span>
+                    </button>
+                </li>
+
+                <div class="admin-nav-section-title">Integrity Auditing</div>
+                <li class="admin-nav-item" data-tab="audits">
+                    <button type="button">
+                        <i class="fa-solid fa-file-shield"></i>
+                        <span>Plagiarism &amp; AI Audits</span>
+                    </button>
+                </li>
+
+                <div class="admin-nav-section-title">Infrastructure</div>
+                <li class="admin-nav-item" data-tab="system">
+                    <button type="button">
+                        <i class="fa-solid fa-server"></i>
+                        <span>System Health &amp; APIs</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="admin-sidebar-footer">
+                <a href="/dashboard.html" class="btn-back-dashboard">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Research Studio</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+            <!-- Top Navigation Bar -->
+            <header class="admin-topbar">
+                <div class="admin-topbar-title">
+                    <h2 id="admin-topbar-title-text">Admin Console Overview</h2>
+                    <p id="admin-topbar-subtitle-text">High-level platform health, usage statistics, and activity.</p>
+                </div>
+                <div class="admin-topbar-actions">
+                    <div class="system-status-pill">
+                        <span class="status-dot-pulse" id="admin-health-pulse"></span>
+                        <span id="admin-health-text">Systems Operational</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content-body">
+                <!-- TAB 1: OVERVIEW -->
+                <section class="admin-tab-view active" id="tab-overview">
+                    <!-- KPI Cards Grid -->
+                    <div class="admin-kpi-grid">
+                        <div class="admin-kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Total Users</span>
+                                <div class="kpi-icon purple">
+                                    <i class="fa-solid fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-value" id="kpi-total-users">--</div>
+                            <div class="kpi-subtitle" id="kpi-user-subtitle">Active scholars &amp; faculty</div>
+                        </div>
+
+                        <div class="admin-kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Partner Institutions</span>
+                                <div class="kpi-icon blue">
+                                    <i class="fa-solid fa-university"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-value" id="kpi-total-institutions">--</div>
+                            <div class="kpi-subtitle">Universities &amp; Research Centers</div>
+                        </div>
+
+                        <div class="admin-kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Submissions Scanned</span>
+                                <div class="kpi-icon emerald">
+                                    <i class="fa-solid fa-file-contract"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-value" id="kpi-total-submissions">--</div>
+                            <div class="kpi-subtitle">Indexed against 10M+ papers</div>
+                        </div>
+
+                        <div class="admin-kpi-card">
+                            <div class="kpi-header">
+                                <span class="kpi-title">Avg. Plagiarism Index</span>
+                                <div class="kpi-icon amber">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </div>
+                            </div>
+                            <div class="kpi-value" id="kpi-avg-plagiarism">--%</div>
+                            <div class="kpi-subtitle">Platform-wide similarity mean</div>
+                        </div>
+                    </div>
+
+                    <!-- Two-Column Breakdown Charts -->
+                    <div class="admin-two-col">
+                        <!-- Integrity Risk Distribution -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3><i class="fa-solid fa-shield-virus" style="color: var(--accent-purple);"></i> Academic Integrity Distribution</h3>
+                            </div>
+                            <div class="risk-meter-container">
+                                <div class="risk-meter-row">
+                                    <div class="risk-meter-labels">
+                                        <span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> Clean Papers (&lt; 30% Similarity)</span>
+                                        <span id="meter-cnt-clean">--</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill clean" id="meter-fill-clean" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="risk-meter-row">
+                                    <div class="risk-meter-labels">
+                                        <span style="color: #f59e0b;"><i class="fa-solid fa-triangle-exclamation"></i> Medium Risk (30% - 60%)</span>
+                                        <span id="meter-cnt-medium">--</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill medium" id="meter-fill-medium" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="risk-meter-row">
+                                    <div class="risk-meter-labels">
+                                        <span style="color: #ef4444;"><i class="fa-solid fa-circle-exclamation"></i> High Risk (&gt; 60% Plagiarism / AI)</span>
+                                        <span id="meter-cnt-high">--</span>
+                                    </div>
+                                    <div class="progress-track">
+                                        <div class="progress-fill high" id="meter-fill-high" style="width: 0%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Seat Allocation Overview -->
+                        <div class="admin-card">
+                            <div class="admin-card-header">
+                                <h3><i class="fa-solid fa-user-check" style="color: var(--accent-blue);"></i> Institutional Seat Utilization</h3>
+                                <button class="btn-admin-secondary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="openModal('modal-add-institution')">
+                                    <i class="fa-solid fa-plus"></i> Add Institution
+                                </button>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
+                                    <span style="font-size: 1.5rem; font-family: 'Outfit'; font-weight: 800; color: var(--text-primary);" id="overview-seat-pct">--%</span>
+                                    <span style="font-size: 0.85rem; color: var(--text-secondary);" id="overview-seat-fraction">-- / -- seats</span>
+                                </div>
+                                <div class="progress-track" style="height: 10px; margin-bottom: 1.5rem;">
+                                    <div class="progress-fill seats" id="overview-seat-fill" style="width: 0%;"></div>
+                                </div>
+                                <div style="display: flex; gap: 0.75rem;">
+                                    <button class="btn-admin-primary" style="flex: 1;" onclick="openModal('modal-invite-users')">
+                                        <i class="fa-solid fa-user-plus"></i> Bulk Invite Users
+                                    </button>
+                                    <button class="btn-admin-secondary" style="flex: 1;" onclick="switchAdminTab('institutions')">
+                                        <i class="fa-solid fa-list-check"></i> Manage Institutions
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TAB 2: INSTITUTIONS & SEATS -->
+                <section class="admin-tab-view" id="tab-institutions">
+                    <div class="admin-action-bar">
+                        <div style="font-family: 'Outfit'; font-size: 1.2rem; font-weight: 700;">
+                            Registered Universities &amp; Labs
+                        </div>
+                        <button class="btn-admin-primary" onclick="openModal('modal-add-institution')">
+                            <i class="fa-solid fa-plus"></i> Add New Institution
+                        </button>
+                    </div>
+
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Institution &amp; Domain</th>
+                                    <th>Onboarding Code</th>
+                                    <th>Seat Quota</th>
+                                    <th>Joined Date</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="institutions-table-body">
+                                <tr><td colspan="5" style="text-align:center; padding: 2rem;">Loading institutions...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB 3: USER DIRECTORY & ROLES -->
+                <section class="admin-tab-view" id="tab-users">
+                    <div class="admin-action-bar">
+                        <div class="admin-search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" class="admin-search-input" id="users-search-input" placeholder="Search by user name or email address...">
+                        </div>
+                        <div class="admin-filter-group">
+                            <select class="admin-select" id="users-role-filter">
+                                <option value="all">All Roles</option>
+                                <option value="student">Students</option>
+                                <option value="instructor">Instructors</option>
+                                <option value="institution_admin">Institution Admins</option>
+                                <option value="super_admin">Super Admins</option>
+                            </select>
+                            <button class="btn-admin-primary" onclick="openModal('modal-invite-users')">
+                                <i class="fa-solid fa-envelope"></i> Invite Users
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Scholar</th>
+                                    <th>Affiliation</th>
+                                    <th>Role Badge</th>
+                                    <th>Submissions</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Change Role</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr><td colspan="6" style="text-align:center; padding: 2rem;">Loading users...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB 4: INTEGRITY AUDITS -->
+                <section class="admin-tab-view" id="tab-audits">
+                    <div class="admin-action-bar">
+                        <div style="font-family: 'Outfit'; font-size: 1.2rem; font-weight: 700;">
+                            Live Submission Audit Feed
+                        </div>
+                    </div>
+
+                    <div class="admin-table-wrapper">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Document Title</th>
+                                    <th>Submitter</th>
+                                    <th>Plagiarism Index</th>
+                                    <th>AI Probability</th>
+                                    <th>Assessment</th>
+                                    <th>Submitted</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audits-table-body">
+                                <tr><td colspan="7" style="text-align:center; padding: 2rem;">Loading submission audits...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- TAB 5: SYSTEM HEALTH & APIS -->
+                <section class="admin-tab-view" id="tab-system">
+                    <div class="admin-card" style="margin-bottom: 2rem;">
+                        <div class="admin-card-header">
+                            <h3><i class="fa-solid fa-microchip" style="color: var(--accent-purple);"></i> Infrastructure &amp; AI Engine Status</h3>
+                            <button class="btn-admin-secondary" style="padding: 4px 10px; font-size: 0.78rem;" onclick="loadSystemHealth()">
+                                <i class="fa-solid fa-arrows-rotate"></i> Refresh Health
+                            </button>
+                        </div>
+                        <div class="service-health-grid">
+                            <div class="service-card">
+                                <div class="service-card-info">
+                                    <h4>FastAPI Application Server</h4>
+                                    <p>v3.0.0 • Asynchronous REST engine</p>
+                                </div>
+                                <span class="status-chip clean">ONLINE</span>
+                            </div>
+
+                            <div class="service-card">
+                                <div class="service-card-info">
+                                    <h4>PostgreSQL Relational DB</h4>
+                                    <p id="health-desc-postgres">Primary metadata &amp; users store</p>
+                                </div>
+                                <span class="status-chip clean" id="health-status-postgres">ONLINE</span>
+                            </div>
+
+                            <div class="service-card">
+                                <div class="service-card-info">
+                                    <h4>pgvector Vector Index</h4>
+                                    <p>HNSW Cosine Semantic Search</p>
+                                </div>
+                                <span class="status-chip clean" id="health-status-vector">ACTIVE</span>
+                            </div>
+
+                            <div class="service-card">
+                                <div class="service-card-info">
+                                    <h4>Celery Task Queues</h4>
+                                    <p>Workers for Plagiarism &amp; ML jobs</p>
+                                </div>
+                                <span class="status-chip clean">READY</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h3><i class="fa-solid fa-key" style="color: var(--accent-blue);"></i> Institutional API &amp; LTI Keys</h3>
+                            <button class="btn-admin-primary" onclick="openModal('modal-add-api-key')">
+                                <i class="fa-solid fa-plus"></i> Generate API Key
+                            </button>
+                        </div>
+                        <div class="admin-table-wrapper" style="border: none;">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Key Description / Consumer</th>
+                                        <th>Prefix</th>
+                                        <th>Created</th>
+                                        <th>Expires</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="api-keys-table-body">
+                                    <tr><td colspan="4" style="text-align:center; padding: 1.5rem;">Loading API keys...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL 1: ADD INSTITUTION -->
+    <div class="admin-modal-backdrop" id="modal-add-institution">
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h3>Add New Partner Institution</h3>
+                <button type="button" class="admin-modal-close" onclick="closeModal('modal-add-institution')">&times;</button>
+            </div>
+            <form id="form-add-institution">
+                <div class="admin-modal-body">
+                    <div class="form-group-admin">
+                        <label for="inst-name-input">Institution Name</label>
+                        <input type="text" id="inst-name-input" class="form-input-admin" placeholder="e.g. Cambridge University" required>
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="inst-domain-input">Academic Email Domain (Optional)</label>
+                        <input type="text" id="inst-domain-input" class="form-input-admin" placeholder="e.g. cam.ac.uk (auto-matches .edu emails)">
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="inst-seats-input">Seat Allocation Quota</label>
+                        <input type="number" id="inst-seats-input" class="form-input-admin" value="150" min="5" max="10000" required>
+                    </div>
+                </div>
+                <div class="admin-modal-footer">
+                    <button type="button" class="btn-admin-secondary" onclick="closeModal('modal-add-institution')">Cancel</button>
+                    <button type="submit" class="btn-admin-primary" id="btn-submit-institution">Create Institution</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: BULK INVITE USERS -->
+    <div class="admin-modal-backdrop" id="modal-invite-users">
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h3>Invite Scholars to Institution</h3>
+                <button type="button" class="admin-modal-close" onclick="closeModal('modal-invite-users')">&times;</button>
+            </div>
+            <form id="form-invite-users">
+                <div class="admin-modal-body">
+                    <div class="form-group-admin">
+                        <label for="invite-institution-select">Select Institution</label>
+                        <select id="invite-institution-select" class="form-input-admin">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="invite-role-select">Default Assigned Role</label>
+                        <select id="invite-role-select" class="form-input-admin">
+                            <option value="student">Student / Researcher</option>
+                            <option value="instructor">Instructor / Faculty</option>
+                        </select>
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="invite-emails-input">Email Addresses (separated by commas or new lines)</label>
+                        <textarea id="invite-emails-input" class="form-input-admin" rows="4" placeholder="scholar1@university.edu, scholar2@university.edu" required></textarea>
+                    </div>
+                </div>
+                <div class="admin-modal-footer">
+                    <button type="button" class="btn-admin-secondary" onclick="closeModal('modal-invite-users')">Cancel</button>
+                    <button type="submit" class="btn-admin-primary" id="btn-submit-invite">Send Invitations</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: VIEW SEATS & MEMBERS -->
+    <div class="admin-modal-backdrop" id="modal-view-seats">
+        <div class="admin-modal" style="max-width: 680px;">
+            <div class="admin-modal-header">
+                <h3 id="seats-modal-title">Institution Seat Roster</h3>
+                <button type="button" class="admin-modal-close" onclick="closeModal('modal-view-seats')">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="seats-modal-members">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="admin-modal-footer">
+                <button type="button" class="btn-admin-secondary" onclick="closeModal('modal-view-seats')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: GENERATE API KEY -->
+    <div class="admin-modal-backdrop" id="modal-add-api-key">
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h3>Generate Institutional API Key</h3>
+                <button type="button" class="admin-modal-close" onclick="closeModal('modal-add-api-key')">&times;</button>
+            </div>
+            <form id="form-add-api-key">
+                <div class="admin-modal-body">
+                    <div class="form-group-admin">
+                        <label for="key-label-input">Integration Label / Client Name</label>
+                        <input type="text" id="key-label-input" class="form-input-admin" placeholder="e.g. Moodle LMS Connector" required>
+                    </div>
+                    <div class="form-group-admin">
+                        <label for="key-expiry-input">Validity Duration (Days)</label>
+                        <input type="number" id="key-expiry-input" class="form-input-admin" value="90" min="7" max="365" required>
+                    </div>
+                </div>
+                <div class="admin-modal-footer">
+                    <button type="button" class="btn-admin-secondary" onclick="closeModal('modal-add-api-key')">Cancel</button>
+                    <button type="submit" class="btn-admin-primary" id="btn-submit-key">Generate Key</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: INSPECT DOCUMENT AUDIT -->
+    <div class="admin-modal-backdrop" id="modal-inspect-doc">
+        <div class="admin-modal" style="max-width: 600px;">
+            <div class="admin-modal-header">
+                <h3 id="inspect-modal-title">Audit Report Inspection</h3>
+                <button type="button" class="admin-modal-close" onclick="closeModal('modal-inspect-doc')">&times;</button>
+            </div>
+            <div class="admin-modal-body" id="inspect-modal-content">
+                <!-- Populated dynamically -->
+            </div>
+            <div class="admin-modal-footer">
+                <button type="button" class="btn-admin-secondary" onclick="closeModal('modal-inspect-doc')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Controller -->
+    <script src="/assets/js/admin.js"></script>
+</body>
+
+</html>

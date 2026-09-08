@@ -1090,6 +1090,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const tabId = item.id;
 
+            if (tabId === "nav-admin-console") {
+                window.location.href = "/admin.html";
+                return;
+            }
+
             if (tabId === "nav-dashboard" || tabId === "nav-generate") {
                 showView("dashboard-home-view");
             } else if (tabId === "nav-restructure") {
