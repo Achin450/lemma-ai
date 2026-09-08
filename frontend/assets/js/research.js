@@ -1759,6 +1759,9 @@
             let snippet = (hl.text_snippet || '').trim();
             if (!snippet || snippet.length < 10) return;
 
+            // Strip any bracketed references [1], [2] from snippet for resilient HTML matching
+            const snippetClean = snippet.replace(/\s*\[\d+\]\s*/g, ' ').replace(/\s+/g, ' ').trim();
+
             for (const container of allContainers) {
                 if (container.querySelector(`[data-novelty-id="${hl.id}"]`)) continue;
 
@@ -1767,29 +1770,36 @@
 
                 let matched = false;
                 for (const p of targets) {
-                    const text = p.textContent || '';
                     const html = p.innerHTML;
 
-                    // 1. Try full exact match
-                    if (text.includes(snippet)) {
-                        const idx = html.indexOf(snippet);
-                        if (idx !== -1) {
-                            const repl = `<mark class="novelty-highlight" data-novelty-id="${hl.id}" tabindex="0">${snippet}<span class="novelty-sparkle-pill"><i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel</span></mark>`;
-                            p.innerHTML = html.slice(0, idx) + repl + html.slice(idx + snippet.length);
-                            matched = true;
-                            break;
+                    // 1. Direct match with original snippet or cleaned snippet
+                    let targetMatch = null;
+                    if (html.includes(snippet)) {
+                        targetMatch = snippet;
+                    } else if (snippetClean && html.includes(snippetClean)) {
+                        targetMatch = snippetClean;
+                    } else {
+                        // 2. Try phrase matching: search 5 to 10 word chunks
+                        const words = (snippetClean || snippet).split(/\s+/);
+                        for (let wLen = Math.min(10, words.length); wLen >= 5; wLen--) {
+                            const chunk = words.slice(0, wLen).join(' ');
+                            if (chunk.length >= 20 && html.includes(chunk)) {
+                                targetMatch = chunk;
+                                break;
+                            }
                         }
                     }
 
-                    // 2. Try phrase match (first 8 words)
-                    const words = snippet.split(/\s+/);
-                    if (words.length >= 4) {
-                        const subPhrase = words.slice(0, Math.min(8, words.length)).join(' ');
-                        if (subPhrase.length > 15 && text.includes(subPhrase)) {
-                            const idx = html.indexOf(subPhrase);
-                            if (idx !== -1) {
-                                const repl = `<mark class="novelty-highlight" data-novelty-id="${hl.id}" tabindex="0">${subPhrase}<span class="novelty-sparkle-pill"><i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel</span></mark>`;
-                                p.innerHTML = html.slice(0, idx) + repl + html.slice(idx + subPhrase.length);
+                    if (targetMatch) {
+                        const idx = html.indexOf(targetMatch);
+                        if (idx !== -1) {
+                            // Ensure we don't inject inside an HTML tag
+                            const before = html.slice(0, idx);
+                            const lastOpen = before.lastIndexOf('<');
+                            const lastClose = before.lastIndexOf('>');
+                            if (lastOpen === -1 || lastClose > lastOpen) {
+                                const repl = `<mark class="novelty-highlight" data-novelty-id="${hl.id}" tabindex="0">${targetMatch}<span class="novelty-sparkle-pill"><i class="fa-solid fa-sparkles"></i> ${hl.novelty_score}% Novel</span></mark>`;
+                                p.innerHTML = html.slice(0, idx) + repl + html.slice(idx + targetMatch.length);
                                 matched = true;
                                 break;
                             }

@@ -528,9 +528,17 @@ class NoveltyAdvisorService:
         """
         Extracts specific sentences or formulation fragments that demonstrate novel
         methodological, theoretical, empirical, or problem formulation contributions.
+        Generates comprehensive highlights across all sections of the paper.
         """
         highlights: List[NoveltyHighlight] = []
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 25]
+        raw_sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if len(s.strip()) > 25]
+
+        # Clean bracketed references [1], [2], etc. from sentences for clean text snippet matching
+        sentences = []
+        for s in raw_sentences:
+            cleaned = re.sub(r'\s*\[\d+\]\s*', ' ', s).strip()
+            if len(cleaned) > 20 and not cleaned.startswith("IEEE TRANSACTIONS") and not cleaned.startswith("Author"):
+                sentences.append(cleaned)
 
         # Dimension score lookup
         dim_map = {d.dimension_id: d for d in dimensions}
@@ -541,14 +549,23 @@ class NoveltyAdvisorService:
         cross_dim = dim_map.get("cross_domain")
 
         used_sentences = set()
+        TARGET_MAX_HIGHLIGHTS = 18
 
+        # --- PASS 1: Primary Signature Match ---
         for s in sentences:
+            if len(highlights) >= TARGET_MAX_HIGHLIGHTS:
+                break
             sl = s.lower()
             if s in used_sentences:
                 continue
 
             # 1. Methodological & Algorithmic Novelty
-            if any(k in sl for k in ["we propose", "we introduce", "our formulation", "our architecture", "we design", "novel mechanism", "new algorithm", "this work develops"]):
+            if any(k in sl for k in [
+                "we propose", "we introduce", "our formulation", "our architecture", "we design",
+                "novel mechanism", "new algorithm", "this work develops", "we present", "our method",
+                "proposed approach", "framework", "architecture", "pipeline", "objective function",
+                "we construct", "paradigm", "we develop", "adaptive mechanism"
+            ]):
                 score = method_dim.score if method_dim else 88
                 highlights.append(NoveltyHighlight(
                     id=f"nov-{uuid.uuid4().hex[:8]}",
@@ -563,12 +580,14 @@ class NoveltyAdvisorService:
                     strengthen_tip="Explicitly include a row in your Ablation Table isolating performance with vs without this exact mechanism."
                 ))
                 used_sentences.add(s)
-                if len(highlights) >= 5:
-                    break
                 continue
 
             # 2. Theoretical Rigor & Guarantees
-            if any(k in sl for k in ["theorem", "lemma", "guarantee", "bound", "complexity", "o(n", "convergence", "proven", "formal proof"]):
+            if any(k in sl for k in [
+                "theorem", "lemma", "guarantee", "bound", "complexity", "o(n", "convergence",
+                "proven", "formal proof", "optimization", "lipschitz", "asymptotic", "proposition",
+                "corollary", "loss convergence", "gradient descent", "stability"
+            ]):
                 score = theory_dim.score if theory_dim else 85
                 highlights.append(NoveltyHighlight(
                     id=f"nov-{uuid.uuid4().hex[:8]}",
@@ -583,12 +602,16 @@ class NoveltyAdvisorService:
                     strengthen_tip="State all boundary conditions in a dedicated Proposition or Lemma appendix for immediate review clarity."
                 ))
                 used_sentences.add(s)
-                if len(highlights) >= 5:
-                    break
                 continue
 
             # 3. Empirical & Benchmark Breakthrough
-            if any(k in sl for k in ["outperforms", "speedup", "reduction in", "state-of-the-art", "sota", "statistically significant", "p < 0.0", "competitive with"]):
+            if any(k in sl for k in [
+                "outperforms", "speedup", "reduction in", "state-of-the-art", "sota",
+                "statistically significant", "p < 0.0", "competitive with", "accuracy",
+                "f1-score", "latency", "benchmark", "baseline", "evaluation", "superior",
+                "demonstrates", "achieves", "improvement", "ablation", "empirical results",
+                "table i", "table ii", "parameter efficiency", "memory footprint"
+            ]):
                 score = emp_dim.score if emp_dim else 82
                 highlights.append(NoveltyHighlight(
                     id=f"nov-{uuid.uuid4().hex[:8]}",
@@ -603,12 +626,15 @@ class NoveltyAdvisorService:
                     strengthen_tip="Specify confidence intervals (mean ± std dev across 5 runs) to render empirical superiority indisputable."
                 ))
                 used_sentences.add(s)
-                if len(highlights) >= 5:
-                    break
                 continue
 
             # 4. Problem Formulation & Scope
-            if any(k in sl for k in ["unexplored", "gap in literature", "unlike classical", "traditional methods fail", "previously overlooked", "in contrast to existing"]):
+            if any(k in sl for k in [
+                "unexplored", "gap in literature", "unlike classical", "traditional methods fail",
+                "previously overlooked", "in contrast to existing", "limitation", "bottleneck",
+                "challenge", "remains difficult", "conventional", "existing approaches", "prior work",
+                "insufficient", "unaddressed", "shortcoming", "quadratic complexity", "trade-offs"
+            ]):
                 score = prob_dim.score if prob_dim else 80
                 highlights.append(NoveltyHighlight(
                     id=f"nov-{uuid.uuid4().hex[:8]}",
@@ -620,15 +646,17 @@ class NoveltyAdvisorService:
                     why_novel="Reframes an overlooked limitation in prior art into an actionable, formal research objective.",
                     prior_art_contrast="Existing paradigms assume standard idealized assumptions; this paper tackles the real constraint directly.",
                     reviewer_2_critique="Reviewers may question whether this constraint is sufficiently widespread in practical applications.",
-                    strengthen_tip="Cite 2-3 recent 2023-2024 industrial or empirical survey papers confirming that practitioners face this exact bottleneck."
+                    strengthen_tip="Cite recent industrial or empirical survey papers confirming that practitioners face this exact bottleneck."
                 ))
                 used_sentences.add(s)
-                if len(highlights) >= 5:
-                    break
                 continue
 
             # 5. Cross-Domain / Hybrid
-            if any(k in sl for k in ["cross-domain", "bio-inspired", "physics-informed", "integrating", "hybrid formulation", "synergy"]):
+            if any(k in sl for k in [
+                "cross-domain", "bio-inspired", "physics-informed", "integrating", "hybrid formulation",
+                "synergy", "bridge", "unify", "interdisciplinary", "multimodal", "hybrid",
+                "combining", "synthesizing", "transferability", "generalizability"
+            ]):
                 score = cross_dim.score if cross_dim else 78
                 highlights.append(NoveltyHighlight(
                     id=f"nov-{uuid.uuid4().hex[:8]}",
@@ -643,11 +671,52 @@ class NoveltyAdvisorService:
                     strengthen_tip="Provide a mapping table defining how constructs from the source domain directly translate to the target system."
                 ))
                 used_sentences.add(s)
-                if len(highlights) >= 5:
-                    break
                 continue
 
-        # If no explicit keyword was matched (e.g. short sample), create realistic highlights from first few sentences
+        # --- PASS 2: Supplemental Coverage ---
+        # If fewer than 12 highlights were found, scan remaining sentences to ensure strong in-paper density
+        if len(highlights) < 14 and sentences:
+            for s in sentences:
+                if len(highlights) >= TARGET_MAX_HIGHLIGHTS:
+                    break
+                if s in used_sentences:
+                    continue
+                sl = s.lower()
+                if len(s) < 35 or sl.startswith("index terms") or sl.startswith("abstract") or "et al." in sl or "vol." in sl:
+                    continue
+
+                if any(w in sl for w in ["loss", "train", "parameter", "model", "network", "feature", "representation", "module", "layer", "linear"]):
+                    score = method_dim.score if method_dim else 86
+                    highlights.append(NoveltyHighlight(
+                        id=f"nov-{uuid.uuid4().hex[:8]}",
+                        text_snippet=s,
+                        dimension_id="methodology",
+                        dimension_name="Architectural Specifics",
+                        novelty_score=min(94, score + 1),
+                        impact_level="Substantial",
+                        why_novel="Defines operational mechanics differentiating this system from generic pipeline templates.",
+                        prior_art_contrast="Demonstrates customized layer topology specialized for this problem domain.",
+                        reviewer_2_critique="Reviewers will verify whether parameter complexity scales smoothly.",
+                        strengthen_tip="State exact parameter counts and GPU memory requirements."
+                    ))
+                    used_sentences.add(s)
+                elif any(w in sl for w in ["result", "metric", "test", "experiment", "observed", "evaluated", "score", "performance", "speed"]):
+                    score = emp_dim.score if emp_dim else 83
+                    highlights.append(NoveltyHighlight(
+                        id=f"nov-{uuid.uuid4().hex[:8]}",
+                        text_snippet=s,
+                        dimension_id="empirical",
+                        dimension_name="Empirical Finding",
+                        novelty_score=min(93, score + 2),
+                        impact_level="Substantial",
+                        why_novel="Substantiates algorithmic validity through direct comparative benchmark verification.",
+                        prior_art_contrast="Provides quantifiable verification of performance gains over foundational baselines.",
+                        reviewer_2_critique="Ensure reproducibility by detailing seed variance.",
+                        strengthen_tip="Report multi-trial standard deviations alongside point estimates."
+                    ))
+                    used_sentences.add(s)
+
+        # Fallback if still empty
         if not highlights and sentences:
             s0 = sentences[0]
             highlights.append(NoveltyHighlight(
@@ -662,20 +731,6 @@ class NoveltyAdvisorService:
                 reviewer_2_critique="Reviewers will look for evidence that this approach generalizes beyond the tested configuration.",
                 strengthen_tip="Add cross-dataset evaluations to substantiate broad architectural utility."
             ))
-            if len(sentences) > 1:
-                s1 = sentences[1]
-                highlights.append(NoveltyHighlight(
-                    id=f"nov-{uuid.uuid4().hex[:8]}",
-                    text_snippet=s1,
-                    dimension_id="empirical",
-                    dimension_name="Empirical Significance",
-                    novelty_score=emp_dim.score if emp_dim else 84,
-                    impact_level="Substantial",
-                    why_novel="Provides quantitative performance metrics and validation against contemporary benchmarks.",
-                    prior_art_contrast="Shows measurable accuracy or efficiency superiority against established foundation baselines.",
-                    reviewer_2_critique="Reviewer 2 may ask for additional latency and memory profiling alongside accuracy.",
-                    strengthen_tip="Include runtime FLOPs and inference latency benchmarks in the final results section."
-                ))
 
         return highlights
 
