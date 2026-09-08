@@ -738,7 +738,7 @@ Example output:
                     f"Despite these advancements, a significant research gap persists: current frameworks lack an integrated mechanism to simultaneously optimize representation fidelity, runtime complexity, and distributional robustness.\n\n"
                     f"TABLE I. TAXONOMIC & ARCHITECTURAL COMPARISON OF PRECEDING METHODOLOGIES\n\n"
                     f"{t1}\n\n"
-                    f"TABLE I summarizes the comparative taxonomy of preceding methodologies versus our proposed paradigm across key architectural criteria, highlighting the distinct technical advancements achieved in this study."
+                    f"As detailed in Table I, the comparative taxonomy categorizes preceding methodologies versus our proposed paradigm across key architectural criteria, highlighting the distinct technical advancements achieved in this study."
                 )
             elif "THEORETICAL" in st or "MATHEMATICAL" in st:
                 c1, c2 = all_nums[4] if len(all_nums) > 4 else 5, all_nums[5] if len(all_nums) > 5 else 6
@@ -798,8 +798,7 @@ Example output:
                     f"On average, the framework achieves statistically significant improvements in fidelity and efficiency compared to contemporary benchmarks [{c2}].\n\n"
                     f"TABLE II. COMPREHENSIVE EMPIRICAL BENCHMARK EVALUATION ACROSS DOMAIN DATASETS\n\n"
                     f"{t2}\n\n"
-                    f"TABLE II summarizes the detailed empirical comparison across all baseline architectures. "
-                    f"Our model consistently achieves lower error margins while exhibiting superior resistance to input perturbations. "
+                    f"As delineated in Table II, the empirical comparison across all baseline architectures confirms that our model consistently achieves lower error margins while exhibiting superior resistance to input perturbations. "
                     f"Statistical significance testing via two-tailed Student's t-tests confirms that observed gains are statistically significant (*p < 0.001) [{c3}].\n\n"
                     f"Fig. 2 illustrates the empirical accuracy distributions and comparative latency scaling across varying batch dimensions. "
                     f"As demonstrated, the proposed architecture maintains optimal throughput and stability even under elevated load conditions."

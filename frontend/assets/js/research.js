@@ -3303,6 +3303,7 @@
 
         let tHtml = `<div class="paper-table-container">`;
         tHtml += `<div class="paper-table-caption">${captionText || 'TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS'}</div>`;
+        tHtml += `<div class="paper-table-scroll-wrapper">`;
         tHtml += `<table class="paper-table-ieee"><thead><tr>`;
         headerCols.forEach(col => {
             const cleanHeader = col.replace(/\*\*/g, '');
@@ -3323,6 +3324,7 @@
         });
 
         tHtml += `</tbody></table>`;
+        tHtml += `</div>`;
         tHtml += `<div class="paper-table-footnote">* Denotes statistically significant superiority (Student's t-test, p &lt; 0.001). Reported values reflect empirical cross-validation distributions.</div>`;
         tHtml += `</div>`;
         return tHtml;
@@ -3357,8 +3359,9 @@
             const trimmed = rawBlocks[i].trim();
             if (!trimmed) continue;
 
-            // Check if this block is a table caption preceding a markdown table block
-            if ((trimmed.startsWith('TABLE ') || trimmed.startsWith('Table ')) && !trimmed.includes('|')) {
+            // Check if this block is a short table caption preceding a markdown table block
+            const isTableCaption = /^TABLE\s+[IVXLCDM\d]+[.:\s\-]/i.test(trimmed) && trimmed.length < 140 && !trimmed.includes('\n');
+            if (isTableCaption && !trimmed.includes('|')) {
                 if (i + 1 < rawBlocks.length && rawBlocks[i + 1].includes('|') && rawBlocks[i + 1].split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
                     const tableBlock = rawBlocks[i + 1].trim();
                     const tableLines = tableBlock.split('\n').filter(l => l.trim().startsWith('|'));
@@ -3366,14 +3369,6 @@
                     i++; // consume table block
                     continue;
                 }
-                // Standalone table caption without subsequent markdown: synthesize topic table
-                const activePaperTitle = (window.currentPaper && window.currentPaper.title) || '';
-                const domain = resolveDomainProfile(activePaperTitle);
-                const tableNum = /TABLE\s+II/i.test(trimmed) ? 2 : 1;
-                const fallbackMarkdown = tableNum === 2 ? domain.table_2 : domain.table_1;
-                const tableLines = fallbackMarkdown.split('\n').filter(l => l.trim().startsWith('|'));
-                processedBlocks.push(renderMarkdownTable(tableLines, trimmed));
-                continue;
             }
 
             // Check if block contains markdown table
