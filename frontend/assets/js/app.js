@@ -1091,6 +1091,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const tabId = item.id;
 
             if (tabId === "nav-admin-console") {
+                const cached = JSON.parse(sessionStorage.getItem("lemma_user") || localStorage.getItem("lemma_user") || "null");
+                const rawRole = (cached && cached.role || "").toLowerCase();
+                if (rawRole !== "super_admin" && rawRole !== "institution_admin" && rawRole !== "admin") {
+                    showToast("Access Denied: Administrator privileges required.", "error");
+                    return;
+                }
                 window.location.href = "/admin.html";
                 return;
             }
@@ -2020,6 +2026,18 @@ async function initUserSession() {
         if (dropRoleEl) dropRoleEl.textContent = role;
         if (welcomeTitle) {
             welcomeTitle.textContent = `What's next, ${fullName.split(" ")[0]}?`;
+        }
+
+        // Show Admin Console only to authorized administrator roles
+        const rawRole = (user.role || "").toLowerCase();
+        const isAdmin = rawRole === "super_admin" || rawRole === "institution_admin" || rawRole === "admin";
+        const adminNav = document.getElementById("nav-admin-console");
+        if (adminNav) {
+            adminNav.style.display = isAdmin ? "block" : "none";
+        }
+        const profileAdmin = document.getElementById("profile-admin-console-link");
+        if (profileAdmin) {
+            profileAdmin.style.display = isAdmin ? "flex" : "none";
         }
     }
 

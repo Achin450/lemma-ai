@@ -511,6 +511,27 @@
         </div>
     </div>
 
+    <!-- ACCESS DENIED BARRIER (FOR NON-ADMIN USERS) -->
+    <div class="admin-access-barrier" id="admin-access-barrier">
+        <div class="access-barrier-card">
+            <div class="barrier-icon">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2>Access Denied</h2>
+            <div class="barrier-badge">403 Forbidden</div>
+            <p>This console is strictly restricted to <strong>Platform Administrators</strong> and <strong>Institution Leads</strong>.</p>
+            <p class="barrier-sub" id="barrier-role-info">Current account does not possess administrator privileges.</p>
+            <div class="barrier-actions">
+                <a href="/login.html" class="btn-admin-primary">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In as Admin
+                </a>
+                <a href="/dashboard.html" class="btn-admin-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> Return to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Controller -->
     <script src="/assets/js/admin.js"></script>
 </body>

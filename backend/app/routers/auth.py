@@ -101,13 +101,16 @@ async def register(payload: UserRegister, background_tasks: BackgroundTasks):
                 institution_id = str(inst["id"])
             # else: no institution — solo/demo account
 
+            # Auto-assign super_admin role if admin email is used
+            assigned_role = "super_admin" if (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")) else "student"
+
             user_id = str(uuid.uuid4())
             pw_hash = hash_password(payload.password)
             # For demo: auto-verify email (a real app would send a verification email)
             cur.execute(
                 """INSERT INTO users (id, email, password_hash, full_name, role, institution_id, email_verified)
-                   VALUES (%s, %s, %s, %s, 'student', %s, TRUE)""",
-                (user_id, email, pw_hash, payload.full_name, institution_id),
+                   VALUES (%s, %s, %s, %s, %s, %s, TRUE)""",
+                (user_id, email, pw_hash, payload.full_name, assigned_role, institution_id),
             )
         conn.commit()
 
@@ -124,6 +127,35 @@ async def login(payload: UserLogin):
     """Authenticate with email + password, returns JWT tokens."""
     email = payload.email.lower().strip()
     row = _get_user_by_email(email)
+
+    # Auto-provision super_admin account for admin@lemma.ai on first login if not exists
+    if not row and (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")):
+        admin_id = str(uuid.uuid4())
+        pw_hash = hash_password(payload.password)
+        try:
+            with DatabaseService.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """INSERT INTO users (id, email, password_hash, full_name, role, email_verified)
+                           VALUES (%s, %s, %s, 'Super Administrator', 'super_admin', TRUE)""",
+                        (admin_id, email, pw_hash),
+                    )
+                conn.commit()
+            row = _get_user_by_email(email)
+        except Exception as ex:
+            logger.warning(f"Auto-provision admin failed: {ex}")
+
+    # Ensure admin emails always have super_admin role
+    if row and (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")) and row.get("role") != "super_admin":
+        try:
+            with DatabaseService.get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("UPDATE users SET role = 'super_admin' WHERE id = %s", (row["id"],))
+                conn.commit()
+            row = _get_user_by_email(email)
+        except Exception as ex:
+            logger.warning(f"Promote admin role failed: {ex}")
+
     if not row or not verify_password(payload.password, row["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 

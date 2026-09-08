@@ -81,9 +81,48 @@
     window.showAdminToast = showToast;
 
     // -------------------------------------------------------------------------
+    // Role-Based Access Control Gate
+    // -------------------------------------------------------------------------
+    function checkAdminAccess() {
+        const token = sessionStorage.getItem("lemma_access_token") || localStorage.getItem("lemma_access_token");
+        const userJson = sessionStorage.getItem("lemma_user") || localStorage.getItem("lemma_user");
+        let user = null;
+        try {
+            if (userJson) user = JSON.parse(userJson);
+        } catch (e) {
+            user = null;
+        }
+
+        const role = (user && user.role || "").toLowerCase();
+        const isAdmin = Boolean(token && (role === "super_admin" || role === "institution_admin" || role === "admin"));
+
+        const barrier = document.getElementById("admin-access-barrier");
+
+        if (!isAdmin) {
+            if (barrier) {
+                barrier.style.display = "flex";
+                const infoEl = document.getElementById("barrier-role-info");
+                if (infoEl) {
+                    if (user && user.email) {
+                        infoEl.textContent = `Signed in as ${user.email} (Role: ${user.role || 'student'}). Super Admin or Institution Admin privileges required.`;
+                    } else {
+                        infoEl.textContent = "No active administrator session detected. Please sign in with an admin account.";
+                    }
+                }
+            }
+            return false;
+        }
+
+        if (barrier) barrier.style.display = "none";
+        return true;
+    }
+    window.checkAdminAccess = checkAdminAccess;
+
+    // -------------------------------------------------------------------------
     // Tab Navigation
     // -------------------------------------------------------------------------
     function switchAdminTab(tabName) {
+        if (!checkAdminAccess()) return;
         state.activeTab = tabName;
 
         // Nav items
@@ -783,6 +822,11 @@
                 }
             });
         });
+
+        // Verify admin access before initializing
+        if (!checkAdminAccess()) {
+            return;
+        }
 
         // Initial tab load
         switchAdminTab("overview");

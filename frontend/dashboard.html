@@ -218,7 +218,7 @@
                             <span>Help &amp; Support</span>
                         </a>
                     </li>
-                    <li class="nav-item" id="nav-admin-console">
+                    <li class="nav-item" id="nav-admin-console" style="display: none;">
                         <a href="/admin.html">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-purple);">
@@ -329,7 +329,7 @@
                                 <button class="dropdown-item" onclick="showView('mypapers-view'); toggleProfileDropdown(false);">
                                     <i class="fa-solid fa-folder-open"></i> My Research Library
                                 </button>
-                                <button class="dropdown-item" onclick="window.location.href='/admin.html';">
+                                <button class="dropdown-item" id="profile-admin-console-link" style="display: none;" onclick="window.location.href='/admin.html';">
                                     <i class="fa-solid fa-shield-halved" style="color: var(--accent-purple);"></i> Admin Console
                                 </button>
                                 <button class="dropdown-item" onclick="window.location.href='/login.html';">
