@@ -4148,7 +4148,7 @@ body.in-paper-editor .main-content {
     align-items: center;
     margin: 0.9rem 0;
     padding: 0.5rem 0.8rem;
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     background: #f8fafc;
     border-radius: 6px;
     border: 1px solid #e2e8f0;
@@ -4159,6 +4159,35 @@ body.in-paper-editor .main-content {
 .paper-equation .eq-body {
     flex: 1;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.paper-equation .katex-display {
+    margin: 0 !important;
+    padding: 2px 0;
+}
+
+.paper-equation .katex {
+    font-size: 1.04em;
+    color: #0f172a;
+}
+
+.latex-inline {
+    display: inline-block;
+    vertical-align: -0.1em;
+    margin: 0 1px;
+}
+
+.latex-inline .katex {
+    font-size: 1em;
+    color: inherit;
+}
+
+.katex-pending-math {
+    font-family: monospace;
+    color: #1e293b;
 }
 
 .paper-equation .eq-num {
@@ -4167,6 +4196,7 @@ body.in-paper-editor .main-content {
     color: #475569;
     padding-left: 12px;
     user-select: none;
+    font-size: 0.88rem;
 }
 
 /* IEEE Standard Booktabs Table */

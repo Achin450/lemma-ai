@@ -729,7 +729,8 @@
 
                         // Attach Fig 1 (Flowchart) under Methodology in live preview if not already present
                         const stUpper = (sec.title || '').toUpperCase();
-                        if (!document.getElementById('live-fig-1') && (stUpper.includes('METHOD') || stUpper.includes('ARCHITECTURE') || stUpper.includes('DESIGN') || sec.number === 'IV' || sec.number === 'III')) {
+                        const secNum = String(sec.number || '').toUpperCase();
+                        if (!document.getElementById('live-fig-1') && (stUpper.includes('METHOD') || stUpper.includes('ARCHITECT') || stUpper.includes('DESIGN') || stUpper.includes('PROPOSED') || stUpper.includes('FRAMEWORK') || stUpper.includes('MODEL') || secNum === 'IV' || secNum === 'III' || secNum === '3' || secNum === '4')) {
                             const figBox = document.createElement('div');
                             figBox.id = 'live-fig-1';
                             figBox.innerHTML = typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
@@ -737,7 +738,7 @@
                         }
 
                         // Attach Fig 2 (Benchmark Chart) under Results in live preview if not already present
-                        if (!document.getElementById('live-fig-2') && (stUpper.includes('RESULT') || stUpper.includes('EVALUAT') || stUpper.includes('EXPERIMENT') || sec.number === 'VI' || sec.number === 'V')) {
+                        if (!document.getElementById('live-fig-2') && (stUpper.includes('RESULT') || stUpper.includes('EVALUAT') || stUpper.includes('EXPERIMENT') || stUpper.includes('BENCHMARK') || stUpper.includes('PERFORMANCE') || stUpper.includes('EMPIRICAL') || secNum === 'VI' || secNum === 'V' || secNum === '5' || secNum === '6')) {
                             const figBox = document.createElement('div');
                             figBox.id = 'live-fig-2';
                             figBox.innerHTML = typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
@@ -745,7 +746,7 @@
                         }
 
                         // Attach Fig 3 (Convergence / Trajectory Chart) under Discussion / Ablation in live preview if not already present
-                        if (!document.getElementById('live-fig-3') && (stUpper.includes('DISCUSS') || stUpper.includes('ABLATION') || stUpper.includes('ANALYS') || stUpper.includes('LIMITATION') || sec.number === 'VII')) {
+                        if (!document.getElementById('live-fig-3') && (stUpper.includes('DISCUSS') || stUpper.includes('ABLATION') || stUpper.includes('ANALYS') || stUpper.includes('LIMITATION') || stUpper.includes('CONVERGENCE') || stUpper.includes('SENSITIVITY') || secNum === 'VII' || secNum === 'VI' || secNum === '6' || secNum === '7')) {
                             const figBox = document.createElement('div');
                             figBox.id = 'live-fig-3';
                             figBox.innerHTML = typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
@@ -1194,10 +1195,64 @@
         }
 
         // Sections (2-Column flow)
-        let hasFig1 = false;
-        let hasFig2 = false;
-        let hasFig3 = false;
-        (paper.sections || []).forEach((sec, idx) => {
+        const sections = paper.sections || [];
+        const totalSecs = sections.length;
+
+        // Smart locator for Figure 1 (Methodology / Architecture Flowchart)
+        let fig1SecIdx = sections.findIndex(s => {
+            const t = (s.title || '').toUpperCase();
+            const n = String(s.number || '').toUpperCase();
+            return t.includes('METHOD') || t.includes('ARCHITECT') || t.includes('DESIGN') ||
+                   t.includes('PROPOSED') || t.includes('FRAMEWORK') || t.includes('MODEL') ||
+                   t.includes('SYSTEM') || t.includes('ALGORITHM') || t.includes('THEORET') ||
+                   t.includes('FORMULATION') || t.includes('PIPELINE') ||
+                   n === 'III' || n === 'IV' || n === '3' || n === '4';
+        });
+        if (fig1SecIdx === -1 && totalSecs > 0) {
+            fig1SecIdx = Math.min(2, Math.max(0, totalSecs - 2));
+        }
+
+        // Smart locator for Figure 2 (Results / Empirical Benchmark Chart)
+        let fig2SecIdx = sections.findIndex((s, i) => {
+            if (i === fig1SecIdx) return false;
+            const t = (s.title || '').toUpperCase();
+            const n = String(s.number || '').toUpperCase();
+            return t.includes('RESULT') || t.includes('EVALUAT') || t.includes('EXPERIMENT') ||
+                   t.includes('BENCHMARK') || t.includes('PERFORMANCE') || t.includes('EMPIRICAL') ||
+                   t.includes('METRIC') || t.includes('FINDING') || t.includes('VALIDATION') ||
+                   n === 'V' || n === 'VI' || n === '5' || n === '6';
+        });
+        if (fig2SecIdx === -1 && totalSecs > 1) {
+            fig2SecIdx = (fig1SecIdx + 2 < totalSecs) ? fig1SecIdx + 2 : Math.min(totalSecs - 1, fig1SecIdx + 1);
+        }
+
+        // Smart locator for Figure 3 (Discussion / Convergence & Trajectory Chart)
+        let fig3SecIdx = sections.findIndex((s, i) => {
+            if (i === fig1SecIdx || i === fig2SecIdx) return false;
+            const t = (s.title || '').toUpperCase();
+            const n = String(s.number || '').toUpperCase();
+            return t.includes('DISCUSS') || t.includes('ABLATION') || t.includes('ANALYS') ||
+                   t.includes('LIMITATION') || t.includes('CONVERGENCE') || t.includes('SENSITIVITY') ||
+                   t.includes('REFLECTION') || t.includes('OBSERVATION') ||
+                   n === 'VI' || n === 'VII' || n === '6' || n === '7';
+        });
+        if (fig3SecIdx === -1 && totalSecs > 2) {
+            fig3SecIdx = (fig2SecIdx + 1 < totalSecs) ? fig2SecIdx + 1 : Math.max(0, totalSecs - 1);
+            if (fig3SecIdx === fig1SecIdx || fig3SecIdx === fig2SecIdx) {
+                for (let i = totalSecs - 1; i >= 0; i--) {
+                    if (i !== fig1SecIdx && i !== fig2SecIdx) {
+                        fig3SecIdx = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        let fig1Inserted = false;
+        let fig2Inserted = false;
+        let fig3Inserted = false;
+
+        sections.forEach((sec, idx) => {
             const simLabel = sec.similarity_score !== null && sec.similarity_score !== undefined
                 ? `<span class="section-sim-indicator" style="color: ${scoreColor(sec.similarity_score)}; font-size: 0.75rem; font-weight: normal; margin-left: 8px;">(${Math.round(sec.similarity_score * 100)}% match)</span>`
                 : '';
@@ -1210,25 +1265,6 @@
                 </h2>
                 <div class="paper-section-content-preview sec-content-editable">${formatContent(sec.content || '')}</div>`;
 
-            // Insert Fig 1 (Dynamic Domain Flowchart) in Methodology / Architecture section (once)
-            const stUpper = (sec.title || '').toUpperCase();
-            if (!hasFig1 && (stUpper.includes('METHOD') || stUpper.includes('ARCHITECTURE') || stUpper.includes('DESIGN') || sec.number === 'IV' || sec.number === 'III')) {
-                html += typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
-                hasFig1 = true;
-            }
-
-            // Insert Fig 2 (Dynamic Domain Benchmark Chart) in Results / Evaluation section (once)
-            if (!hasFig2 && (stUpper.includes('RESULT') || stUpper.includes('EVALUAT') || stUpper.includes('EXPERIMENT') || sec.number === 'VI' || sec.number === 'V')) {
-                html += typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
-                hasFig2 = true;
-            }
-
-            // Insert Fig 3 (Dynamic Convergence / Ablation Chart) in Discussion / Ablation / Analysis section (once)
-            if (!hasFig3 && (stUpper.includes('DISCUSS') || stUpper.includes('ABLATION') || stUpper.includes('ANALYS') || stUpper.includes('LIMITATION') || sec.number === 'VII')) {
-                html += typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
-                hasFig3 = true;
-            }
-
             (sec.subsections || []).forEach((sub, subIdx) => {
                 html += `<div class="paper-subsection-wrapper" data-sub-idx="${subIdx}">
                     <h3 class="paper-subsection-heading-preview">
@@ -1240,7 +1276,32 @@
             });
 
             html += `</div>`;
+
+            // Insert figures as direct children of .paper-two-column-body so column-span: all works natively
+            if (idx === fig1SecIdx) {
+                html += typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
+                fig1Inserted = true;
+            }
+            if (idx === fig2SecIdx) {
+                html += typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
+                fig2Inserted = true;
+            }
+            if (idx === fig3SecIdx) {
+                html += typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
+                fig3Inserted = true;
+            }
         });
+
+        // Guaranteed fallback: If any figure wasn't placed, append before references
+        if (!fig1Inserted && totalSecs > 0) {
+            html += typeof renderDynamicArchFlowchart === 'function' ? renderDynamicArchFlowchart(paper.title) : renderProfessionalArchFlowchart(paper.title);
+        }
+        if (!fig2Inserted && totalSecs > 0) {
+            html += typeof renderDynamicBenchmarkChart === 'function' ? renderDynamicBenchmarkChart(paper.title) : renderProfessionalBenchmarkChart(paper.title);
+        }
+        if (!fig3Inserted && totalSecs > 0) {
+            html += typeof renderDynamicConvergenceChart === 'function' ? renderDynamicConvergenceChart(paper.title) : '';
+        }
 
         // References (in 2-column flow)
         const finalCitations = (paper.citations && paper.citations.length)
@@ -1271,6 +1332,9 @@
 
         html += `</div></div>`;
         wrapper.innerHTML = html;
+
+        // Hydrate any pending KaTeX mathematical formulas immediately
+        hydratePendingKaTeX();
 
         // If novelty audit already exists and not editing, re-apply highlights
         if (state.currentPaperNoveltyReport && !isEditMode) {
@@ -1516,7 +1580,7 @@
                         newSubsections.push({
                             label: origSub.label || String.fromCharCode(65 + sIdx),
                             title: subTitleSpan ? subTitleSpan.innerText.trim() : (origSub.title || ''),
-                            content: subContentDiv ? subContentDiv.innerText.trim() : (origSub.content || '')
+                            content: subContentDiv ? extractCleanMarkdownContent(subContentDiv) : (origSub.content || '')
                         });
                     });
                 } else if (origSec.subsections && origSec.subsections.length) {
@@ -1526,7 +1590,7 @@
                 newSections.push({
                     number: origSec.number || `SECTION_${idx+1}`,
                     title: titleSpan ? titleSpan.innerText.trim() : origSec.title,
-                    content: contentDiv ? contentDiv.innerText.trim() : (origSec.content || ''),
+                    content: contentDiv ? extractCleanMarkdownContent(contentDiv) : (origSec.content || ''),
                     subsections: newSubsections
                 });
             });
@@ -3276,21 +3340,67 @@
         return renderDynamicBenchmarkChart(topic);
     }
 
-    function renderLatexFormula(latexStr) {
+    function cleanLatexForKaTeX(latexStr) {
+        if (!latexStr) return '';
+        let s = String(latexStr).trim();
+        // Remove enclosing $$, $, \[, \]
+        s = s.replace(/^(\$\$|\$|\\\[)(.*)(\$\$|\$|\\\])$/s, '$2').trim();
+        // Unescape HTML entities that might have been escaped previously
+        s = s.replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'")
+             .replace(/&ndash;/g, '-')
+             .replace(/&mdash;/g, '-');
+        return s.trim();
+    }
+
+    function renderLatexFormula(latexStr, isBlock = true) {
+        const cleanLatex = cleanLatexForKaTeX(latexStr);
+        if (!cleanLatex) return '';
+
         if (window.katex && typeof window.katex.renderToString === 'function') {
             try {
-                return window.katex.renderToString(latexStr, { throwOnError: false, displayMode: true });
+                return window.katex.renderToString(cleanLatex, {
+                    throwOnError: false,
+                    displayMode: isBlock,
+                    output: 'htmlAndMathml',
+                    strict: false
+                });
             } catch (err) {
-                return `<code>${escHtml(latexStr)}</code>`;
+                console.warn('KaTeX render warning:', err);
             }
         }
-        return `<code>${escHtml(latexStr)}</code>`;
+        // Fallback placeholder for deferred hydration
+        const tag = isBlock ? 'div' : 'span';
+        return `<${tag} class="katex-pending-math" data-latex="${escHtml(cleanLatex)}" data-display="${isBlock ? 'true' : 'false'}"><code>${escHtml(cleanLatex)}</code></${tag}>`;
+    }
+
+    function hydratePendingKaTeX() {
+        if (!window.katex || typeof window.katex.renderToString !== 'function') return;
+        const pending = document.querySelectorAll('.katex-pending-math');
+        pending.forEach(el => {
+            const raw = el.getAttribute('data-latex');
+            const isBlock = el.getAttribute('data-display') === 'true';
+            if (raw) {
+                try {
+                    const rendered = window.katex.renderToString(raw, {
+                        throwOnError: false,
+                        displayMode: isBlock,
+                        output: 'htmlAndMathml',
+                        strict: false
+                    });
+                    el.outerHTML = rendered;
+                } catch (e) {}
+            }
+        });
     }
 
     // ---------------------------------------------------------------------------
     // Professional IEEE Markdown Table Renderer
     // ---------------------------------------------------------------------------
-    function renderMarkdownTable(lines, captionText) {
+    function renderMarkdownTable(lines, captionText, rawMarkdown) {
         if (!lines || !lines.length) return '';
         const rows = lines.map(line => {
             return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
@@ -3300,8 +3410,9 @@
 
         const headerCols = rows[0];
         const bodyRows = rows.slice(1);
+        const rawAttr = rawMarkdown ? ` data-raw-table="${escHtml(rawMarkdown)}"` : '';
 
-        let tHtml = `<div class="paper-table-container">`;
+        let tHtml = `<div class="paper-table-container"${rawAttr}>`;
         tHtml += `<div class="paper-table-caption">${captionText || 'TABLE I. QUANTITATIVE BENCHMARK EVALUATION ACROSS DATASETS'}</div>`;
         tHtml += `<div class="paper-table-scroll-wrapper">`;
         tHtml += `<table class="paper-table-ieee"><thead><tr>`;
@@ -3335,69 +3446,157 @@
     // ---------------------------------------------------------------------------
     function formatContent(text) {
         if (!text) return '';
-        let escaped = escHtml(text);
-        // Convert inline citations [N], [N, M], [N]-[M] to styled citation markers
-        escaped = escaped.replace(/\[([\d\s,\-]+)\]/g, (match, p1) => {
-            const trimmed = p1.trim();
-            if (/^\d+(?:\s*,\s*\d+)*$/.test(trimmed)) {
-                const nums = trimmed.split(',').map(s => s.trim()).filter(Boolean);
-                const links = nums.map(n => `<a href="#ref-${n}" title="Reference [${n}]">[${n}]</a>`).join(', ');
-                return `<span class="paper-cit-marker">${links}</span>`;
-            }
-            if (/^\d+\s*-\s*\d+$/.test(trimmed)) {
-                const parts = trimmed.split('-').map(s => s.trim());
-                return `<span class="paper-cit-marker"><a href="#ref-${parts[0]}" title="Reference [${parts[0]}]">[${parts[0]}]</a>&ndash;<a href="#ref-${parts[1]}" title="Reference [${parts[1]}]">[${parts[1]}]</a></span>`;
-            }
-            return match;
-        });
-        
-        // Split into raw blocks
-        const rawBlocks = escaped.split(/\n\n+/);
+
+        // Normalize block equations: ensure standalone $$...$$ or \[...\] are on their own blocks
+        let normalized = text.replace(/\r\n/g, '\n');
+        normalized = normalized.replace(/(^|\n)\s*(\$\$[^\$]+\$\$|\\\[[^\]]+\\\])\s*(\n|$)/g, '\n\n$2\n\n');
+
+        const rawBlocks = normalized.split(/\n\n+/);
         const processedBlocks = [];
 
         for (let i = 0; i < rawBlocks.length; i++) {
-            const trimmed = rawBlocks[i].trim();
-            if (!trimmed) continue;
+            const block = rawBlocks[i].trim();
+            if (!block) continue;
 
-            // Check if this block is a short table caption preceding a markdown table block
-            const isTableCaption = /^TABLE\s+[IVXLCDM\d]+[.:\s\-]/i.test(trimmed) && trimmed.length < 140 && !trimmed.includes('\n');
-            if (isTableCaption && !trimmed.includes('|')) {
+            // 1. Table caption preceding markdown table
+            const isTableCaption = /^TABLE\s+[IVXLCDM\d]+[.:\s\-]/i.test(block) && block.length < 140 && !block.includes('\n');
+            if (isTableCaption && !block.includes('|')) {
                 if (i + 1 < rawBlocks.length && rawBlocks[i + 1].includes('|') && rawBlocks[i + 1].split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
                     const tableBlock = rawBlocks[i + 1].trim();
                     const tableLines = tableBlock.split('\n').filter(l => l.trim().startsWith('|'));
-                    processedBlocks.push(renderMarkdownTable(tableLines, trimmed));
+                    const combinedRaw = block + '\n\n' + tableBlock;
+                    processedBlocks.push(renderMarkdownTable(tableLines, block, combinedRaw));
                     i++; // consume table block
                     continue;
                 }
             }
 
-            // Check if block contains markdown table
-            if (trimmed.includes('|') && trimmed.split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
-                const tableLines = trimmed.split('\n').filter(l => l.trim().startsWith('|'));
-                const captionMatch = trimmed.match(/(TABLE\s+[IVXLCDM\d]+[^\n]*)/i);
+            // 2. Direct Markdown table block
+            if (block.includes('|') && block.split('\n').filter(l => l.trim().startsWith('|')).length >= 2) {
+                const tableLines = block.split('\n').filter(l => l.trim().startsWith('|'));
+                const captionMatch = block.match(/(TABLE\s+[IVXLCDM\d]+[^\n]*)/i);
                 const caption = captionMatch ? captionMatch[1] : 'TABLE I. SYSTEM PERFORMANCE AND COMPARATIVE BENCHMARKING';
-                processedBlocks.push(renderMarkdownTable(tableLines, caption));
+                processedBlocks.push(renderMarkdownTable(tableLines, caption, block));
                 continue;
             }
 
-            // Check for explicit equation lines: e.g. $$ ... (N) $$ or \min_
-            if (trimmed.startsWith('$$') || trimmed.includes('\\min_') || trimmed.includes('\\mathbb') || (trimmed.includes('=') && (trimmed.includes('(1)') || trimmed.includes('(2)')))) {
-                let eqBody = trimmed.replace(/\$\$/g, '').trim();
-                let eqNum = '(1)';
-                const numMatch = eqBody.match(/\((\d+)\)$/);
+            // 3. Block Equation: starts with $$ or \[ or has $$...$$ as the standalone block
+            const isBlockEquation = (/^\$\$[^\$]+\$\$$/s.test(block)) || 
+                                    (/^\\\[.*\\\]$/s.test(block)) ||
+                                    (block.startsWith('$$') && block.endsWith('$$')) ||
+                                    (block.includes('$$') && block.split('\n').length <= 3 && !block.includes('. ') && (block.includes('=') || block.includes('\\')));
+
+            if (isBlockEquation) {
+                let eqClean = block.replace(/^\$\$|\$\$$/g, '').replace(/^\\\[|\\\]$/g, '').trim();
+                let eqNum = '';
+                const numMatch = eqClean.match(/(?:\\(?:quad|qquad|enspace|hspace\{[^\}]+\})\s*)?\((\d+[a-zA-Z]?)\)\s*$/);
                 if (numMatch) {
-                    eqNum = numMatch[0];
-                    eqBody = eqBody.replace(/\s*\(\d+\)$/, '').trim();
+                    eqNum = `(${numMatch[1]})`;
+                    eqClean = eqClean.slice(0, numMatch.index).trim();
                 }
-                const mathHtml = renderLatexFormula(eqBody);
-                processedBlocks.push(`<div class="paper-equation"><div class="eq-body">${mathHtml}</div><span class="eq-num">${escHtml(eqNum)}</span></div>`);
+                const cleanLatex = cleanLatexForKaTeX(eqClean);
+                const mathHtml = renderLatexFormula(cleanLatex, true);
+                const numHtml = eqNum ? `<span class="eq-num">${escHtml(eqNum)}</span>` : '';
+                const rawEquationStr = `$$ ${cleanLatex} ${eqNum} $$`.trim();
+                processedBlocks.push(`<div class="paper-equation" data-raw-equation="${escHtml(rawEquationStr)}"><div class="eq-body">${mathHtml}</div>${numHtml}</div>`);
                 continue;
             }
 
-            processedBlocks.push(`<p class="paper-paragraph">${trimmed.replace(/\n/g, ' ')}</p>`);
+            // 4. Academic Paragraph with inline math and citations
+            const mathTokens = [];
+            let pText = block.replace(/\$([^\$\n]+)\$/g, (match, p1) => {
+                const idx = mathTokens.length;
+                mathTokens.push({ raw: p1.trim(), full: match });
+                return '___LEMMA_MATH_' + idx + '___';
+            });
+
+            pText = pText.replace(/\\\((.*?)\\\)/g, (match, p1) => {
+                const idx = mathTokens.length;
+                mathTokens.push({ raw: p1.trim(), full: match });
+                return '___LEMMA_MATH_' + idx + '___';
+            });
+
+            let escapedP = escHtml(pText);
+            // Convert inline citations [N], [N, M], [N]-[M] to styled citation markers
+            escapedP = escapedP.replace(/\[([\d\s,\-]+)\]/g, (match, p1) => {
+                const trimmed = p1.trim();
+                if (/^\d+(?:\s*,\s*\d+)*$/.test(trimmed)) {
+                    const nums = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+                    const links = nums.map(n => `<a href="#ref-${n}" title="Reference [${n}]">[${n}]</a>`).join(', ');
+                    return `<span class="paper-cit-marker">${links}</span>`;
+                }
+                if (/^\d+\s*-\s*\d+$/.test(trimmed)) {
+                    const parts = trimmed.split('-').map(s => s.trim());
+                    return `<span class="paper-cit-marker"><a href="#ref-${parts[0]}" title="Reference [${parts[0]}]">[${parts[0]}]</a>&ndash;<a href="#ref-${parts[1]}" title="Reference [${parts[1]}]">[${parts[1]}]</a></span>`;
+                }
+                return match;
+            });
+
+            // Restore inline math with KaTeX
+            escapedP = escapedP.replace(/___LEMMA_MATH_(\d+)___/g, (match, idx) => {
+                const item = mathTokens[parseInt(idx, 10)];
+                if (!item) return match;
+                const clean = cleanLatexForKaTeX(item.raw);
+                const mathHtml = renderLatexFormula(clean, false);
+                return `<span class="latex-inline" data-raw-inline="${escHtml(item.full)}">${mathHtml}</span>`;
+            });
+
+            processedBlocks.push(`<p class="paper-paragraph">${escapedP.replace(/\n/g, ' ')}</p>`);
         }
 
         return processedBlocks.join('');
+    }
+
+    function extractCleanMarkdownContent(contentEl) {
+        if (!contentEl) return '';
+        const children = Array.from(contentEl.children);
+        if (!children.length) {
+            return contentEl.innerText.trim();
+        }
+
+        const blocks = [];
+        children.forEach(child => {
+            // 1. Table container -> restore raw markdown table
+            if (child.classList.contains('paper-table-container') && child.getAttribute('data-raw-table')) {
+                blocks.push(child.getAttribute('data-raw-table').trim());
+                return;
+            }
+
+            // 2. Equation container -> restore raw equation
+            if (child.classList.contains('paper-equation') && child.getAttribute('data-raw-equation')) {
+                blocks.push(child.getAttribute('data-raw-equation').trim());
+                return;
+            }
+
+            // 3. Paragraph -> restore inline math and citation markers
+            if (child.tagName === 'P' || child.classList.contains('paper-paragraph')) {
+                const clone = child.cloneNode(true);
+
+                // Restore inline math
+                clone.querySelectorAll('.latex-inline[data-raw-inline]').forEach(el => {
+                    const raw = el.getAttribute('data-raw-inline');
+                    el.replaceWith(document.createTextNode(raw));
+                });
+
+                // Restore citations
+                clone.querySelectorAll('.paper-cit-marker').forEach(el => {
+                    el.replaceWith(document.createTextNode(el.textContent));
+                });
+
+                // Strip any novelty sparkle pills if present
+                clone.querySelectorAll('.novelty-sparkle-pill').forEach(el => el.remove());
+
+                const text = clone.textContent.trim();
+                if (text) blocks.push(text);
+                return;
+            }
+
+            // Default fallback
+            const text = child.innerText ? child.innerText.trim() : child.textContent.trim();
+            if (text) blocks.push(text);
+        });
+
+        return blocks.join('\n\n');
     }
 
     function buildRefString(cit) {
