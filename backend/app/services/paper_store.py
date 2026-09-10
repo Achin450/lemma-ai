@@ -313,13 +313,13 @@ class PaperStore:
             import psycopg2.extras
             with DatabaseService.get_connection() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                    if user_id:
+                    if user_id and user_id != "00000000-0000-0000-0000-000000000001":
                         cursor.execute("""
                             SELECT id, job_id, user_id, title, topic, status, paper_type,
                                    similarity_score, sections_count, citations_count,
                                    created_at, updated_at
                             FROM research_papers
-                            WHERE user_id = %s
+                            WHERE user_id = %s OR user_id IS NULL
                             ORDER BY created_at DESC
                             LIMIT %s
                         """, (user_id, limit))

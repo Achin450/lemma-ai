@@ -1683,6 +1683,19 @@
     }
 
     async function downloadFile(url, filename) {
+        if (window.requireAuthForDownload) {
+            window.requireAuthForDownload(() => {
+                _executeDownloadFile(url, filename);
+            }, {
+                title: "Sign In to Download Paper",
+                subtitle: "Sign in or create a free account to export your research paper, citations, and analysis reports."
+            });
+            return;
+        }
+        return _executeDownloadFile(url, filename);
+    }
+
+    async function _executeDownloadFile(url, filename) {
         try {
             showToast('Generating export...', 'info');
             const res = await fetch(url, { headers: authHeadersFormData() });
