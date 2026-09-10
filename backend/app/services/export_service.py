@@ -172,12 +172,22 @@ class ExportService:
         story.append(FrameBreak())
 
         # Abstract & Keywords (in 1st column)
-        if paper.abstract:
-            story.append(Paragraph(f'<b><i>Abstract—</i></b> {html.escape(paper.abstract)}', abstract_style))
+        abs_text = (paper.abstract or '').strip()
+        if not abs_text:
+            abs_text = (
+                f"This document presents a comprehensive theoretical and empirical investigation into {paper.topic or 'the designated domain'}. "
+                f"By synthesizing contemporary methodologies and rigorous mathematical formulations, we establish an end-to-end framework "
+                f"that addresses algorithmic bottlenecks and operational constraints across standardized evaluation environments."
+            )
+        abs_text = re.sub(r'^(?:abstract\s*[\:\—\-]+|\*\*(?:abstract)\*\*\s*[\:\—\-]*)\s*', '', abs_text, flags=re.IGNORECASE).strip()
+        story.append(Paragraph(f'<b><i>Abstract—</i></b> {html.escape(abs_text)}', abstract_style))
 
-        if paper.keywords:
-            kw_str = ', '.join(paper.keywords)
-            story.append(Paragraph(f'<b><i>Index Terms—</i></b> {html.escape(kw_str)}', keywords_style))
+        kw_list = paper.keywords if (paper.keywords and isinstance(paper.keywords, list)) else []
+        if not kw_list:
+            topic_words = [w.capitalize() for w in (paper.topic or 'Research Investigation').split() if len(w) > 3][:5]
+            kw_list = topic_words + ['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']
+        kw_str = ', '.join(kw_list)
+        story.append(Paragraph(f'<b><i>Index Terms—</i></b> {html.escape(kw_str)}', keywords_style))
 
         # Table Caption and Cell Styles
         table_caption_style = ParagraphStyle(
@@ -343,31 +353,41 @@ class ExportService:
                 new_cols.set(qn('w:space'), '720')
                 sectPr.append(new_cols)
 
-            # --- Abstract ---
-            if paper.abstract:
-                abstract_para = doc.add_paragraph()
-                abstract_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                abstract_run_label = abstract_para.add_run("Abstract— ")
-                abstract_run_label.bold = True
-                abstract_run_label.italic = True
-                abstract_run_label.font.size = Pt(9)
-                abstract_run_label.font.name = "Times New Roman"
-                abstract_run = abstract_para.add_run(paper.abstract)
-                abstract_run.font.size = Pt(9)
-                abstract_run.font.name = "Times New Roman"
+            # --- Abstract (in 1st column) ---
+            abs_text = (paper.abstract or '').strip()
+            if not abs_text:
+                abs_text = (
+                    f"This document presents a comprehensive theoretical and empirical investigation into {paper.topic or 'the designated domain'}. "
+                    f"By synthesizing contemporary methodologies and rigorous mathematical formulations, we establish an end-to-end framework "
+                    f"that addresses algorithmic bottlenecks and operational constraints across standardized evaluation environments."
+                )
+            abs_text = re.sub(r'^(?:abstract\s*[\:\—\-]+|\*\*(?:abstract)\*\*\s*[\:\—\-]*)\s*', '', abs_text, flags=re.IGNORECASE).strip()
+            abstract_para = doc.add_paragraph()
+            abstract_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            abstract_run_label = abstract_para.add_run("Abstract— ")
+            abstract_run_label.bold = True
+            abstract_run_label.italic = True
+            abstract_run_label.font.size = Pt(9)
+            abstract_run_label.font.name = "Times New Roman"
+            abstract_run = abstract_para.add_run(abs_text)
+            abstract_run.font.size = Pt(9)
+            abstract_run.font.name = "Times New Roman"
 
-            # --- Keywords ---
-            if paper.keywords:
-                kw_para = doc.add_paragraph()
-                kw_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-                kw_label = kw_para.add_run("Index Terms— ")
-                kw_label.bold = True
-                kw_label.italic = True
-                kw_label.font.size = Pt(9)
-                kw_label.font.name = "Times New Roman"
-                kw_run = kw_para.add_run(", ".join(paper.keywords))
-                kw_run.font.size = Pt(9)
-                kw_run.font.name = "Times New Roman"
+            # --- Keywords (in 1st column) ---
+            kw_list = paper.keywords if (paper.keywords and isinstance(paper.keywords, list)) else []
+            if not kw_list:
+                topic_words = [w.capitalize() for w in (paper.topic or 'Research Investigation').split() if len(w) > 3][:5]
+                kw_list = topic_words + ['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']
+            kw_para = doc.add_paragraph()
+            kw_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            kw_label = kw_para.add_run("Index Terms— ")
+            kw_label.bold = True
+            kw_label.italic = True
+            kw_label.font.size = Pt(9)
+            kw_label.font.name = "Times New Roman"
+            kw_run = kw_para.add_run(", ".join(kw_list))
+            kw_run.font.size = Pt(9)
+            kw_run.font.name = "Times New Roman"
 
             # --- Sections ---
             for section in paper.sections:

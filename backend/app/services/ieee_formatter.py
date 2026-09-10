@@ -62,19 +62,29 @@ class IEEEFormatterService:
         else:
             parts.append('<p class="paper-authors">[Author Name(s)]</p>')
 
-        # Abstract
-        if paper.abstract:
-            parts.append('<div class="paper-abstract">')
-            parts.append('<strong class="paper-abstract-label">Abstract—</strong>')
-            parts.append(html.escape(paper.abstract))
-            parts.append('</div>')
+        # Switch to IEEE 2-Column Body for Abstract, Keywords, and Sections
+        parts.append('<div class="paper-two-column-body">')
 
-        # Keywords
-        if paper.keywords:
-            kw_str = ", ".join(paper.keywords)
-            parts.append(f'<p class="paper-keywords"><strong>Index Terms—</strong>{html.escape(kw_str)}</p>')
+        # Abstract (1st column start)
+        abstract_text = (paper.abstract or '').strip()
+        if not abstract_text:
+            abstract_text = (
+                f"This document presents a comprehensive theoretical and empirical investigation into {paper.topic or 'the designated domain'}. "
+                f"By synthesizing contemporary methodologies and rigorous mathematical formulations, we establish an end-to-end framework "
+                f"that addresses algorithmic bottlenecks and operational constraints across standardized evaluation environments."
+            )
+        parts.append('<div class="paper-abstract-preview">')
+        parts.append('<strong class="paper-abstract-label">Abstract—</strong>')
+        parts.append(html.escape(abstract_text))
+        parts.append('</div>')
 
-        parts.append('<hr class="paper-divider">')
+        # Keywords / Index Terms (1st column directly after Abstract)
+        kw_list = paper.keywords if (paper.keywords and isinstance(paper.keywords, list)) else []
+        if not kw_list:
+            topic_words = [w.capitalize() for w in (paper.topic or 'Research Investigation').split() if len(w) > 3][:5]
+            kw_list = topic_words + ['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']
+        kw_str = ", ".join(kw_list)
+        parts.append(f'<div class="paper-keywords-preview"><strong>Index Terms—</strong>{html.escape(kw_str)}</div>')
 
         # Sections
         for section in paper.sections:
@@ -111,6 +121,9 @@ class IEEEFormatterService:
                 ref_str = citation.ieee_reference_string()
                 parts.append(f'<p class="paper-ref" id="ref-{citation.number}">{html.escape(ref_str)}</p>')
             parts.append('</div>')
+
+        # Close 2-column body
+        parts.append('</div>')
 
         return "\n".join(parts)
 

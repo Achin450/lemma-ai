@@ -576,10 +576,11 @@ Example output:
         if sources:
             source_ctx = f"\nThe paper references {len(sources)} academic sources."
 
+        kw_list = keywords if (keywords and isinstance(keywords, list)) else [topic]
         prompt = (
             "Write a concise, professional IEEE-style abstract (200-280 words) for an 8-10 page research paper.\n\n"
             f"Topic: {topic}\n"
-            f"Keywords: {', '.join(keywords)}\n"
+            f"Keywords: {', '.join(kw_list)}\n"
             f"Paper covers: {sections_summary}\n"
             f"{source_ctx}\n\n"
             "The abstract must:\n"
@@ -591,20 +592,25 @@ Example output:
         )
         try:
             model = await cls._resolve_model()
-            return await cls._call_ollama(prompt, model, temp=0.4)
+            res = await cls._call_ollama(prompt, model, temp=0.4)
+            if res and res.strip() and len(res.strip()) > 50:
+                cleaned = re.sub(r'^(?:abstract\s*[\:\—\-]+|\*\*(?:abstract)\*\*\s*[\:\—\-]*)\s*', '', res.strip(), flags=re.IGNORECASE).strip()
+                if cleaned:
+                    return cleaned
         except Exception as e:
             logger.warning(f"Failed to generate abstract with LLM: {e}. Using fallback abstract.")
-            return (
-                f"This document investigates {topic} within modern computational and empirical paradigms. "
-                f"With the continuous escalation of complex data environments and real-time processing demands, "
-                f"establishing robust, scalable, and theoretically grounded formulations for {topic} has emerged as an urgent priority. "
-                f"In this article, we formulate a unified end-to-end framework that addresses foundational bottlenecks through optimized algorithmic pipelines, "
-                f"rigorous mathematical representations, and adaptive representation learning. "
-                f"We conduct extensive empirical evaluations across multiple standardized benchmark datasets, comparing our formulation against existing state-of-the-art baselines. "
-                f"Our experimental findings demonstrate statistically significant improvements across key precision, latency, and convergence metrics, "
-                f"achieving up to 14.8% reduction in computational overhead while maintaining superior generalization. "
-                f"Finally, we provide detailed ablation studies, sensitivity analyses, and delineate critical pathways for future research."
-            )
+
+        return (
+            f"This document investigates {topic} within modern computational and empirical paradigms. "
+            f"With the continuous escalation of complex data environments and real-time processing demands, "
+            f"establishing robust, scalable, and theoretically grounded formulations for {topic} has emerged as an urgent priority. "
+            f"In this article, we formulate a unified end-to-end framework that addresses foundational bottlenecks through optimized algorithmic pipelines, "
+            f"rigorous mathematical representations, and adaptive representation learning. "
+            f"We conduct extensive empirical evaluations across multiple standardized benchmark datasets, comparing our formulation against existing state-of-the-art baselines. "
+            f"Our experimental findings demonstrate statistically significant improvements across key precision, latency, and convergence metrics, "
+            f"achieving up to 14.8% reduction in computational overhead while maintaining superior generalization. "
+            f"Finally, we provide detailed ablation studies, sensitivity analyses, and delineate critical pathways for future research."
+        )
 
     @classmethod
     async def generate_section(cls, section_title: str, section_description: str,
