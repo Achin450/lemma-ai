@@ -47,6 +47,22 @@ def _get_celery_result(job_id: str):
 
 # ---------------------------------------------------------------------------
 # POST /generate
+from app.services.topic_validator import TopicValidator, TopicValidationResult
+from pydantic import BaseModel as PyBaseModel
+
+
+class ValidateTopicPayload(PyBaseModel):
+    topic: str
+    domain: Optional[str] = None
+
+
+@router.post("/validate-topic", summary="Validate research topic viability")
+async def validate_research_topic(payload: ValidateTopicPayload):
+    """Validates topic viability and returns 3 scholarly suggestions if invalid."""
+    result = await TopicValidator.validate_topic(payload.topic, payload.domain)
+    return result.dict()
+
+
 # ---------------------------------------------------------------------------
 @router.post(
     "/generate",
@@ -63,12 +79,25 @@ async def generate_research_paper(
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
 ):
+    # 4-Tier Foolproof Topic Validation Guardrail
+    validation = await TopicValidator.validate_topic(payload.topic, payload.domain)
+    if not validation.is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": validation.error_code or "NON_ACADEMIC_TOPIC",
+                "message": validation.reason or "The provided topic is not recognized as a legitimate academic research inquiry.",
+                "reason": validation.reason,
+                "suggestions": validation.suggestions or []
+            }
+        )
+
     paper_id = str(uuid.uuid4())
 
     from app.schemas.research import ResearchPaper, PaperStatus, PaperType
     init_paper = ResearchPaper(
         paper_id=paper_id,
-        title=f"Research Paper on {payload.topic}",
+        title=f"Research Paper on {validation.refined_topic or payload.topic}",
         status=PaperStatus.processing,
         paper_type=PaperType.generated
     )

@@ -7119,6 +7119,165 @@ body.in-paper-editor .main-content {
     }
 }
 
+/* ==========================================================================
+   Topic Autocomplete & 4-Tier Validation Styles
+   ========================================================================== */
+
+.blank-start-bar {
+    position: relative;
+}
+
+.topic-autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(99, 102, 241, 0.15);
+    z-index: 1000;
+    max-height: 320px;
+    overflow-y: auto;
+    text-align: left;
+    padding: 6px;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.topic-autocomplete-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 4px;
+}
+
+.topic-autocomplete-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.topic-autocomplete-item:hover,
+.topic-autocomplete-item.active {
+    background: rgba(99, 102, 241, 0.2);
+    color: #ffffff;
+}
+
+.topic-autocomplete-item .topic-title-text {
+    flex: 1;
+    font-weight: 500;
+}
+
+.topic-autocomplete-item .topic-category-tag {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: #a5b4fc;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* Invalid Topic Modal Card */
+.invalid-topic-modal-card {
+    background: var(--bg-secondary, #131b2e);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 580px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(99, 102, 241, 0.12);
+    overflow: hidden;
+    animation: modalScaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.invalid-topic-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.25rem;
+    background: rgba(239, 68, 68, 0.05);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.invalid-topic-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.invalid-suggestion-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: left;
+}
+
+.invalid-suggestion-card:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-1px);
+}
+
+.invalid-suggestion-card .suggestion-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.invalid-suggestion-card .suggestion-action-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-purple, #818cf8);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Shake animation for invalid input */
+@keyframes shakeInput {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.input-shake {
+    animation: shakeInput 0.35s ease-in-out;
+    border-color: #ef4444 !important;
+}
+
 
 
 

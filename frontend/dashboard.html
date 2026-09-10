@@ -395,6 +395,8 @@
                                     <polyline points="12 5 19 12 12 19"></polyline>
                                 </svg>
                             </button>
+                            <!-- Live Academic Autocomplete Dropdown -->
+                            <div class="topic-autocomplete-dropdown" id="topic-autocomplete-dropdown" style="display: none;"></div>
                         </div>
 
                         <!-- Hidden file input triggered by plus icon -->
@@ -1970,6 +1972,46 @@ Minimum 50 characters required. For best results, paste the full document text."
 
             <div class="auth-modal-footer">
                 <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Free forever for researchers. No credit card required.
+            </div>
+        </div>
+    </div>
+
+    <!-- Invalid / Non-Academic Topic Rejection & Scientific Suggestions Modal -->
+    <div class="auth-modal-backdrop" id="invalid-topic-modal" style="display: none;">
+        <div class="invalid-topic-modal-card">
+            <div class="invalid-topic-header">
+                <div class="invalid-topic-icon-wrap">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div style="flex: 1; text-align: left;">
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">Scholarly Topic Required</h3>
+                    <p style="margin: 2px 0 0; font-size: 0.8rem; color: var(--text-secondary);">Lemma AI only generates verified, peer-reviewed academic papers.</p>
+                </div>
+                <button type="button" class="modal-close-btn" id="btn-close-invalid-topic" title="Close" style="background: none; border: none; font-size: 1.4rem; color: var(--text-secondary); cursor: pointer; padding: 0 6px;">&times;</button>
+            </div>
+
+            <div class="invalid-topic-body" style="padding: 1.25rem; text-align: left;">
+                <div class="invalid-query-pill" style="margin-bottom: 0.85rem; padding: 0.5rem 0.85rem; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                    <span style="font-weight: 600; color: #f87171; font-size: 0.75rem; text-transform: uppercase;">Your Query:</span>
+                    <span id="invalid-topic-user-query" style="color: var(--text-primary); font-family: monospace; word-break: break-all;"></span>
+                </div>
+
+                <div class="invalid-reason-box" id="invalid-topic-reason" style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 1.25rem;">
+                    The provided topic is not recognized as a legitimate scientific or academic research inquiry.
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 0.65rem; font-size: 0.82rem; font-weight: 600; color: var(--accent-purple);">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Did you mean one of these recognized academic research topics?</span>
+                </div>
+
+                <div class="invalid-topic-suggestions-list" id="invalid-topic-suggestions" style="display: flex; flex-direction: column; gap: 0.6rem;">
+                    <!-- Suggested cards inserted dynamically -->
+                </div>
+            </div>
+
+            <div class="invalid-topic-footer" style="padding: 0.85rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 0.5rem; background: rgba(0, 0, 0, 0.1);">
+                <button type="button" class="btn btn-outline" id="btn-dismiss-invalid-topic" style="padding: 0.45rem 1.1rem; font-size: 0.85rem;">Edit Query</button>
             </div>
         </div>
     </div>

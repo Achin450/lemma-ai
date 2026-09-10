@@ -2541,6 +2541,14 @@
 
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
+                if (res.status === 422 && errData.detail && typeof errData.detail === 'object') {
+                    const d = errData.detail;
+                    if (d.error_code || d.suggestions) {
+                        showInvalidTopicModal(topic, d.reason || d.message, d.suggestions || []);
+                        showViewGlobal('dashboard-home-view');
+                        return;
+                    }
+                }
                 throw new Error(formatApiErrorMessage(errData, res.status));
             }
 
@@ -2593,6 +2601,163 @@
     }
 
     // ---------------------------------------------------------------------------
+    // Academic Autocomplete Database & Heuristic Validation
+    // ---------------------------------------------------------------------------
+    const ACADEMIC_AUTOCOMPLETE_DATABASE = [
+        { topic: "Deep Reinforcement Learning in Autonomous Robotics", domain: "Robotics & AI" },
+        { topic: "Graph Neural Networks for Drug Discovery and Molecular Modeling", domain: "Bio-AI & Chemistry" },
+        { topic: "Transformer Architectures for Natural Language Understanding", domain: "NLP & AI" },
+        { topic: "Zero-Knowledge Proofs for Decentralized Identity Verification", domain: "Cryptography & Blockchain" },
+        { topic: "Self-Supervised Contrastive Learning in High-Dimensional Computer Vision", domain: "Computer Vision" },
+        { topic: "Explainable Artificial Intelligence for Clinical Diagnostics", domain: "Biomedical Engineering" },
+        { topic: "Federated Learning for Privacy-Preserving Healthcare Applications", domain: "Distributed Computing" },
+        { topic: "Physics-Informed Neural Networks for Fluid Dynamics Simulation", domain: "Computational Physics" },
+        { topic: "Diffusion Probabilistic Models for Generative Synthetic Data", domain: "Machine Learning" },
+        { topic: "Adversarial Robustness and Certified Defenses in Neural Networks", domain: "Cybersecurity" },
+        { topic: "Model Predictive Control for Multi-Agent Autonomous Aerial Vehicles", domain: "Robotics" },
+        { topic: "Vision-Language-Action Models for Robotic Manipulation in Unstructured Environments", domain: "Robotics" },
+        { topic: "Sim-to-Real Transfer Learning for Quadrupedal Locomotion", domain: "Robotics & Control" },
+        { topic: "Simultaneous Localization and Mapping Using Neuromorphic Event Cameras", domain: "Autonomous Navigation" },
+        { topic: "Surface Code Fault-Tolerant Quantum Computing Architectures", domain: "Quantum Information" },
+        { topic: "Variational Quantum Eigensolvers for Complex Molecular Simulation", domain: "Quantum Computing" },
+        { topic: "Neuromorphic Memristor Crossbar Arrays for Edge AI Acceleration", domain: "VLSI & Hardware" },
+        { topic: "Optical Neural Networks for Sub-Nanosecond Matrix Multiplication", domain: "Photonics & Hardware" },
+        { topic: "Zero-Trust Security Architecture for Cloud-Native Microservices", domain: "Cybersecurity" },
+        { topic: "Quantum-Resistant Lattice-Based Cryptography in Distributed Ledgers", domain: "Cryptography" },
+        { topic: "Automated Vulnerability Detection in Smart Contracts Using Static Symbolic Analysis", domain: "Software Engineering" },
+        { topic: "6G Ultra-Reliable Low-Latency Communication Using Terahertz Reconfigurable Surfaces", domain: "Telecommunications" },
+        { topic: "Single-Cell RNA Sequencing Analysis for Cancer Immunotherapy Stratification", domain: "Biomedical Data" },
+        { topic: "Deep Learning for Automated Detection of Diabetic Retinopathy in Fundus Imaging", domain: "Biomedical Imaging" },
+        { topic: "CRISPR-Cas9 Off-Target Binding Prediction with Deep Sequence Models", domain: "Computational Biology" },
+        { topic: "Perovskite Solar Cell Degradation Modeling Using Bayesian Optimization", domain: "Materials Science" },
+        { topic: "Deep Learning for Smart Grid Frequency Stability and Renewable Energy Integration", domain: "Power Engineering" },
+        { topic: "Carbon Capture Materials Discovery Using Graph Representation Learning", domain: "Environmental Engineering" }
+    ];
+
+    function validateTopicHeuristics(topic) {
+        const raw = (topic || '').trim();
+        const cleaned = raw.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim();
+        const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+
+        if (raw.length < 5) {
+            return {
+                valid: false,
+                reason: "The research topic is too short. Please enter a descriptive scholarly topic of at least 2-3 words."
+            };
+        }
+
+        if (words.length < 2) {
+            return {
+                valid: false,
+                reason: `'${raw}' is too broad for a publication-grade research paper. Please specify the research subfield or inquiry.`
+            };
+        }
+
+        if (/^[\d\s\W]+$/.test(raw)) {
+            return {
+                valid: false,
+                reason: "The topic contains only numbers or symbols. Please enter a valid scientific topic."
+            };
+        }
+
+        if (/(.)\1{4,}/.test(raw)) {
+            return {
+                valid: false,
+                reason: "The input contains repeated consecutive characters, which indicates invalid input."
+            };
+        }
+
+        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv", "hjkl"];
+        const lower = raw.toLowerCase();
+        for (const w of walks) {
+            if (lower.includes(w)) {
+                return {
+                    valid: false,
+                    reason: "The input matches sequential keyboard sweeps. Please type a meaningful research topic."
+                };
+            }
+        }
+
+        for (const word of words) {
+            if (word.length >= 6 && /[bcdfghjklmnpqrstvwxyz]{6,}/i.test(word)) {
+                return {
+                    valid: false,
+                    reason: `Word '${word}' contains unnatural consonant patterns resembling keyboard mash.`
+                };
+            }
+        }
+
+        const nonAcademic = [
+            /\b(hi|hello|hey|bhai|bro|dude|sup|kese|kaisa|kya|haan|nahi)\b/i,
+            /\b(how to make|how to cook|recipe|maggi|chai|tea|pizza|burger)\b/i,
+            /\b(kutta|billi|dog|cat|girlfriend|boyfriend|pyar|love|shadi)\b/i,
+            /\b(joke|prank|meme|funny|lol|lmao|rofl|sexy|porn|xxx)\b/i,
+            /\b(who are you|what is your name|mera naam|apka naam)\b/i,
+            /\b(song|lyrics|movie|actor|cricket|ipl|score)\b/i
+        ];
+        for (const pat of nonAcademic) {
+            if (pat.test(lower)) {
+                return {
+                    valid: false,
+                    reason: "The query appears to be informal conversation, colloquial chat, or non-scholarly text."
+                };
+            }
+        }
+
+        return { valid: true };
+    }
+
+    function showInvalidTopicModal(topic, reason, suggestions) {
+        const modal = document.getElementById('invalid-topic-modal');
+        const userQueryEl = document.getElementById('invalid-topic-user-query');
+        const reasonEl = document.getElementById('invalid-topic-reason');
+        const suggContainer = document.getElementById('invalid-topic-suggestions');
+        const promptInput = document.getElementById('blank-prompt-input');
+
+        if (!modal) return;
+
+        if (userQueryEl) userQueryEl.textContent = topic || 'Unknown';
+        if (reasonEl) reasonEl.textContent = reason || 'The provided query is not recognized as a legitimate academic research inquiry.';
+
+        const fallbackSugg = [
+            "Deep Reinforcement Learning in Autonomous Robotics",
+            "Graph Neural Networks for Drug Discovery and Molecular Modeling",
+            "Transformer Architectures for Natural Language Understanding"
+        ];
+        const list = (suggestions && suggestions.length > 0) ? suggestions : fallbackSugg;
+
+        if (suggContainer) {
+            suggContainer.innerHTML = list.map(item => `
+                <div class="invalid-suggestion-card" data-topic="${escHtml(item)}">
+                    <div class="suggestion-title">${escHtml(item)}</div>
+                    <div class="suggestion-action-btn">
+                        <span>Select</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            `).join('');
+
+            suggContainer.querySelectorAll('.invalid-suggestion-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const chosen = card.getAttribute('data-topic');
+                    if (promptInput && chosen) {
+                        promptInput.value = chosen;
+                    }
+                    modal.style.display = 'none';
+                    // Automatically trigger generation with the selected academic topic
+                    const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
+                    const length = document.getElementById('home-gen-length')?.value || 'long';
+                    const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
+                    const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
+                    startGenerateFromTopic(chosen, domain, length, numRefs, ieeeFormat);
+                });
+            });
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    // ---------------------------------------------------------------------------
     // Dashboard Home: Search Bar & Plus Button Handler
     // ---------------------------------------------------------------------------
     function initHomePromptBar() {
@@ -2602,6 +2767,88 @@
         const fileInput = document.getElementById('home-restructure-file-input');
         const toggleOptionsBtn = document.getElementById('btn-toggle-advanced-params');
         const advancedOptionsBox = document.getElementById('home-advanced-options');
+        const dropdown = document.getElementById('topic-autocomplete-dropdown');
+
+        // Close modal handlers
+        const modal = document.getElementById('invalid-topic-modal');
+        const closeBtn = document.getElementById('btn-close-invalid-topic');
+        const dismissBtn = document.getElementById('btn-dismiss-invalid-topic');
+
+        if (closeBtn) closeBtn.onclick = () => { if (modal) modal.style.display = 'none'; if (promptInput) promptInput.focus(); };
+        if (dismissBtn) dismissBtn.onclick = () => { if (modal) modal.style.display = 'none'; if (promptInput) promptInput.focus(); };
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    if (promptInput) promptInput.focus();
+                }
+            });
+        }
+
+        // Live Academic Autocomplete Dropdown
+        if (promptInput && dropdown) {
+            let debounceTimer = null;
+
+            function renderAutocomplete(query) {
+                const q = query.trim().toLowerCase();
+                if (q.length < 2) {
+                    dropdown.style.display = 'none';
+                    dropdown.innerHTML = '';
+                    return;
+                }
+
+                const matches = ACADEMIC_AUTOCOMPLETE_DATABASE.filter(item => 
+                    item.topic.toLowerCase().includes(q) || item.domain.toLowerCase().includes(q)
+                ).slice(0, 5);
+
+                if (!matches.length) {
+                    dropdown.style.display = 'none';
+                    dropdown.innerHTML = '';
+                    return;
+                }
+
+                let html = `<div class="topic-autocomplete-header">
+                    <span><i class="fa-solid fa-graduation-cap" style="color: var(--accent-purple);"></i> Verified Scholarly Taxonomies</span>
+                    <span>IEEE / arXiv</span>
+                </div>`;
+
+                matches.forEach(item => {
+                    html += `
+                        <div class="topic-autocomplete-item" data-topic="${escHtml(item.topic)}">
+                            <span class="topic-title-text">${escHtml(item.topic)}</span>
+                            <span class="topic-category-tag">${escHtml(item.domain)}</span>
+                        </div>
+                    `;
+                });
+
+                dropdown.innerHTML = html;
+                dropdown.style.display = 'block';
+
+                dropdown.querySelectorAll('.topic-autocomplete-item').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const topic = el.getAttribute('data-topic');
+                        if (topic) {
+                            promptInput.value = topic;
+                            dropdown.style.display = 'none';
+                            promptInput.focus();
+                        }
+                    });
+                });
+            }
+
+            promptInput.addEventListener('input', (e) => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    renderAutocomplete(promptInput.value);
+                }, 120);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!promptInput.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
 
         // Toggle advanced options box
         if (toggleOptionsBtn && advancedOptionsBox) {
@@ -2617,6 +2864,23 @@
             if (!topic) {
                 showToast('Please enter a research topic to generate a paper.', 'error');
                 if (promptInput) promptInput.focus();
+                return;
+            }
+
+            if (dropdown) dropdown.style.display = 'none';
+
+            // Client-Side 0ms Heuristic Guardrail
+            const heuristic = validateTopicHeuristics(topic);
+            if (!heuristic.valid) {
+                if (promptInput && promptInput.parentElement) {
+                    promptInput.parentElement.classList.add('input-shake');
+                    setTimeout(() => promptInput.parentElement.classList.remove('input-shake'), 400);
+                }
+                showInvalidTopicModal(topic, heuristic.reason, [
+                    "Deep Reinforcement Learning in Autonomous Robotics",
+                    "Graph Neural Networks for Drug Discovery and Molecular Modeling",
+                    "Transformer Architectures for Natural Language Understanding"
+                ]);
                 return;
             }
 
