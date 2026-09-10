@@ -2707,6 +2707,14 @@
         return { valid: true };
     }
 
+    function hideInvalidTopicModal() {
+        const modal = document.getElementById('invalid-topic-modal');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+        const promptInput = document.getElementById('blank-prompt-input');
+        if (promptInput) promptInput.focus();
+    }
+
     function showInvalidTopicModal(topic, reason, suggestions) {
         const modal = document.getElementById('invalid-topic-modal');
         const userQueryEl = document.getElementById('invalid-topic-user-query');
@@ -2743,7 +2751,7 @@
                     if (promptInput && chosen) {
                         promptInput.value = chosen;
                     }
-                    modal.style.display = 'none';
+                    hideInvalidTopicModal();
                     // Automatically trigger generation with the selected academic topic
                     const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
                     const length = document.getElementById('home-gen-length')?.value || 'long';
@@ -2755,6 +2763,7 @@
         }
 
         modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
     }
 
     // ---------------------------------------------------------------------------
@@ -2774,16 +2783,20 @@
         const closeBtn = document.getElementById('btn-close-invalid-topic');
         const dismissBtn = document.getElementById('btn-dismiss-invalid-topic');
 
-        if (closeBtn) closeBtn.onclick = () => { if (modal) modal.style.display = 'none'; if (promptInput) promptInput.focus(); };
-        if (dismissBtn) dismissBtn.onclick = () => { if (modal) modal.style.display = 'none'; if (promptInput) promptInput.focus(); };
+        if (closeBtn) closeBtn.onclick = hideInvalidTopicModal;
+        if (dismissBtn) dismissBtn.onclick = hideInvalidTopicModal;
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
-                    modal.style.display = 'none';
-                    if (promptInput) promptInput.focus();
+                    hideInvalidTopicModal();
                 }
             });
         }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+                hideInvalidTopicModal();
+            }
+        });
 
         // Live Academic Autocomplete Dropdown
         if (promptInput && dropdown) {
