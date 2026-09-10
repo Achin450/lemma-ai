@@ -2604,35 +2604,235 @@
     // Academic Autocomplete Database & Heuristic Validation
     // ---------------------------------------------------------------------------
     const ACADEMIC_AUTOCOMPLETE_DATABASE = [
+        // AI, Deep Learning & LLMs
+        { topic: "Transformer Architectures for Natural Language Understanding", domain: "NLP & AI" },
         { topic: "Deep Reinforcement Learning in Autonomous Robotics", domain: "Robotics & AI" },
         { topic: "Graph Neural Networks for Drug Discovery and Molecular Modeling", domain: "Bio-AI & Chemistry" },
-        { topic: "Transformer Architectures for Natural Language Understanding", domain: "NLP & AI" },
-        { topic: "Zero-Knowledge Proofs for Decentralized Identity Verification", domain: "Cryptography & Blockchain" },
         { topic: "Self-Supervised Contrastive Learning in High-Dimensional Computer Vision", domain: "Computer Vision" },
+        { topic: "Diffusion Probabilistic Models for Generative Synthetic Data", domain: "Machine Learning" },
         { topic: "Explainable Artificial Intelligence for Clinical Diagnostics", domain: "Biomedical Engineering" },
         { topic: "Federated Learning for Privacy-Preserving Healthcare Applications", domain: "Distributed Computing" },
         { topic: "Physics-Informed Neural Networks for Fluid Dynamics Simulation", domain: "Computational Physics" },
-        { topic: "Diffusion Probabilistic Models for Generative Synthetic Data", domain: "Machine Learning" },
         { topic: "Adversarial Robustness and Certified Defenses in Neural Networks", domain: "Cybersecurity" },
-        { topic: "Model Predictive Control for Multi-Agent Autonomous Aerial Vehicles", domain: "Robotics" },
+        { topic: "Parameter-Efficient Fine-Tuning of Large Language Models", domain: "NLP & AI" },
+        { topic: "Retrieval-Augmented Generation for Hallucination Mitigation in LLMs", domain: "NLP & AI" },
+        { topic: "Multimodal Foundation Models for Zero-Shot Cross-Domain Reasoning", domain: "Machine Learning" },
+        { topic: "Neuro-Symbolic Reasoning for Explainable Knowledge Graph Induction", domain: "Artificial Intelligence" },
+        { topic: "Curriculum and Meta-Reinforcement Learning for Generalized Policy Transfer", domain: "Reinforcement Learning" },
+
+        // Computer Vision & Imaging
+        { topic: "Neural Radiance Fields for Novel View Synthesis in Autonomous Driving", domain: "Computer Vision" },
+        { topic: "Weakly Supervised Semantic Segmentation in Ultra-High Resolution Satellite Imagery", domain: "Remote Sensing & Vision" },
+        { topic: "Real-Time 3D Object Detection from Sparse LiDAR Point Clouds", domain: "Computer Vision & Robotics" },
+        { topic: "Deep Learning for Automated Detection of Diabetic Retinopathy in Fundus Imaging", domain: "Biomedical Imaging" },
+        { topic: "Synthetic Aperture Radar Target Classification Using Convolutional Networks", domain: "Signal Processing" },
+
+        // Robotics & Autonomous Systems
+        { topic: "Model Predictive Control for Multi-Agent Autonomous Aerial Vehicles", domain: "Robotics & Control" },
         { topic: "Vision-Language-Action Models for Robotic Manipulation in Unstructured Environments", domain: "Robotics" },
         { topic: "Sim-to-Real Transfer Learning for Quadrupedal Locomotion", domain: "Robotics & Control" },
         { topic: "Simultaneous Localization and Mapping Using Neuromorphic Event Cameras", domain: "Autonomous Navigation" },
+        { topic: "Swarm Intelligence and Cooperative Path Planning for Unmanned Aerial Vehicles", domain: "Autonomous Systems" },
+        { topic: "Human-Robot Collaborative Assembly Using Real-Time Force Feedback and Deep Q-Networks", domain: "Industrial Robotics" },
+
+        // Quantum Computing & Physics
         { topic: "Surface Code Fault-Tolerant Quantum Computing Architectures", domain: "Quantum Information" },
         { topic: "Variational Quantum Eigensolvers for Complex Molecular Simulation", domain: "Quantum Computing" },
-        { topic: "Neuromorphic Memristor Crossbar Arrays for Edge AI Acceleration", domain: "VLSI & Hardware" },
-        { topic: "Optical Neural Networks for Sub-Nanosecond Matrix Multiplication", domain: "Photonics & Hardware" },
+        { topic: "Quantum Approximate Optimization Algorithm for Combinatorial NP-Hard Problems", domain: "Quantum Algorithms" },
+        { topic: "Quantum Key Distribution Protocols over Satellite-to-Ground Free-Space Optical Links", domain: "Quantum Cryptography" },
+        { topic: "Quantum Machine Learning Algorithms for High-Dimensional Classification", domain: "Quantum AI" },
+
+        // Cybersecurity, Cryptography & Blockchain
+        { topic: "Zero-Knowledge Proofs for Decentralized Identity Verification", domain: "Cryptography & Blockchain" },
         { topic: "Zero-Trust Security Architecture for Cloud-Native Microservices", domain: "Cybersecurity" },
         { topic: "Quantum-Resistant Lattice-Based Cryptography in Distributed Ledgers", domain: "Cryptography" },
         { topic: "Automated Vulnerability Detection in Smart Contracts Using Static Symbolic Analysis", domain: "Software Engineering" },
-        { topic: "6G Ultra-Reliable Low-Latency Communication Using Terahertz Reconfigurable Surfaces", domain: "Telecommunications" },
+        { topic: "Homomorphic Encryption for Confidential Inference on Untrusted Cloud Servers", domain: "Privacy & Cryptography" },
+        { topic: "AI-Driven Anomaly Detection for Advanced Persistent Threats in Enterprise Networks", domain: "Cybersecurity" },
+        { topic: "Decentralized Finance Protocol Vulnerability Auditing via Formal Verification", domain: "Blockchain Security" },
+
+        // Biomedical, Genomics & Healthcare
         { topic: "Single-Cell RNA Sequencing Analysis for Cancer Immunotherapy Stratification", domain: "Biomedical Data" },
-        { topic: "Deep Learning for Automated Detection of Diabetic Retinopathy in Fundus Imaging", domain: "Biomedical Imaging" },
         { topic: "CRISPR-Cas9 Off-Target Binding Prediction with Deep Sequence Models", domain: "Computational Biology" },
+        { topic: "Deep Learning for Cardiovascular Risk Stratification via 12-Lead Electrocardiography", domain: "Medical Informatics" },
+        { topic: "Protein Structure Prediction and Conformational Dynamics via Geometric Deep Learning", domain: "Bioinformatics" },
+        { topic: "Brain-Computer Interface Decoding of Motor Imagery Using Spatial-Temporal Graph Networks", domain: "Neural Engineering" },
+
+        // Telecommunications, Networks & 6G
+        { topic: "6G Ultra-Reliable Low-Latency Communication Using Terahertz Reconfigurable Surfaces", domain: "Telecommunications" },
+        { topic: "Deep Reinforcement Learning for Dynamic Network Slicing in 5G and Beyond", domain: "Wireless Networks" },
+        { topic: "Cell-Free Massive MIMO Systems for Next-Generation Ubiquitous Coverage", domain: "Telecommunications" },
+        { topic: "Ultra-Dense Edge Computing and Task Offloading for Autonomous Transportation", domain: "Edge Computing" },
+
+        // Clean Energy, Smart Grid & Materials Science
         { topic: "Perovskite Solar Cell Degradation Modeling Using Bayesian Optimization", domain: "Materials Science" },
         { topic: "Deep Learning for Smart Grid Frequency Stability and Renewable Energy Integration", domain: "Power Engineering" },
-        { topic: "Carbon Capture Materials Discovery Using Graph Representation Learning", domain: "Environmental Engineering" }
+        { topic: "Carbon Capture Materials Discovery Using Graph Representation Learning", domain: "Environmental Engineering" },
+        { topic: "State-of-Charge and State-of-Health Estimation of Lithium-Ion Batteries via Physics-Informed ML", domain: "Energy Storage" },
+        { topic: "Predictive Control for Thermal Energy Management in Next-Generation Electric Vehicles", domain: "Automotive Engineering" },
+
+        // Hardware, Edge AI & Neuromorphic
+        { topic: "Neuromorphic Memristor Crossbar Arrays for Edge AI Acceleration", domain: "VLSI & Hardware" },
+        { topic: "Optical Neural Networks for Sub-Nanosecond Matrix Multiplication", domain: "Photonics & Hardware" },
+        { topic: "Quantization-Aware Training and Hardware-Software Co-Design for TinyML", domain: "Embedded Systems" },
+
+        // FinTech & Financial Engineering
+        { topic: "Deep Reinforcement Learning for High-Frequency Algorithmic Market Making", domain: "Computational Finance" },
+        { topic: "Graph Anomaly Detection for Anti-Money Laundering and Credit Fraud in Banking", domain: "FinTech" },
+        { topic: "Explainable Machine Learning for Systemic Credit Risk and Default Modeling", domain: "Financial Engineering" }
     ];
+
+    function inferAcademicDomain(query) {
+        const q = (query || '').toLowerCase();
+        if (/quantum|qubit|eigensolver|entangle/i.test(q)) return "Quantum Computing";
+        if (/robot|drone|uav|locomotion|slam|manipulat|kinematic/i.test(q)) return "Robotics & Control";
+        if (/security|crypto|zero-knowledge|vulnerab|malware|blockchain|ethereum|smart contract|exploit|threat/i.test(q)) return "Cybersecurity & Blockchain";
+        if (/biomedical|cancer|drug|genom|retinopathy|dna|rna|clinical|health|medical|disease|cardio|protein|mri/i.test(q)) return "Biomedical Engineering";
+        if (/vision|image|video|object detect|segmentation|point cloud|nerf|surveillance|face|facial/i.test(q)) return "Computer Vision";
+        if (/nlp|language|transformer|text|speech|llm|sentiment|semantic|rag|retrieval/i.test(q)) return "NLP & Language Models";
+        if (/solar|grid|battery|energy|carbon|power|perovskite|renewable/i.test(q)) return "Energy & Materials Science";
+        if (/network|5g|6g|terahertz|telecom|wireless|iot|sensor|antenna|mimo/i.test(q)) return "Wireless & Telecommunications";
+        if (/finance|stock|trading|fraud|credit|market|banking|fintech/i.test(q)) return "FinTech & Applied Economics";
+        if (/cloud|microservice|distributed|docker|kubernetes|latency|edge/i.test(q)) return "Cloud & Distributed Systems";
+        if (/neural|learning|deep|reinforcement|bayesian|diffusion|gnn|dataset|supervised/i.test(q)) return "AI & Machine Learning";
+        return "Applied Scientific Research";
+    }
+
+    function toAcademicTitleCase(str) {
+        const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet', 'with', 'via', 'using']);
+        const words = (str || '').trim().split(/\s+/);
+        return words.map((w, idx) => {
+            const lower = w.toLowerCase();
+            if (idx > 0 && idx < words.length - 1 && minorWords.has(lower)) {
+                return lower;
+            }
+            return lower.charAt(0).toUpperCase() + lower.slice(1);
+        }).join(' ');
+    }
+
+    function highlightTopicMatches(text, query) {
+        const raw = (query || '').trim();
+        if (!raw) return escHtml(text);
+        const STOP_WORDS = new Set(['in', 'on', 'at', 'for', 'to', 'of', 'and', 'with', 'by', 'the', 'a', 'an', 'using', 'via', 'from', 'as', 'into', 'is', 'are', 'based']);
+        const tokens = raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 1 && !STOP_WORDS.has(t));
+        const queryTokens = tokens.length ? tokens : raw.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 1);
+        
+        if (!queryTokens.length) return escHtml(text);
+
+        const safeTokens = queryTokens.filter(t => !['amp', 'quot', 'lt', 'gt', 'span', 'class'].includes(t));
+        if (!safeTokens.length) return escHtml(text);
+
+        safeTokens.sort((a, b) => b.length - a.length);
+        const escaped = safeTokens.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+        const regex = new RegExp(`(${escaped})`, 'gi');
+
+        return escHtml(text).replace(regex, '<span class="match-highlight">$1</span>');
+    }
+
+    function getAcademicAutocompleteMatches(userQuery) {
+        const raw = (userQuery || '').trim();
+        if (raw.length < 2) return [];
+
+        const lowerRaw = raw.toLowerCase();
+        // Keyboard sweep / repeated char check to avoid generating fake titles for keyboard mash
+        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv"];
+        for (const w of walks) {
+            if (lowerRaw.includes(w)) return [];
+        }
+        if (/(.)\1{4,}/.test(lowerRaw)) return [];
+
+        const STOP_WORDS = new Set(['in', 'on', 'at', 'for', 'to', 'of', 'and', 'with', 'by', 'the', 'a', 'an', 'using', 'via', 'from', 'as', 'into', 'is', 'are', 'based']);
+        const rawTokens = lowerRaw.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
+        let meaningfulTokens = rawTokens.filter(t => !STOP_WORDS.has(t) && t.length > 1);
+        if (!meaningfulTokens.length) meaningfulTokens = rawTokens;
+
+        // 1. Precise Word-boundary and Token-overlap scoring on database items
+        const scoredMatches = [];
+        for (const item of ACADEMIC_AUTOCOMPLETE_DATABASE) {
+            const topicLower = item.topic.toLowerCase();
+            const domainLower = item.domain.toLowerCase();
+            let score = 0;
+
+            if (topicLower.startsWith(lowerRaw)) {
+                score += 300;
+            } else if (topicLower.includes(lowerRaw)) {
+                score += 150;
+            }
+
+            let tokenMatches = 0;
+            for (const token of meaningfulTokens) {
+                const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const wordPrefixRegex = new RegExp('\\b' + escapedToken, 'i');
+                if (wordPrefixRegex.test(topicLower)) {
+                    score += 40;
+                    tokenMatches++;
+                    const exactWordRegex = new RegExp('\\b' + escapedToken + '\\b', 'i');
+                    if (exactWordRegex.test(topicLower)) {
+                        score += 25;
+                    }
+                } else if (wordPrefixRegex.test(domainLower)) {
+                    score += 15;
+                }
+            }
+
+            // Multi-token queries MUST match multiple tokens or the exact phrase to be relevant
+            if (meaningfulTokens.length >= 3 && tokenMatches < 2 && !topicLower.includes(lowerRaw)) {
+                continue;
+            }
+            if (meaningfulTokens.length === 2 && tokenMatches < 1 && !topicLower.includes(lowerRaw)) {
+                continue;
+            }
+
+            if (tokenMatches > 0 && tokenMatches >= meaningfulTokens.length) {
+                score += 100;
+            }
+
+            if (score >= 40) {
+                scoredMatches.push({ item, score });
+            }
+        }
+
+        scoredMatches.sort((a, b) => b.score - a.score);
+        const results = scoredMatches.slice(0, 4).map(m => m.item);
+
+        // 2. Synthesize contextually tailored IEEE-grade titles from user's exact keywords
+        // Ensures suggestions NEVER stop as user types more words!
+        const inferredDomain = inferAcademicDomain(raw);
+        const titleCased = toAcademicTitleCase(raw);
+
+        const templates = [
+            `${titleCased}: A Comprehensive Review and Empirical Benchmark`,
+            `Advances in ${titleCased}: Architectural Paradigms and Scalability`,
+            `Comparative Performance Analysis of Methodologies in ${titleCased}`,
+            `Optimization and Robustness Frameworks for ${titleCased}`,
+            `Novel Approaches and Real-World Evaluation of ${titleCased}`,
+            `State-of-the-Art in ${titleCased}: Challenges and Future Horizons`
+        ];
+
+        const seen = new Set(results.map(r => r.topic.toLowerCase()));
+
+        // For multi-word input (2+ words), present the user's cleanly title-cased topic directly
+        if (rawTokens.length >= 2 && !seen.has(titleCased.toLowerCase())) {
+            results.push({
+                topic: titleCased,
+                domain: inferredDomain
+            });
+            seen.add(titleCased.toLowerCase());
+        }
+
+        for (const tmpl of templates) {
+            if (results.length >= 6) break;
+            if (!seen.has(tmpl.toLowerCase())) {
+                results.push({
+                    topic: tmpl,
+                    domain: inferredDomain
+                });
+                seen.add(tmpl.toLowerCase());
+            }
+        }
+
+        return results.slice(0, 6);
+    }
 
     function validateTopicHeuristics(topic) {
         const raw = (topic || '').trim();
@@ -2803,36 +3003,45 @@
         });
 
         // Live Academic Autocomplete Dropdown
+        let currentSuggestions = [];
+        let selectedIndex = -1;
+
         if (promptInput && dropdown) {
             let debounceTimer = null;
 
             function renderAutocomplete(query) {
-                const q = query.trim().toLowerCase();
-                if (q.length < 2) {
+                const raw = (query || '').trim();
+                if (raw.length < 2) {
                     dropdown.style.display = 'none';
                     dropdown.innerHTML = '';
+                    currentSuggestions = [];
+                    selectedIndex = -1;
                     return;
                 }
 
-                const matches = ACADEMIC_AUTOCOMPLETE_DATABASE.filter(item => 
-                    item.topic.toLowerCase().includes(q) || item.domain.toLowerCase().includes(q)
-                ).slice(0, 5);
+                const matches = getAcademicAutocompleteMatches(raw);
 
-                if (!matches.length) {
+                if (!matches || !matches.length) {
                     dropdown.style.display = 'none';
                     dropdown.innerHTML = '';
+                    currentSuggestions = [];
+                    selectedIndex = -1;
                     return;
                 }
+
+                currentSuggestions = matches;
+                selectedIndex = -1;
 
                 let html = `<div class="topic-autocomplete-header">
                     <span><i class="fa-solid fa-graduation-cap" style="color: var(--accent-purple);"></i> Verified Scholarly Taxonomies</span>
                     <span>IEEE / arXiv</span>
                 </div>`;
 
-                matches.forEach(item => {
+                matches.forEach((item, idx) => {
+                    const highlightedTopic = highlightTopicMatches(item.topic, raw);
                     html += `
-                        <div class="topic-autocomplete-item" data-topic="${escHtml(item.topic)}">
-                            <span class="topic-title-text">${escHtml(item.topic)}</span>
+                        <div class="topic-autocomplete-item" data-index="${idx}" data-topic="${escHtml(item.topic)}">
+                            <span class="topic-title-text">${highlightedTopic}</span>
                             <span class="topic-category-tag">${escHtml(item.domain)}</span>
                         </div>
                     `;
@@ -2842,27 +3051,37 @@
                 dropdown.style.display = 'block';
 
                 dropdown.querySelectorAll('.topic-autocomplete-item').forEach(el => {
-                    el.addEventListener('click', () => {
+                    el.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
                         const topic = el.getAttribute('data-topic');
                         if (topic) {
                             promptInput.value = topic;
                             dropdown.style.display = 'none';
+                            currentSuggestions = [];
+                            selectedIndex = -1;
                             promptInput.focus();
                         }
                     });
                 });
             }
 
-            promptInput.addEventListener('input', (e) => {
+            promptInput.addEventListener('input', () => {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(() => {
                     renderAutocomplete(promptInput.value);
-                }, 120);
+                }, 80);
+            });
+
+            promptInput.addEventListener('focus', () => {
+                if (promptInput.value.trim().length >= 2) {
+                    renderAutocomplete(promptInput.value);
+                }
             });
 
             document.addEventListener('click', (e) => {
                 if (!promptInput.contains(e.target) && !dropdown.contains(e.target)) {
                     dropdown.style.display = 'none';
+                    selectedIndex = -1;
                 }
             });
         }
@@ -2893,7 +3112,8 @@
                     promptInput.parentElement.classList.add('input-shake');
                     setTimeout(() => promptInput.parentElement.classList.remove('input-shake'), 400);
                 }
-                showInvalidTopicModal(topic, heuristic.reason, [
+                const dynamicSugg = getAcademicAutocompleteMatches(topic).slice(0, 3).map(m => m.topic);
+                showInvalidTopicModal(topic, heuristic.reason, dynamicSugg.length ? dynamicSugg : [
                     "Deep Reinforcement Learning in Autonomous Robotics",
                     "Graph Neural Networks for Drug Discovery and Molecular Modeling",
                     "Transformer Architectures for Natural Language Understanding"
@@ -2911,9 +3131,50 @@
 
         if (promptInput) {
             promptInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'ArrowDown') {
+                    if (dropdown && dropdown.style.display !== 'none' && currentSuggestions.length > 0) {
+                        e.preventDefault();
+                        selectedIndex = (selectedIndex + 1) % currentSuggestions.length;
+                        const items = dropdown.querySelectorAll('.topic-autocomplete-item');
+                        items.forEach((it, idx) => {
+                            if (idx === selectedIndex) {
+                                it.classList.add('active');
+                                it.scrollIntoView({ block: 'nearest' });
+                            } else {
+                                it.classList.remove('active');
+                            }
+                        });
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    if (dropdown && dropdown.style.display !== 'none' && currentSuggestions.length > 0) {
+                        e.preventDefault();
+                        selectedIndex = (selectedIndex - 1 + currentSuggestions.length) % currentSuggestions.length;
+                        const items = dropdown.querySelectorAll('.topic-autocomplete-item');
+                        items.forEach((it, idx) => {
+                            if (idx === selectedIndex) {
+                                it.classList.add('active');
+                                it.scrollIntoView({ block: 'nearest' });
+                            } else {
+                                it.classList.remove('active');
+                            }
+                        });
+                    }
+                } else if (e.key === 'Enter') {
                     e.preventDefault();
-                    handleGenerateSubmit();
+                    if (dropdown && dropdown.style.display !== 'none' && selectedIndex >= 0 && selectedIndex < currentSuggestions.length) {
+                        promptInput.value = currentSuggestions[selectedIndex].topic;
+                        dropdown.style.display = 'none';
+                        selectedIndex = -1;
+                        currentSuggestions = [];
+                    } else {
+                        if (dropdown) dropdown.style.display = 'none';
+                        handleGenerateSubmit();
+                    }
+                } else if (e.key === 'Escape') {
+                    if (dropdown && dropdown.style.display !== 'none') {
+                        dropdown.style.display = 'none';
+                        selectedIndex = -1;
+                    }
                 }
             });
         }

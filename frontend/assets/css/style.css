@@ -7184,6 +7184,33 @@ body.in-paper-editor .main-content {
     font-weight: 500;
 }
 
+.topic-autocomplete-item .match-highlight {
+    color: #a5b4fc;
+    font-weight: 700;
+    text-shadow: 0 0 10px rgba(165, 180, 252, 0.45);
+    background: rgba(99, 102, 241, 0.18);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+.topic-autocomplete-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.topic-autocomplete-dropdown::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 4px;
+}
+
+.topic-autocomplete-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.35);
+    border-radius: 4px;
+}
+
+.topic-autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.6);
+}
+
 .topic-autocomplete-item .topic-category-tag {
     font-size: 0.7rem;
     padding: 2px 8px;
