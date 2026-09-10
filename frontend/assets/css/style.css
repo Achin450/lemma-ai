@@ -7197,24 +7197,32 @@ body.in-paper-editor .main-content {
 
 /* Invalid Topic Modal Overlay & Viewport Centering */
 .invalid-topic-modal-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: rgba(0, 0, 0, 0.82) !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-    z-index: 99999 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 1.25rem !important;
-    box-sizing: border-box !important;
-    overflow-y: auto !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 99999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    box-sizing: border-box;
+    overflow-y: auto;
     animation: authFadeIn 0.2s ease-out;
+}
+
+.invalid-topic-modal-overlay.active {
+    display: flex !important;
+}
+
+.invalid-topic-modal-overlay:not(.active) {
+    display: none !important;
 }
 
 .invalid-topic-modal-card {

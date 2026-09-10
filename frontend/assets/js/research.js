@@ -2709,7 +2709,10 @@
 
     function hideInvalidTopicModal() {
         const modal = document.getElementById('invalid-topic-modal');
-        if (modal) modal.style.display = 'none';
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
         document.body.style.overflow = '';
         const promptInput = document.getElementById('blank-prompt-input');
         if (promptInput) promptInput.focus();
@@ -2762,6 +2765,7 @@
             });
         }
 
+        modal.classList.add('active');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
