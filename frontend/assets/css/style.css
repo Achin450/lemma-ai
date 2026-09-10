@@ -6928,6 +6928,193 @@ body.in-paper-editor .main-content {
     gap: 6px;
 }
 
+/* ==========================================================================
+   Dashboard Home View: Right-Side Ad Placement Box
+   ========================================================================== */
+.dashboard-home-layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2.25rem;
+    width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 2rem 1.25rem;
+    box-sizing: border-box;
+}
+
+.dashboard-home-layout .blank-start-content {
+    flex: 1 1 800px;
+    max-width: 850px;
+    width: 100%;
+    text-align: center;
+    padding-top: 1.5rem;
+}
+
+.dashboard-ad-sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    margin-top: 1.5rem;
+    position: sticky;
+    top: 1.5rem;
+}
+
+.dashboard-ad-card {
+    background: rgba(14, 14, 21, 0.72);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    padding: 1.25rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 460px;
+    justify-content: space-between;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: all 0.25s ease;
+    box-sizing: border-box;
+}
+
+.dashboard-ad-card:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    border-style: solid;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.12);
+}
+
+.dashboard-ad-badge-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.ad-badge-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ad-slot-info-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.82rem;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: color 0.2s;
+}
+
+.ad-slot-info-btn:hover {
+    color: var(--accent-purple);
+}
+
+.dashboard-ad-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 0.5rem;
+}
+
+.ad-blank-placeholder {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.ad-placeholder-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #818cf8;
+    font-size: 1.3rem;
+    margin-bottom: 0.25rem;
+}
+
+.ad-blank-placeholder h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.2px;
+}
+
+.ad-blank-placeholder p {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.ad-placeholder-hint {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    display: inline-block;
+    line-height: 1.35;
+}
+
+.dashboard-ad-footer {
+    text-align: center;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 0.5rem;
+}
+
+.ad-sponsor-link {
+    font-size: 0.76rem;
+    color: var(--accent-hover);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ad-sponsor-link:hover {
+    color: #c7d2fe;
+    text-decoration: underline;
+}
+
+@media (max-width: 1260px) {
+    .dashboard-home-layout {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    .dashboard-ad-sidebar {
+        width: 100%;
+        max-width: 600px;
+        position: static;
+        margin-top: 1.5rem;
+    }
+    .dashboard-ad-card {
+        min-height: 200px;
+    }
+}
+
 
 
 
