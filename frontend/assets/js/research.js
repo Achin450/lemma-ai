@@ -2604,7 +2604,7 @@
     // Academic Autocomplete Database & Heuristic Validation
     // ---------------------------------------------------------------------------
     const ACADEMIC_AUTOCOMPLETE_DATABASE = [
-        // AI, Deep Learning & LLMs
+        // AI, Deep Learning & Neural Architectures
         { topic: "Transformer Architectures for Natural Language Understanding", domain: "NLP & AI" },
         { topic: "Deep Reinforcement Learning in Autonomous Robotics", domain: "Robotics & AI" },
         { topic: "Graph Neural Networks for Drug Discovery and Molecular Modeling", domain: "Bio-AI & Chemistry" },
@@ -2614,55 +2614,96 @@
         { topic: "Federated Learning for Privacy-Preserving Healthcare Applications", domain: "Distributed Computing" },
         { topic: "Physics-Informed Neural Networks for Fluid Dynamics Simulation", domain: "Computational Physics" },
         { topic: "Adversarial Robustness and Certified Defenses in Neural Networks", domain: "Cybersecurity" },
-        { topic: "Parameter-Efficient Fine-Tuning of Large Language Models", domain: "NLP & AI" },
+        { topic: "Parameter-Efficient Fine-Tuning of Large Language Models via LoRA", domain: "NLP & AI" },
         { topic: "Retrieval-Augmented Generation for Hallucination Mitigation in LLMs", domain: "NLP & AI" },
         { topic: "Multimodal Foundation Models for Zero-Shot Cross-Domain Reasoning", domain: "Machine Learning" },
         { topic: "Neuro-Symbolic Reasoning for Explainable Knowledge Graph Induction", domain: "Artificial Intelligence" },
         { topic: "Curriculum and Meta-Reinforcement Learning for Generalized Policy Transfer", domain: "Reinforcement Learning" },
+        { topic: "Continual Lifelong Learning and Catastrophic Forgetting Mitigation", domain: "Machine Learning" },
+        { topic: "Unsupervised Domain Adaptation for Cross-Modality Semantic Segmentation", domain: "Computer Vision" },
+        { topic: "Sparse Mixture-of-Experts Architectures for Scalable Deep Learning", domain: "Deep Learning" },
+        { topic: "Information-Theoretic Regularization for Generalizable Representation Learning", domain: "Machine Learning Theory" },
+        { topic: "Neural Ordinary Differential Equations for Continuous-Time Dynamic Modeling", domain: "Applied Mathematics & ML" },
+        { topic: "Reinforcement Learning from Human Feedback for LLM Alignment", domain: "NLP & AI Safety" },
 
-        // Computer Vision & Imaging
+        // Computer Vision & Imaging Systems
         { topic: "Neural Radiance Fields for Novel View Synthesis in Autonomous Driving", domain: "Computer Vision" },
         { topic: "Weakly Supervised Semantic Segmentation in Ultra-High Resolution Satellite Imagery", domain: "Remote Sensing & Vision" },
         { topic: "Real-Time 3D Object Detection from Sparse LiDAR Point Clouds", domain: "Computer Vision & Robotics" },
         { topic: "Deep Learning for Automated Detection of Diabetic Retinopathy in Fundus Imaging", domain: "Biomedical Imaging" },
         { topic: "Synthetic Aperture Radar Target Classification Using Convolutional Networks", domain: "Signal Processing" },
+        { topic: "Vision Transformers for Real-Time Human Pose and Motion Estimation", domain: "Computer Vision" },
+        { topic: "Thermal Infrared and Visible Image Fusion for Low-Light Surveillance", domain: "Computer Vision" },
+        { topic: "Zero-Shot Open-Vocabulary Object Detection Using Vision-Language Embeddings", domain: "Computer Vision" },
+        { topic: "Deep Learning for Automated Brain Tumor Segmentation in Multi-Modal MRI", domain: "Biomedical Imaging" },
+        { topic: "Facial Recognition and Anti-Spoofing Systems Using Dual-Spectrum Sensing", domain: "Biometrics & Security" },
+        { topic: "Video Anomaly Detection in Dense Crowds Using Spatio-Temporal Transformers", domain: "Computer Vision" },
+        { topic: "Autonomous Drone Visual Inertial Odometry in GPS-Denied Environments", domain: "Robotics & Vision" },
 
-        // Robotics & Autonomous Systems
+        // Robotics, Autonomous Vehicles & Control Systems
         { topic: "Model Predictive Control for Multi-Agent Autonomous Aerial Vehicles", domain: "Robotics & Control" },
         { topic: "Vision-Language-Action Models for Robotic Manipulation in Unstructured Environments", domain: "Robotics" },
-        { topic: "Sim-to-Real Transfer Learning for Quadrupedal Locomotion", domain: "Robotics & Control" },
+        { topic: "Sim-to-Real Transfer Learning for Quadrupedal Locomotion Across Rough Terrain", domain: "Robotics & Control" },
         { topic: "Simultaneous Localization and Mapping Using Neuromorphic Event Cameras", domain: "Autonomous Navigation" },
         { topic: "Swarm Intelligence and Cooperative Path Planning for Unmanned Aerial Vehicles", domain: "Autonomous Systems" },
         { topic: "Human-Robot Collaborative Assembly Using Real-Time Force Feedback and Deep Q-Networks", domain: "Industrial Robotics" },
+        { topic: "Deep Learning for Autonomous Vehicle Trajectory Prediction and Decision-Making", domain: "Autonomous Vehicles" },
+        { topic: "Fault-Tolerant Cooperative Control of Distributed Multi-UAV Swarms", domain: "Control Systems" },
+        { topic: "Soft Robotic Actuators with Embedded Sensor Feedback for Delicate Surgery", domain: "Biomedical Robotics" },
+        { topic: "Autonomous Underwater Vehicle Navigation and Acoustic Target Tracking", domain: "Marine Robotics" },
 
-        // Quantum Computing & Physics
+        // Quantum Information & Quantum Computing
         { topic: "Surface Code Fault-Tolerant Quantum Computing Architectures", domain: "Quantum Information" },
         { topic: "Variational Quantum Eigensolvers for Complex Molecular Simulation", domain: "Quantum Computing" },
         { topic: "Quantum Approximate Optimization Algorithm for Combinatorial NP-Hard Problems", domain: "Quantum Algorithms" },
         { topic: "Quantum Key Distribution Protocols over Satellite-to-Ground Free-Space Optical Links", domain: "Quantum Cryptography" },
         { topic: "Quantum Machine Learning Algorithms for High-Dimensional Classification", domain: "Quantum AI" },
+        { topic: "Superconducting Transmon Qubit Decoherence Mitigation Using Dynamical Decoupling", domain: "Quantum Hardware" },
+        { topic: "Neutral Atom Quantum Processors with Programmable Optical Tweezers", domain: "Quantum Technology" },
+        { topic: "Measurement-Based Quantum Computing and Topological Quantum Memory", domain: "Quantum Physics" },
+        { topic: "Quantum State Tomography Acceleration via Compressed Sensing and Neural Networks", domain: "Quantum Information" },
 
-        // Cybersecurity, Cryptography & Blockchain
+        // Cybersecurity, Cryptography & Privacy
         { topic: "Zero-Knowledge Proofs for Decentralized Identity Verification", domain: "Cryptography & Blockchain" },
         { topic: "Zero-Trust Security Architecture for Cloud-Native Microservices", domain: "Cybersecurity" },
         { topic: "Quantum-Resistant Lattice-Based Cryptography in Distributed Ledgers", domain: "Cryptography" },
         { topic: "Automated Vulnerability Detection in Smart Contracts Using Static Symbolic Analysis", domain: "Software Engineering" },
-        { topic: "Homomorphic Encryption for Confidential Inference on Untrusted Cloud Servers", domain: "Privacy & Cryptography" },
+        { topic: "Homomorphic Encryption for Confidential Machine Learning Inference on Cloud Servers", domain: "Privacy & Cryptography" },
         { topic: "AI-Driven Anomaly Detection for Advanced Persistent Threats in Enterprise Networks", domain: "Cybersecurity" },
-        { topic: "Decentralized Finance Protocol Vulnerability Auditing via Formal Verification", domain: "Blockchain Security" },
+        { topic: "Formal Verification of Ethereum Smart Contracts for Decentralized Finance Protocols", domain: "Blockchain Security" },
+        { topic: "Deep Learning for Intrusion Detection and DDoS Mitigation in Industrial Control Systems", domain: "Cybersecurity" },
+        { topic: "Differential Privacy in Distributed Edge Computing and Data Sharing", domain: "Data Privacy" },
+        { topic: "Ransomware Behavior Analysis and Automated Memory Forensics Using Machine Learning", domain: "Cybersecurity" },
+        { topic: "Biometric Template Protection Using Cancelable Cryptographic Primitives", domain: "Information Security" },
+        { topic: "Side-Channel Attack Detection in Cryptographic Hardware via Electromagnetic Leakage", domain: "Hardware Security" },
 
-        // Biomedical, Genomics & Healthcare
+        // Blockchain, Web3 & Distributed Ledgers
+        { topic: "Scalability and Latency Benchmarks of Optimistic and ZK-Rollups on Ethereum", domain: "Blockchain & Web3" },
+        { topic: "Consensus Protocols and Byzantine Fault Tolerance in High-Throughput Blockchains", domain: "Distributed Computing" },
+        { topic: "Decentralized Oracle Networks and Data Integrity Proofs for DeFi", domain: "Blockchain Systems" },
+        { topic: "Cross-Chain Interoperability Protocols and Atomic Swap Verification", domain: "Blockchain Architecture" },
+        { topic: "Privacy-Preserving Transactions in Public Ledgers Using Ring Signatures", domain: "Cryptography & Web3" },
+
+        // Biomedical, Healthcare & Computational Biology
         { topic: "Single-Cell RNA Sequencing Analysis for Cancer Immunotherapy Stratification", domain: "Biomedical Data" },
         { topic: "CRISPR-Cas9 Off-Target Binding Prediction with Deep Sequence Models", domain: "Computational Biology" },
         { topic: "Deep Learning for Cardiovascular Risk Stratification via 12-Lead Electrocardiography", domain: "Medical Informatics" },
         { topic: "Protein Structure Prediction and Conformational Dynamics via Geometric Deep Learning", domain: "Bioinformatics" },
         { topic: "Brain-Computer Interface Decoding of Motor Imagery Using Spatial-Temporal Graph Networks", domain: "Neural Engineering" },
+        { topic: "Continuous Glucose Monitoring and Predictive Glycemic Control via Recurrent Neural Networks", domain: "Biomedical Sensors" },
+        { topic: "Automated Histopathology Whole-Slide Classification for Early Onset Oncology", domain: "Digital Pathology" },
+        { topic: "Genomic Variant Calling and Clinical Interpretation Using Deep DeepVariant Pipelines", domain: "Genomics" },
+        { topic: "EEG Signal Analysis for Early Diagnosis of Alzheimer's Disease and Dementia", domain: "Neuroscience & AI" },
+        { topic: "Drug-Target Interaction Prediction Using Multi-Task Deep Siamese Networks", domain: "Pharmacology & AI" },
 
-        // Telecommunications, Networks & 6G
+        // Telecommunications, 5G/6G & Wireless Systems
         { topic: "6G Ultra-Reliable Low-Latency Communication Using Terahertz Reconfigurable Surfaces", domain: "Telecommunications" },
         { topic: "Deep Reinforcement Learning for Dynamic Network Slicing in 5G and Beyond", domain: "Wireless Networks" },
         { topic: "Cell-Free Massive MIMO Systems for Next-Generation Ubiquitous Coverage", domain: "Telecommunications" },
         { topic: "Ultra-Dense Edge Computing and Task Offloading for Autonomous Transportation", domain: "Edge Computing" },
+        { topic: "Non-Terrestrial Networks and Low-Earth-Orbit Satellite Constellation Beamforming", domain: "Satellite Communications" },
+        { topic: "Energy-Harvesting Cognitive Radio Networks for IoT Environmental Monitoring", domain: "Wireless IoT" },
+        { topic: "Millimeter-Wave Channel Modeling and Beam Alignment for High-Speed Railways", domain: "Telecommunications" },
 
         // Clean Energy, Smart Grid & Materials Science
         { topic: "Perovskite Solar Cell Degradation Modeling Using Bayesian Optimization", domain: "Materials Science" },
@@ -2670,45 +2711,30 @@
         { topic: "Carbon Capture Materials Discovery Using Graph Representation Learning", domain: "Environmental Engineering" },
         { topic: "State-of-Charge and State-of-Health Estimation of Lithium-Ion Batteries via Physics-Informed ML", domain: "Energy Storage" },
         { topic: "Predictive Control for Thermal Energy Management in Next-Generation Electric Vehicles", domain: "Automotive Engineering" },
+        { topic: "Microgrid Fault Detection and Islanding Identification Using Synchrophasor Measurements", domain: "Power Systems" },
+        { topic: "Wind Turbine Power Generation Forecasting via Spatio-Temporal Graph Wavelet Networks", domain: "Renewable Energy" },
+        { topic: "Green Hydrogen Production Optimization Through Proton Exchange Membrane Electrolyzers", domain: "Clean Technology" },
 
-        // Hardware, Edge AI & Neuromorphic
+        // Hardware, Edge AI & Neuromorphic Engineering
         { topic: "Neuromorphic Memristor Crossbar Arrays for Edge AI Acceleration", domain: "VLSI & Hardware" },
         { topic: "Optical Neural Networks for Sub-Nanosecond Matrix Multiplication", domain: "Photonics & Hardware" },
         { topic: "Quantization-Aware Training and Hardware-Software Co-Design for TinyML", domain: "Embedded Systems" },
+        { topic: "Spiking Neural Networks on Loihi Neuromorphic Hardware for Low-Power Sensory Processing", domain: "Neuromorphic Computing" },
+        { topic: "Approximate Computing Architectures for Energy-Efficient Deep Learning Accelerators", domain: "Computer Architecture" },
 
-        // FinTech & Financial Engineering
+        // FinTech & Computational Finance
         { topic: "Deep Reinforcement Learning for High-Frequency Algorithmic Market Making", domain: "Computational Finance" },
         { topic: "Graph Anomaly Detection for Anti-Money Laundering and Credit Fraud in Banking", domain: "FinTech" },
-        { topic: "Explainable Machine Learning for Systemic Credit Risk and Default Modeling", domain: "Financial Engineering" }
+        { topic: "Explainable Machine Learning for Systemic Credit Risk and Default Modeling", domain: "Financial Engineering" },
+        { topic: "Sentiment Analysis of Financial Disclosures and Earnings Calls for Stock Volatility Prediction", domain: "FinTech & NLP" },
+        { topic: "Automated Portfolio Optimization Using Deep Reinforcement Learning and Mean-Variance Theory", domain: "Quantitative Finance" },
+
+        // Software Engineering & Cloud Computing
+        { topic: "Automated Microservices Failure Diagnosis Using Distributed Tracing and Graph Neural Networks", domain: "Cloud Computing" },
+        { topic: "Chaos Engineering Frameworks for Resilience Testing in Large-Scale Kubernetes Clusters", domain: "Distributed Systems" },
+        { topic: "Automated Program Repair and Vulnerability Patching Using Code Foundation Models", domain: "Software Engineering" },
+        { topic: "Static and Dynamic Concurrency Bug Detection in Multi-Threaded Go and Rust Systems", domain: "Software Engineering" }
     ];
-
-    function inferAcademicDomain(query) {
-        const q = (query || '').toLowerCase();
-        if (/quantum|qubit|eigensolver|entangle/i.test(q)) return "Quantum Computing";
-        if (/robot|drone|uav|locomotion|slam|manipulat|kinematic/i.test(q)) return "Robotics & Control";
-        if (/security|crypto|zero-knowledge|vulnerab|malware|blockchain|ethereum|smart contract|exploit|threat/i.test(q)) return "Cybersecurity & Blockchain";
-        if (/biomedical|cancer|drug|genom|retinopathy|dna|rna|clinical|health|medical|disease|cardio|protein|mri/i.test(q)) return "Biomedical Engineering";
-        if (/vision|image|video|object detect|segmentation|point cloud|nerf|surveillance|face|facial/i.test(q)) return "Computer Vision";
-        if (/nlp|language|transformer|text|speech|llm|sentiment|semantic|rag|retrieval/i.test(q)) return "NLP & Language Models";
-        if (/solar|grid|battery|energy|carbon|power|perovskite|renewable/i.test(q)) return "Energy & Materials Science";
-        if (/network|5g|6g|terahertz|telecom|wireless|iot|sensor|antenna|mimo/i.test(q)) return "Wireless & Telecommunications";
-        if (/finance|stock|trading|fraud|credit|market|banking|fintech/i.test(q)) return "FinTech & Applied Economics";
-        if (/cloud|microservice|distributed|docker|kubernetes|latency|edge/i.test(q)) return "Cloud & Distributed Systems";
-        if (/neural|learning|deep|reinforcement|bayesian|diffusion|gnn|dataset|supervised/i.test(q)) return "AI & Machine Learning";
-        return "Applied Scientific Research";
-    }
-
-    function toAcademicTitleCase(str) {
-        const minorWords = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet', 'with', 'via', 'using']);
-        const words = (str || '').trim().split(/\s+/);
-        return words.map((w, idx) => {
-            const lower = w.toLowerCase();
-            if (idx > 0 && idx < words.length - 1 && minorWords.has(lower)) {
-                return lower;
-            }
-            return lower.charAt(0).toUpperCase() + lower.slice(1);
-        }).join(' ');
-    }
 
     function highlightTopicMatches(text, query) {
         const raw = (query || '').trim();
@@ -2733,20 +2759,27 @@
         const raw = (userQuery || '').trim();
         if (raw.length < 2) return [];
 
+        // 1. Immediately reject colloquial, conversational, non-scholarly input
+        const nonAcademicPattern = /\b(hi|hello|hey|bhai|bro|dude|sup|kese|kaisa|kya|haan|nahi|how to|recipe|maggi|chai|tea|pizza|burger|kutta|billi|dog|cat|pyar|love|shadi|joke|prank|meme|funny|lol|lmao|xxx|who are you|song|lyrics|movie|cricket|ipl)\b/i;
+        if (nonAcademicPattern.test(raw)) {
+            return [];
+        }
+
+        // 2. Reject keyboard sweeps and unnatural repetitions
+        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv", "hjkl"];
         const lowerRaw = raw.toLowerCase();
-        // Keyboard sweep / repeated char check to avoid generating fake titles for keyboard mash
-        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv"];
         for (const w of walks) {
             if (lowerRaw.includes(w)) return [];
         }
         if (/(.)\1{4,}/.test(lowerRaw)) return [];
 
+        // 3. Extract meaningful tokens from query
         const STOP_WORDS = new Set(['in', 'on', 'at', 'for', 'to', 'of', 'and', 'with', 'by', 'the', 'a', 'an', 'using', 'via', 'from', 'as', 'into', 'is', 'are', 'based']);
         const rawTokens = lowerRaw.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean);
         let meaningfulTokens = rawTokens.filter(t => !STOP_WORDS.has(t) && t.length > 1);
         if (!meaningfulTokens.length) meaningfulTokens = rawTokens;
 
-        // 1. Precise Word-boundary and Token-overlap scoring on database items
+        // 4. Token-overlap & word-boundary matching on authentic database
         const scoredMatches = [];
         for (const item of ACADEMIC_AUTOCOMPLETE_DATABASE) {
             const topicLower = item.topic.toLowerCase();
@@ -2756,7 +2789,7 @@
             if (topicLower.startsWith(lowerRaw)) {
                 score += 300;
             } else if (topicLower.includes(lowerRaw)) {
-                score += 150;
+                score += 160;
             }
 
             let tokenMatches = 0;
@@ -2775,16 +2808,18 @@
                 }
             }
 
-            // Multi-token queries MUST match multiple tokens or the exact phrase to be relevant
             if (meaningfulTokens.length >= 3 && tokenMatches < 2 && !topicLower.includes(lowerRaw)) {
                 continue;
             }
             if (meaningfulTokens.length === 2 && tokenMatches < 1 && !topicLower.includes(lowerRaw)) {
                 continue;
             }
+            if (meaningfulTokens.length === 1 && tokenMatches === 0 && !topicLower.includes(lowerRaw)) {
+                continue;
+            }
 
             if (tokenMatches > 0 && tokenMatches >= meaningfulTokens.length) {
-                score += 100;
+                score += 120;
             }
 
             if (score >= 40) {
@@ -2793,45 +2828,7 @@
         }
 
         scoredMatches.sort((a, b) => b.score - a.score);
-        const results = scoredMatches.slice(0, 4).map(m => m.item);
-
-        // 2. Synthesize contextually tailored IEEE-grade titles from user's exact keywords
-        // Ensures suggestions NEVER stop as user types more words!
-        const inferredDomain = inferAcademicDomain(raw);
-        const titleCased = toAcademicTitleCase(raw);
-
-        const templates = [
-            `${titleCased}: A Comprehensive Review and Empirical Benchmark`,
-            `Advances in ${titleCased}: Architectural Paradigms and Scalability`,
-            `Comparative Performance Analysis of Methodologies in ${titleCased}`,
-            `Optimization and Robustness Frameworks for ${titleCased}`,
-            `Novel Approaches and Real-World Evaluation of ${titleCased}`,
-            `State-of-the-Art in ${titleCased}: Challenges and Future Horizons`
-        ];
-
-        const seen = new Set(results.map(r => r.topic.toLowerCase()));
-
-        // For multi-word input (2+ words), present the user's cleanly title-cased topic directly
-        if (rawTokens.length >= 2 && !seen.has(titleCased.toLowerCase())) {
-            results.push({
-                topic: titleCased,
-                domain: inferredDomain
-            });
-            seen.add(titleCased.toLowerCase());
-        }
-
-        for (const tmpl of templates) {
-            if (results.length >= 6) break;
-            if (!seen.has(tmpl.toLowerCase())) {
-                results.push({
-                    topic: tmpl,
-                    domain: inferredDomain
-                });
-                seen.add(tmpl.toLowerCase());
-            }
-        }
-
-        return results.slice(0, 6);
+        return scoredMatches.slice(0, 6).map(m => m.item);
     }
 
     function validateTopicHeuristics(topic) {
