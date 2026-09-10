@@ -147,18 +147,18 @@ class GenerateRequest(BaseModel):
     """Request body for POST /api/v1/research/generate"""
     topic: str = Field(..., min_length=3, max_length=500, description="Research topic")
     domain: Optional[str] = Field(None, description="Research domain/area (optional)")
-    length: PaperLength = Field(PaperLength.medium, description="Target paper length")
-    num_references: int = Field(10, ge=1, le=50, description="Target number of references")
+    length: PaperLength = Field(PaperLength.long, description="Target paper length")
+    num_references: int = Field(30, ge=1, le=50, description="Target number of references")
     ieee_format: bool = Field(True, description="Apply IEEE formatting (default: True)")
 
     @field_validator('num_references', mode='before')
     @classmethod
     def ensure_min_references(cls, v):
         try:
-            val = int(v) if v is not None else 10
+            val = int(v) if v is not None else 30
             return max(10, val)
         except (ValueError, TypeError):
-            return 10
+            return 30
 
 
 class RestructureRequest(BaseModel):

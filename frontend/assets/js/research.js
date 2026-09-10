@@ -2513,7 +2513,7 @@
     // ---------------------------------------------------------------------------
     // Core Workflow Launchers (Callable from anywhere)
     // ---------------------------------------------------------------------------
-    async function startGenerateFromTopic(topic, domain = null, length = 'medium', numRefs = 10, ieeeFormat = true) {
+    async function startGenerateFromTopic(topic, domain = null, length = 'long', numRefs = 30, ieeeFormat = true) {
         if (!topic || topic.trim().length < 3) {
             showToast('Please enter a valid research topic (at least 3 characters).', 'error');
             return;
@@ -2616,8 +2616,8 @@
             }
 
             const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
-            const length = document.getElementById('home-gen-length')?.value || 'medium';
-            const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '10');
+            const length = document.getElementById('home-gen-length')?.value || 'long';
+            const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
             const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
 
             startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);
@@ -2662,8 +2662,8 @@
                 if (promptInput) promptInput.value = topic;
                 
                 const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
-                const length = document.getElementById('home-gen-length')?.value || 'medium';
-                const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '10');
+                const length = document.getElementById('home-gen-length')?.value || 'long';
+                const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
                 const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
 
                 startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);

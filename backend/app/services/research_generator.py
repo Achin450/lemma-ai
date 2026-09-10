@@ -137,7 +137,7 @@ class ResearchGeneratorService:
 
             # === Stage 2: Source Retrieval (10-30%) ===
             self._report_progress("Finding relevant academic sources...", 10)
-            target_ref_count = max(10, getattr(request, 'num_references', 10) or 10)
+            target_ref_count = max(10, getattr(request, 'num_references', 30) or 30)
             candidates = await self._retrieve_sources(refined_topic, suggested_sections)
             candidates = self._ensure_minimum_references(
                 topic=refined_topic,
