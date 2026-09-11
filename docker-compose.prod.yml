@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. FastAPI Core Application
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: lemma-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.production
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/lemma
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CELERY_ALWAYS_EAGER=false
+    volumes:
+      - lemma_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - lemma-network
+
+  # ---------------------------------------------------------------------------
+  # 2. Celery Background Worker (Asynchronous Paper Generation & Analysis)
+  # ---------------------------------------------------------------------------
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: lemma-celery-worker
+    restart: unless-stopped
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info --concurrency=2
+    env_file:
+      - .env.production
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/lemma
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CELERY_ALWAYS_EAGER=false
+    volumes:
+      - lemma_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lemma-network
+
+  # ---------------------------------------------------------------------------
+  # 3. PostgreSQL Database with pgvector Extension
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: lemma-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lemma
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lemma"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lemma-network
+
+  # ---------------------------------------------------------------------------
+  # 4. Elasticsearch 8.11 (Full-Text Academic Search & BM25)
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: elasticsearch:8.11.1
+    container_name: lemma-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:9200/_cat/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lemma-network
+
+  # ---------------------------------------------------------------------------
+  # 5. Redis (Broker & Cache for Background Jobs)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7.0-alpine
+    container_name: lemma-redis
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - lemma-network
+
+  # ---------------------------------------------------------------------------
+  # 6. Caddy Reverse Proxy (Automatic HTTPS / SSL via Let's Encrypt)
+  # ---------------------------------------------------------------------------
+  # Uncomment once you point your custom domain (e.g., api.lemma.ai) to your server IP
+  # caddy:
+  #   image: caddy:2-alpine
+  #   container_name: lemma-caddy
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./Caddyfile:/etc/caddy/Caddyfile
+  #     - caddy_data:/data
+  #     - caddy_config:/config
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - lemma-network
+
+networks:
+  lemma-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  esdata:
+  redisdata:
+  lemma_uploads:
+  # caddy_data:
+  # caddy_config:

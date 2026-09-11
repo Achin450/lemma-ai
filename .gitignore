@@ -59,6 +59,7 @@ desktop.ini
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # Node / React (for future phases / build residue)
 node_modules/
