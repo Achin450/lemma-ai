@@ -30,6 +30,7 @@ backend/papers/
 fix_*.py
 patch_*.py
 /test_*.py
+!backend/tests/**
 
 # AI Agent Context Files
 lemma/Project Context/
@@ -59,7 +60,6 @@ desktop.ini
 .env
 .env.*
 !.env.example
-!.env.production.example
 
 # Node / React (for future phases / build residue)
 node_modules/

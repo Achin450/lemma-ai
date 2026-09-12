@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lemma — Sign In</title>
     <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --bg: #000000;
@@ -33,28 +35,69 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 30px 16px;
             background-image: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.06) 0%, transparent 60%),
-                              radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.04) 0%, transparent 50%);
+                              radial-gradient(ellipse at 80% 20%, rgba(16,185,129,0.05) 0%, transparent 50%);
         }
         .container {
             width: 100%;
-            max-width: 420px;
-            padding: 24px;
+            max-width: 480px;
+            padding: 10px;
         }
         .logo-area {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
         }
-        .logo-area img { height: 36px; margin-bottom: 12px; }
+        .logo-area img { height: 36px; margin-bottom: 8px; }
         .logo-area h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
         .logo-area p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Role Switcher Pill */
+        .role-switch-container {
+            display: flex;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 20px;
+            gap: 4px;
+        }
+        .role-switch-btn {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 9px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .role-switch-btn.active {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
+        }
+        .role-switch-btn.active.org-mode {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+        }
 
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 32px;
+            padding: 28px;
             box-shadow: var(--shadow);
+            transition: border-color 0.3s;
+        }
+        .card.org-theme {
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .tabs {
@@ -63,7 +106,7 @@
             background: var(--bg);
             border-radius: 10px;
             padding: 4px;
-            margin-bottom: 28px;
+            margin-bottom: 22px;
             border: 1px solid var(--border);
         }
         .tab-btn {
@@ -83,25 +126,28 @@
             color: var(--text-primary);
         }
 
-        .form-group { margin-bottom: 18px; }
-        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 7px; letter-spacing: 0.3px; }
-        input[type="text"], input[type="email"], input[type="password"] {
+        .form-group { margin-bottom: 16px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; letter-spacing: 0.3px; }
+        input[type="text"], input[type="email"], input[type="password"], input[type="url"], input[type="tel"], select, textarea {
             width: 100%;
-            padding: 11px 14px;
+            padding: 10px 13px;
             background: var(--surface2);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 13.5px;
             outline: none;
+            font-family: inherit;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-        input::placeholder { color: var(--text-muted); }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+        .org-theme input:focus, .org-theme select:focus, .org-theme textarea:focus { border-color: var(--success); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); font-size: 13px; }
 
         .btn-primary {
             width: 100%;
-            padding: 12px;
+            padding: 11px;
             background: var(--accent);
             color: #fff;
             border: none;
@@ -113,10 +159,16 @@
             margin-top: 4px;
         }
         .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary.btn-org {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .btn-primary.btn-org:hover {
+            background: linear-gradient(135deg, #34d399, #10b981);
+        }
         .btn-primary:active { transform: scale(0.98); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+        .divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
         .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
         .divider span { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -124,7 +176,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .btn-social {
@@ -157,20 +209,32 @@
             flex-shrink: 0;
         }
 
-        .inst-code-row { display: flex; gap: 10px; align-items: flex-end; }
-        .inst-code-row .form-group { flex: 1; margin-bottom: 0; }
-
-        .message { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; }
+        .message { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; display: none; line-height: 1.45; }
         .message.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
         .message.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
         .message.show { display: block; }
 
-        .hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+        .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+        .hint.green { color: #10b981; }
 
         .panel { display: none; }
         .panel.active { display: block; }
+        .hidden { display: none !important; }
 
-        footer { text-align: center; margin-top: 24px; font-size: 11px; color: var(--text-muted); }
+        .domain-badge-notice {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+            font-size: 12px;
+            color: #a7f3d0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        footer { text-align: center; margin-top: 20px; font-size: 11px; color: var(--text-muted); }
         footer a { color: var(--text-secondary); text-decoration: none; }
     </style>
 </head>
@@ -178,78 +242,190 @@
 <div class="container">
     <div class="logo-area">
         <h1>⚡ Lemma</h1>
-        <p>Academic Integrity Platform</p>
+        <p>Academic Integrity &amp; Research Incentive Platform</p>
     </div>
 
-    <div class="card">
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
-            <button class="tab-btn" onclick="switchTab('register')">Create Account</button>
+    <!-- Role Switcher (Student vs Organisation) -->
+    <div class="role-switch-container">
+        <button class="role-switch-btn active" id="role-student-btn" onclick="switchRole('student')">
+            <i class="fa-solid fa-user-graduate"></i>
+            <span>Student / Scholar</span>
+        </button>
+        <button class="role-switch-btn" id="role-org-btn" onclick="switchRole('organisation')">
+            <i class="fa-solid fa-building-columns"></i>
+            <span>Organisation / University</span>
+        </button>
+    </div>
+
+    <div class="card" id="main-auth-card">
+        <!-- Student Tabs -->
+        <div class="tabs" id="student-tabs">
+            <button class="tab-btn active" onclick="switchStudentTab('login')">Sign In</button>
+            <button class="tab-btn" onclick="switchStudentTab('register')">Create Account</button>
+        </div>
+
+        <!-- Organisation Tabs -->
+        <div class="tabs hidden" id="org-tabs">
+            <button class="tab-btn active" onclick="switchOrgTab('login')">Organisation Sign In</button>
+            <button class="tab-btn" onclick="switchOrgTab('register')">Sign Up as Organisation</button>
         </div>
 
         <div id="msg" class="message"></div>
 
-        <!-- Social OAuth Sign-In Group -->
-        <div class="social-btn-group">
-            <button type="button" class="btn-social" onclick="initiateOAuth('google')">
-                <svg viewBox="0 0 24 24">
-                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
-                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
-                    <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
-                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
-                </svg>
-                <span>Continue with Google</span>
-            </button>
+        <!-- ========================================== -->
+        <!-- STUDENT / SCHOLAR FORMS                    -->
+        <!-- ========================================== -->
+        <div id="student-section">
+            <!-- Social OAuth Sign-In Group -->
+            <div class="social-btn-group">
+                <button type="button" class="btn-social" onclick="initiateOAuth('google')">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+                        <path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.8-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/>
+                        <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+            </div>
+
+            <div class="divider">
+                <span>or continue with email</span>
+            </div>
+
+            <!-- Student Login Panel -->
+            <div id="student-login-panel" class="panel active">
+                <form id="student-login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="login-email" placeholder="you@university.edu" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="login-password" placeholder="Your password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
+                </form>
+            </div>
+
+            <!-- Student Register Panel -->
+            <div id="student-register-panel" class="panel">
+                <form id="student-register-form" onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="reg-name" placeholder="John Doe" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="reg-email" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="reg-password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="reg-confirm-password" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="btn-primary" id="register-btn">Create Account</button>
+                </form>
+            </div>
         </div>
 
-        <div class="divider">
-            <span>or continue with email</span>
-        </div>
+        <!-- ========================================== -->
+        <!-- ORGANISATION / UNIVERSITY FORMS            -->
+        <!-- ========================================== -->
+        <div id="org-section" class="hidden">
+            <div class="domain-badge-notice">
+                <i class="fa-solid fa-shield-halved" style="color: #10b981; font-size: 14px;"></i>
+                <span>Institutional Portal — Official domain email required (e.g. <code>@chitkara.edu.in</code>).</span>
+            </div>
 
-        <!-- Login Panel -->
-        <div id="login-panel" class="panel active">
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="login-email" placeholder="you@university.edu" required autocomplete="email">
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="login-password" placeholder="Your password" required autocomplete="current-password">
-                </div>
-                <button type="submit" class="btn-primary" id="login-btn">Sign In</button>
-            </form>
-        </div>
+            <!-- Organisation Login Panel -->
+            <div id="org-login-panel" class="panel active">
+                <form id="org-login-form" onsubmit="handleOrgLogin(event)">
+                    <div class="form-group">
+                        <label>Official Institutional Email</label>
+                        <input type="email" id="org-login-email" placeholder="research@chitkara.edu.in" required autocomplete="email">
+                        <div class="hint">Use your university/organisation domain email address.</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="org-login-password" placeholder="Organisation admin password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn-primary btn-org" id="btn-org-login">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In to Organisation Portal
+                    </button>
+                </form>
+            </div>
 
-        <!-- Register Panel -->
-        <div id="register-panel" class="panel">
-            <form id="register-form" onsubmit="handleRegister(event)">
-                <div class="form-group">
-                    <label>Full Name</label>
-                    <input type="text" id="reg-name" placeholder="John Doe" required autocomplete="name">
-                </div>
-                <div class="form-group">
-                    <label>Email Address</label>
-                    <input type="email" id="reg-email" placeholder="you@example.com" required autocomplete="email">
-                </div>
+            <!-- Organisation Register Panel -->
+            <div id="org-register-panel" class="panel">
+                <form id="org-register-form" onsubmit="handleOrgRegister(event)">
+                    <div class="form-group">
+                        <label>Organisation / University Name *</label>
+                        <input type="text" id="org-reg-name" placeholder="e.g. Chitkara University" required>
+                    </div>
 
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="reg-password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
-                </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Short Name / Acronym</label>
+                            <input type="text" id="org-reg-short-name" placeholder="e.g. CU / IITD">
+                        </div>
+                        <div class="form-group">
+                            <label>Organisation Type *</label>
+                            <select id="org-reg-type" required>
+                                <option value="University" selected>University / College</option>
+                                <option value="Research Institute">Research Institute</option>
+                                <option value="Corporate R&D">Corporate R&amp;D Lab</option>
+                                <option value="Government Agency">Government / State Body</option>
+                            </select>
+                        </div>
+                    </div>
 
-                <div class="form-group">
-                    <label>Confirm Password</label>
-                    <input type="password" id="reg-confirm-password" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password">
-                </div>
-                <button type="submit" class="btn-primary" id="register-btn">Create Account</button>
-            </form>
-        </div>
+                    <div class="form-group">
+                        <label>Official Domain Email *</label>
+                        <input type="email" id="org-reg-email" placeholder="e.g. research@chitkara.edu.in" required autocomplete="email">
+                        <div class="hint green"><i class="fa-solid fa-circle-info"></i> Must use your institutional domain (e.g. <code>.edu</code>, <code>.ac.in</code>, <code>.org</code>). Public emails (Gmail, Yahoo) are strictly prohibited.</div>
+                    </div>
 
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border);">
-            <a href="dashboard.html" style="color: var(--accent-hover); font-size: 13.5px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; transition: all 0.2s;">
-                <span>Continue without signing in (Guest Mode)</span> <i class="fa-solid fa-arrow-right"></i>
-            </a>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Password *</label>
+                            <input type="password" id="org-reg-password" placeholder="Min. 8 characters" required minlength="8" autocomplete="new-password">
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password *</label>
+                            <input type="password" id="org-reg-confirm-password" placeholder="Re-enter password" required minlength="8" autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Official Website *</label>
+                        <input type="url" id="org-reg-website" placeholder="https://www.chitkara.edu.in" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Contact Person Name *</label>
+                            <input type="text" id="org-reg-contact-name" placeholder="Dr. Research Dean" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Number *</label>
+                            <input type="tel" id="org-reg-contact-phone" placeholder="+91 98765 43210" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Organisation Description &amp; Research Focus</label>
+                        <textarea id="org-reg-desc" rows="2" placeholder="Brief description of your institution and research incentive policy..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-org" id="btn-org-register">
+                        <i class="fa-solid fa-building-circle-check"></i> Register Organisation &amp; Setup Portal
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -275,26 +451,76 @@
         return 'https://lemma-ai-zi5o.onrender.com';
     })();
 
-    function switchTab(tab) {
-        document.querySelectorAll(".tab-btn").forEach((b, i) => {
-            b.classList.toggle("active", (i === 0 && tab === "login") || (i === 1 && tab === "register"));
-        });
-        document.getElementById("login-panel").classList.toggle("active", tab === "login");
-        document.getElementById("register-panel").classList.toggle("active", tab === "register");
+    let currentRole = "student"; // "student" or "organisation"
+
+    const GENERIC_DOMAINS = [
+        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com",
+        "aol.com", "zoho.com", "protonmail.com", "mail.com", "yandex.com",
+        "rediffmail.com", "gmx.com", "live.com", "msn.com"
+    ];
+
+    function isGenericEmail(email) {
+        if (!email || !email.includes("@")) return false;
+        const domain = email.split("@")[1].toLowerCase().trim();
+        return GENERIC_DOMAINS.includes(domain);
+    }
+
+    function switchRole(role) {
+        currentRole = role;
+        hideMsg();
+
+        const studentBtn = document.getElementById("role-student-btn");
+        const orgBtn = document.getElementById("role-org-btn");
+        const mainCard = document.getElementById("main-auth-card");
+        const studentTabs = document.getElementById("student-tabs");
+        const orgTabs = document.getElementById("org-tabs");
+        const studentSection = document.getElementById("student-section");
+        const orgSection = document.getElementById("org-section");
+
+        if (role === "organisation") {
+            studentBtn.classList.remove("active");
+            orgBtn.classList.add("active", "org-mode");
+            mainCard.classList.add("org-theme");
+
+            studentTabs.classList.add("hidden");
+            orgTabs.classList.remove("hidden");
+
+            studentSection.classList.add("hidden");
+            orgSection.classList.remove("hidden");
+        } else {
+            orgBtn.classList.remove("active", "org-mode");
+            studentBtn.classList.add("active");
+            mainCard.classList.remove("org-theme");
+
+            orgTabs.classList.add("hidden");
+            studentTabs.classList.remove("hidden");
+
+            orgSection.classList.add("hidden");
+            studentSection.classList.remove("hidden");
+        }
+    }
+
+    function switchStudentTab(tab) {
+        const btns = document.querySelectorAll("#student-tabs .tab-btn");
+        btns[0].classList.toggle("active", tab === "login");
+        btns[1].classList.toggle("active", tab === "register");
+        document.getElementById("student-login-panel").classList.toggle("active", tab === "login");
+        document.getElementById("student-register-panel").classList.toggle("active", tab === "register");
         hideMsg();
     }
 
-    let isOAuthInitiating = false;
+    function switchOrgTab(tab) {
+        const btns = document.querySelectorAll("#org-tabs .tab-btn");
+        btns[0].classList.toggle("active", tab === "login");
+        btns[1].classList.toggle("active", tab === "register");
+        document.getElementById("org-login-panel").classList.toggle("active", tab === "login");
+        document.getElementById("org-register-panel").classList.toggle("active", tab === "register");
+        hideMsg();
+    }
+
     function initiateOAuth(provider = 'google') {
-        if (isOAuthInitiating) return;
-        isOAuthInitiating = true;
         hideMsg();
         showMsg("Redirecting to Google authentication...", "success");
-        document.querySelectorAll('.btn-social').forEach(b => {
-            b.style.pointerEvents = 'none';
-            b.style.opacity = '0.7';
-        });
-        // Direct redirect to backend OAuth entrypoint
         window.location.href = `${API_BASE}/api/v1/auth/oauth/${provider}/login`;
     }
 
@@ -326,7 +552,6 @@
                 }
             });
 
-            // Clean URL
             window.history.replaceState({}, document.title, window.location.pathname);
             showMsg("Successfully authenticated! Redirecting to Dashboard...", "success");
             setTimeout(() => {
@@ -351,9 +576,8 @@
             data.user.role = "super_admin";
         }
         sessionStorage.setItem("lemma_access_token", data.access_token);
-        sessionStorage.setItem("lemma_refresh_token", data.refresh_token);
-        sessionStorage.setItem("lemma_user", JSON.stringify(data.user));
-        // Clear any persistent storage so sessions don't linger across visits
+        sessionStorage.setItem("lemma_refresh_token", data.refresh_token || data.access_token);
+        sessionStorage.setItem("lemma_user", JSON.stringify(data.user || data.organisation || {}));
         localStorage.removeItem("lemma_access_token");
         localStorage.removeItem("lemma_refresh_token");
         localStorage.removeItem("lemma_user");
@@ -370,7 +594,7 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    email: document.getElementById("login-email").value,
+                    email: document.getElementById("login-email").value.trim(),
                     password: document.getElementById("login-password").value,
                 })
             });
@@ -427,6 +651,137 @@
             btn.textContent = "Create Account";
         }
     }
+
+    // ==========================================
+    // ORGANISATION AUTH HANDLERS
+    // ==========================================
+    async function handleOrgLogin(e) {
+        e.preventDefault();
+        hideMsg();
+
+        const btn = document.getElementById("btn-org-login");
+        btn.disabled = true;
+        btn.textContent = "Verifying Credentials...";
+
+        try {
+            const email = document.getElementById("org-login-email").value.trim();
+            const password = document.getElementById("org-login-password").value;
+
+            const res = await fetch(`${API_BASE}/api/v1/organisations/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    official_email: email,
+                    password: password
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Organisation login failed.");
+            }
+
+            const tokenData = {
+                access_token: data.access_token,
+                refresh_token: data.access_token,
+                user: {
+                    id: data.organisation.id,
+                    email: data.organisation.official_email,
+                    full_name: data.organisation.name,
+                    role: "organisation_admin",
+                    is_organisation: true,
+                    org_data: data.organisation
+                }
+            };
+            storeTokens(tokenData);
+
+            showMsg("Organisation verified! Opening portal…", "success");
+            setTimeout(() => {
+                window.location.href = "/dashboard.html";
+            }, 800);
+        } catch (err) {
+            showMsg(err.message || "Failed to sign in.", "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In to Organisation Portal';
+        }
+    }
+
+    async function handleOrgRegister(e) {
+        e.preventDefault();
+        hideMsg();
+
+        const email = document.getElementById("org-reg-email").value.trim();
+        const password = document.getElementById("org-reg-password").value;
+        const confirmPassword = document.getElementById("org-reg-confirm-password").value;
+
+        // Client-side domain check
+        if (isGenericEmail(email)) {
+            showMsg(`"${email}" is a public email provider. Organisation registration requires an official institutional domain email (e.g., research@chitkara.edu.in).`, "error");
+            document.getElementById("org-reg-email").focus();
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showMsg("Passwords do not match! Please check and try again.", "error");
+            document.getElementById("org-reg-confirm-password").focus();
+            return;
+        }
+
+        const btn = document.getElementById("btn-org-register");
+        btn.disabled = true;
+        btn.textContent = "Registering & Validating Domain...";
+
+        try {
+            const body = {
+                name: document.getElementById("org-reg-name").value.trim(),
+                short_name: document.getElementById("org-reg-short-name").value.trim() || undefined,
+                official_email: email,
+                password: password,
+                organisation_type: document.getElementById("org-reg-type").value,
+                website: document.getElementById("org-reg-website").value.trim(),
+                contact_person: document.getElementById("org-reg-contact-name").value.trim(),
+                contact_phone: document.getElementById("org-reg-contact-phone").value.trim(),
+                description: document.getElementById("org-reg-desc").value.trim() || undefined
+            };
+
+            const res = await fetch(`${API_BASE}/api/v1/organisations/register`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Organisation registration failed.");
+            }
+
+            const tokenData = {
+                access_token: data.access_token,
+                refresh_token: data.access_token,
+                user: {
+                    id: data.organisation.id,
+                    email: data.organisation.official_email,
+                    full_name: data.organisation.name,
+                    role: "organisation_admin",
+                    is_organisation: true,
+                    org_data: data.organisation
+                }
+            };
+            storeTokens(tokenData);
+
+            showMsg("Organisation successfully registered! Redirecting to Organisation Dashboard…", "success");
+            setTimeout(() => {
+                window.location.href = "/dashboard.html";
+            }, 900);
+        } catch (err) {
+            showMsg(err.message || "Registration failed.", "error");
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-building-circle-check"></i> Register Organisation &amp; Setup Portal';
+        }
+    }
 </script>
 </body>
 </html>
+

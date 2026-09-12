@@ -43,6 +43,7 @@ from app.routers.plagiarism import router as plagiarism_check_router
 from app.routers.novelty import router as novelty_router
 from app.routers.funding import router as funding_router
 from app.routers.payment import router as payment_router
+from app.routers.organisations import router as organisations_router
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -81,12 +82,13 @@ app.include_router(lti_router)
 app.include_router(public_api_router)
 app.include_router(citations_router)
 app.include_router(federation_router)
-# NEW: Research Paper Assistant
+# NEW: Research Paper Assistant & Organisation Funding & Payments
 app.include_router(research_router)
 app.include_router(plagiarism_check_router)
 app.include_router(novelty_router)
 app.include_router(funding_router)
 app.include_router(payment_router)
+app.include_router(organisations_router)
 
 # ---------------------------------------------------------------------------
 # Startup event — ensure new DB tables exist
@@ -470,10 +472,8 @@ async def analyze_document_async(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save temporary file: {str(e)}"
         )
-    analyze_document_task.apply_async(
-        args=[str(temp_filepath), file.filename],
-        task_id=job_id
-    )
+    from app.tasks.analysis import start_analysis_job, JobRegistry
+    start_analysis_job(job_id, str(temp_filepath), file.filename)
     return {"job_id": job_id, "status": "pending", "user_id": current_user.get("sub")}
 
 
@@ -489,6 +489,11 @@ async def analyze_document_async(
     include_in_schema=False
 )
 async def get_job_status(job_id: str, current_user: dict = Depends(get_current_user)):
+    from app.tasks.analysis import JobRegistry
+    job_info = JobRegistry.get(job_id)
+    if job_info:
+        return job_info
+
     res = AsyncResult(job_id, app=celery_app)
     if res.state == "SUCCESS":
         return {"job_id": job_id, "status": "completed", "result": res.result, "progress_step": "Analysis complete!", "progress_pct": 100}

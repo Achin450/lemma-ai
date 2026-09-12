@@ -1199,12 +1199,122 @@ class FundingService:
     """Service providing search, filter, and analytics for university publication bounties."""
 
     @classmethod
+    def _fetch_dynamic_database_schemes(cls) -> List[Dict[str, Any]]:
+        """Fetches registered organisation funding schemes from PostgreSQL."""
+        try:
+            import json
+            import psycopg2.extras
+            from app.services.database import DatabaseService
+            with DatabaseService.get_connection() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                    cur.execute("""
+                        SELECT f.*, o.name AS org_name, o.domain, o.org_type, o.website,
+                               o.domain_email, o.country, o.city, o.region
+                        FROM funding_schemes f
+                        JOIN organisations o ON f.organisation_id = o.id
+                        WHERE f.is_active = TRUE
+                        ORDER BY f.created_at DESC
+                    """)
+                    rows = cur.fetchall()
+
+            dynamic_bounties = []
+            for r in rows:
+                pub_crit = r.get("publication_criteria")
+                if isinstance(pub_crit, str):
+                    try: pub_crit = json.loads(pub_crit)
+                    except Exception: pub_crit = []
+                elif not isinstance(pub_crit, list):
+                    pub_crit = []
+
+                indexing = r.get("accepted_indexing")
+                if isinstance(indexing, str):
+                    try: indexing = json.loads(indexing)
+                    except Exception: indexing = []
+                elif not isinstance(indexing, list):
+                    indexing = []
+
+                reward_tiers = r.get("reward_tiers")
+                if isinstance(reward_tiers, str):
+                    try: reward_tiers = json.loads(reward_tiers)
+                    except Exception: reward_tiers = []
+                elif not isinstance(reward_tiers, list):
+                    reward_tiers = []
+
+                if not reward_tiers and pub_crit:
+                    for crit in pub_crit:
+                        reward_tiers.append({
+                            "tier_name": crit.get("label", "Publication Incentive"),
+                            "amount_inr": crit.get("amount_inr", 10000),
+                            "amount_usd": crit.get("amount_usd", 120),
+                            "criteria": crit.get("description") or f"Published as {crit.get('label')}",
+                            "payout_type": "Direct Research Incentive"
+                        })
+
+                if not indexing and pub_crit:
+                    indexing = [c.get("label", "Research Output") for c in pub_crit]
+
+                if not indexing:
+                    indexing = ["Scopus Q1", "Scopus Q2", "Conference Paper", "Book Chapter"]
+
+                if not reward_tiers:
+                    reward_tiers = [
+                        {
+                            "tier_name": "Research Publication Scheme",
+                            "amount_inr": r.get("max_amount_inr", 50000),
+                            "amount_usd": r.get("max_amount_usd", 600),
+                            "criteria": r.get("description") or "Approved Research Publication",
+                            "payout_type": "Direct Research Incentive"
+                        }
+                    ]
+
+                country = r.get("country") or "India"
+                country_code = "IN" if country.lower() == "india" else "UN"
+                flag_emoji = "🇮🇳" if country.lower() == "india" else "🏛️"
+                
+                short_name = "".join([w[0] for w in r["org_name"].split() if w.isalpha()]).upper()[:6] or "ORG"
+                
+                dynamic_bounties.append({
+                    "id": f"org-scheme-{r['id']}",
+                    "name": f"{r['org_name']} — {r['scheme_name']}",
+                    "short_name": short_name,
+                    "country": country,
+                    "country_code": country_code,
+                    "flag_emoji": flag_emoji,
+                    "region": r.get("region") or ("India" if country.lower() == "india" else "International"),
+                    "city": r.get("city") or "University Campus",
+                    "min_amount_inr": r.get("min_amount_inr", 10000),
+                    "max_amount_inr": r.get("max_amount_inr", 50000),
+                    "min_amount_usd": r.get("min_amount_usd", 120),
+                    "max_amount_usd": r.get("max_amount_usd", 600),
+                    "accepted_indexing": indexing,
+                    "funding_types": ["Direct Cash Bounty", "Institutional Grant"],
+                    "eligibility_type": r.get("eligibility_criteria") or "Faculty, Scholars & Co-authors",
+                    "key_perks": [
+                        f"Deadline: {r.get('application_deadline') or 'Rolling'}",
+                        f"Domain: {r.get('research_area') or 'All Disciplines'}",
+                        "Direct Institutional Disbursement"
+                    ],
+                    "reward_tiers": reward_tiers,
+                    "official_policy_url": r.get("application_link") or r.get("website"),
+                    "contact_email": r.get("domain_email"),
+                    "verified": True,
+                    "notes": r.get("additional_requirements") or r.get("description")
+                })
+            return dynamic_bounties
+        except Exception as e:
+            return []
+
+    @classmethod
     def get_all_universities(cls, filters: Optional[FundingFilterParams] = None) -> List[UniversityBounty]:
-        """Filters and returns universities matching user query criteria."""
+        """Filters and returns universities matching user query criteria, combining dynamic org schemes with curated directory."""
         results = []
         min_threshold = filters.min_amount_inr if filters and filters.min_amount_inr else 10000
 
-        for raw in VERIFIED_UNIVERSITY_BOUNTIES:
+        # Combine curated list + registered organisation schemes
+        dynamic_schemes = cls._fetch_dynamic_database_schemes()
+        combined_list = dynamic_schemes + VERIFIED_UNIVERSITY_BOUNTIES
+
+        for raw in combined_list:
             # Check minimum threshold (must be >= 10k)
             if raw["max_amount_inr"] < min_threshold:
                 continue
@@ -1254,21 +1364,25 @@ class FundingService:
 
     @classmethod
     def get_university_by_id(cls, university_id: str) -> Optional[UniversityBounty]:
-        """Lookup university by ID."""
-        for raw in VERIFIED_UNIVERSITY_BOUNTIES:
+        """Lookup university or registered organisation scheme by ID."""
+        dynamic_schemes = cls._fetch_dynamic_database_schemes()
+        combined_list = dynamic_schemes + VERIFIED_UNIVERSITY_BOUNTIES
+        for raw in combined_list:
             if raw["id"] == university_id:
                 return cls._convert_raw_to_bounty(raw)
         return None
 
     @classmethod
     def get_summary_stats(cls) -> FundingSummaryStats:
-        """Compute aggregate metrics across the verified directory."""
-        total = len(VERIFIED_UNIVERSITY_BOUNTIES)
-        indian = sum(1 for u in VERIFIED_UNIVERSITY_BOUNTIES if u["region"] == "India")
-        foreign = sum(1 for u in VERIFIED_UNIVERSITY_BOUNTIES if u["region"] == "International")
-        max_inr = max(u["max_amount_inr"] for u in VERIFIED_UNIVERSITY_BOUNTIES)
-        max_usd = max(u["max_amount_usd"] for u in VERIFIED_UNIVERSITY_BOUNTIES)
-        avg_inr = int(sum(u["max_amount_inr"] for u in VERIFIED_UNIVERSITY_BOUNTIES) / total) if total else 0
+        """Compute aggregate metrics across the verified directory and registered organisation schemes."""
+        dynamic_schemes = cls._fetch_dynamic_database_schemes()
+        combined = dynamic_schemes + VERIFIED_UNIVERSITY_BOUNTIES
+        total = len(combined)
+        indian = sum(1 for u in combined if u["region"] == "India")
+        foreign = sum(1 for u in combined if u["region"] == "International")
+        max_inr = max((u["max_amount_inr"] for u in combined), default=850000)
+        max_usd = max((u["max_amount_usd"] for u in combined), default=10000)
+        avg_inr = int(sum(u["max_amount_inr"] for u in combined) / total) if total else 0
 
         return FundingSummaryStats(
             total_institutions=total,

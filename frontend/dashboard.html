@@ -160,6 +160,12 @@
                             <span>Publishing Grants</span>
                             <span class="badge" style="margin-left: auto; font-size: 0.65rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; padding: 1px 5px; font-weight: 700;">10K+</span>
                         </a>
+                <!-- Organisation Portal Tab -->
+                <a href="#" class="nav-item" id="nav-org-dashboard" data-view="org-dashboard-view">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <span>Org Portal</span>
+                    <span class="badge" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: auto;">GRANTS</span>
+                </a>
                     </li>
                 </ul>
 
@@ -2051,9 +2057,347 @@ Minimum 50 characters required. For best results, paste the full document text."
                 </div>
             </div>
         </div>
-        </main>
+        
+
+<div class="workspace-view hidden" id="org-dashboard-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+            
+            <!-- State 1: When user is not logged in as organisation admin -->
+            <div id="org-not-logged-in-state" class="hidden" style="text-align: center; padding: 4rem 1.5rem; background: var(--bg-secondary); border-radius: 18px; border: 1px dashed var(--border-color); max-width: 650px; margin: 2rem auto;">
+                <div style="width: 70px; height: 70px; background: rgba(99, 102, 241, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; color: #818cf8; font-size: 1.8rem; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--text-primary);">Organisation Admin Portal</h2>
+                <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 1.75rem;">
+                    Sign in with your verified institutional domain email (e.g. <code>@chitkara.edu.in</code>) or register your university to create and manage research funding schemes, publication incentive slabs (Q1, Q2, Q3, Q4, Conferences), and institutional bounties.
+                </p>
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <a href="/login.html" class="btn btn-primary" style="padding: 10px 22px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-right-to-bracket"></i> Sign In / Register as Organisation
+                    </a>
+                </div>
+            </div>
+
+            <!-- State 2: Logged-in Organisation Dashboard -->
+            <div id="org-logged-in-state">
+                <!-- Org Profile Hero Card -->
+                <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 18px; padding: 1.75rem; margin-bottom: 1.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 1.25rem;">
+                        <div id="org-profile-avatar" style="width: 64px; height: 64px; border-radius: 14px; background: linear-gradient(135deg, #6366f1, #10b981); color: #fff; font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                            CU
+                        </div>
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h2 id="org-profile-name" style="font-size: 1.5rem; font-weight: 800; margin: 0; color: var(--text-primary);">Chitkara University</h2>
+                                <span id="org-profile-type" style="padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3);">University</span>
+                                <span id="org-profile-domain" style="padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-circle-check"></i> @chitkara.edu.in</span>
+                            </div>
+                            <div style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 5px; display: flex; gap: 14px; flex-wrap: wrap;">
+                                <span><i class="fa-solid fa-envelope" style="color: var(--text-muted);"></i> <span id="org-profile-email">research@chitkara.edu.in</span></span>
+                                <span><i class="fa-solid fa-user-tie" style="color: var(--text-muted);"></i> <span id="org-profile-contact">Dr. Research Dean</span></span>
+                                <span><i class="fa-solid fa-globe" style="color: var(--text-muted);"></i> <a id="org-profile-website" href="#" target="_blank" style="color: #6366f1; text-decoration: none;">www.chitkara.edu.in</a></span>
+                            </div>
+                            <p id="org-profile-desc" style="font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 0; line-height: 1.45; max-width: 700px;"></p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-outline" id="btn-edit-org-profile" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 9px; font-weight: 600;">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit Profile
+                        </button>
+                        <button class="btn btn-primary" id="btn-add-scheme-modal" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 9px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-plus"></i> Add Funding Scheme
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Org Stats Ribbon -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Total Schemes</span>
+                        <span id="stat-org-total-schemes" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">0</span>
+                        <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 2px;">Policies in system</span>
+                    </div>
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Active in Public Grants</span>
+                        <span id="stat-org-active-schemes" style="font-size: 1.8rem; font-weight: 800; color: #10b981;">0</span>
+                        <span style="font-size: 0.78rem; color: #10b981; display: block; margin-top: 2px;"><i class="fa-solid fa-globe"></i> Live in Grants Hub</span>
+                    </div>
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Max Incentive Payout</span>
+                        <span id="stat-org-max-bounty" style="font-size: 1.8rem; font-weight: 800; color: #10b981;">₹0</span>
+                        <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 2px;">Per qualifying publication</span>
+                    </div>
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Configured Criteria</span>
+                        <span id="stat-org-criteria-count" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">0</span>
+                        <span style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 2px;">Q1, Q2, Q3, Q4, Conferences</span>
+                    </div>
+                </div>
+
+                <!-- Schemes Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                    <div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">Institutional Funding Schemes</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 3px 0 0;">All schemes published here appear in real-time in the Lemma Research Publishing Grants directory.</p>
+                    </div>
+                </div>
+
+                <!-- Schemes Grid -->
+                <div id="org-schemes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;"></div>
+
+                <!-- Empty Schemes State -->
+                <div id="org-schemes-empty" class="hidden" style="text-align: center; padding: 4rem 1.5rem; background: var(--bg-secondary); border-radius: 16px; border: 1px dashed var(--border-color);">
+                    <i class="fa-solid fa-file-invoice-dollar" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
+                    <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Funding Schemes Added Yet</h3>
+                    <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.5rem; line-height: 1.5;">
+                        Click "Add Funding Scheme" to configure publication bounties for Scopus Q1, Q2, Q3, Q4 journals, IEEE/ACM conferences, book chapters, and patents.
+                    </p>
+                    <button class="btn btn-primary" onclick="document.getElementById('btn-add-scheme-modal').click()" style="padding: 9px 20px; font-weight: 700; border-radius: 8px; background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fa-solid fa-plus"></i> Add Your First Scheme
+                    </button>
+                </div>
+            </div>
+        </div>
+
+</main>
 
         <!-- Sticky On-Device Engine Status Monitor -->
+        
+    <!-- ==================== ORGANISATION SCHEME MODAL ==================== -->
+    <div class="custom-modal hidden" id="org-scheme-modal" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-purple); font-size: 1.2rem;">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-scheme-title-text" style="margin: 0; font-size: 1.25rem; font-weight: 700;">Add Research Funding Scheme</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Configure publishing grants and reward tiers for scholars.</p>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-scheme-modal" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="org-scheme-form">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Scheme Title / Name *</label>
+                    <input type="text" id="input-scheme-title" class="research-input" placeholder="e.g. Annual Research Publication Incentive Scheme 2026-27" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Academic / Financial Year</label>
+                        <input type="text" id="input-scheme-year" class="research-input" placeholder="2026-2027" value="2026-2027" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Scope / Department</label>
+                        <input type="text" id="input-scheme-scope" class="research-input" placeholder="All Engineering & Sciences" value="All Academic Departments" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px;">
+                        Publication &amp; Grant Criteria (Q1, Q2, Q3, Q4, Conference, Book Chapter, Patent)
+                    </label>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); padding: 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                        <!-- Q1 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-q1_sci" checked style="accent-color: #6366f1;">
+                                <span><strong style="color: #6366f1;">Scopus / WoS Q1 Journal</strong> (Top 25% Quartile)</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-q1_sci" class="research-input" value="100000" min="0" step="5000" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-q2" checked style="accent-color: #3b82f6;">
+                                <span><strong style="color: #3b82f6;">Scopus / WoS Q2 Journal</strong> (25-50% Quartile)</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-q2" class="research-input" value="50000" min="0" step="5000" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Q3 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-q3" checked style="accent-color: #10b981;">
+                                <span><strong style="color: #10b981;">Scopus / WoS Q3 Journal</strong> (50-75% Quartile)</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-q3" class="research-input" value="25000" min="0" step="2500" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Q4 -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-q4" checked style="accent-color: #f59e0b;">
+                                <span><strong style="color: #f59e0b;">Scopus / WoS Q4 Journal</strong> (75-100% Quartile)</span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-q4" class="research-input" value="15000" min="0" step="2500" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- IEEE Conference -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-conference_ieee" checked style="accent-color: #ec4899;">
+                                <span><strong style="color: #ec4899;">Flagship / IEEE Scopus Conference Paper</strong></span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-conference_ieee" class="research-input" value="20000" min="0" step="2500" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Book Chapter -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-book_chapter" checked style="accent-color: #8b5cf6;">
+                                <span><strong style="color: #8b5cf6;">Scopus Indexed Book Chapter / Monograph</strong></span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-book_chapter" class="research-input" value="12000" min="0" step="1000" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                        <!-- Patent -->
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; flex: 1;">
+                                <input type="checkbox" id="chk-crit-patent_granted" checked style="accent-color: #06b6d4;">
+                                <span><strong style="color: #06b6d4;">Granted Patent (National / International)</strong></span>
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹</span>
+                                <input type="number" id="amt-crit-patent_granted" class="research-input" value="50000" min="0" step="5000" style="width: 110px; padding: 0.35rem 0.6rem; font-size: 0.85rem; text-align: right; border-radius: 6px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Official Guidelines / Policy URL</label>
+                        <input type="url" id="input-scheme-guidelines-url" class="research-input" placeholder="https://chitkara.edu.in/research/incentives" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Contact Person / Domain Email</label>
+                        <input type="email" id="input-scheme-contact-email" class="research-input" placeholder="research.dean@chitkara.edu.in" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Eligibility &amp; Description</label>
+                    <textarea id="input-scheme-desc" class="research-input" rows="3" placeholder="Explain eligible faculty, co-authorship guidelines, disbursement process, etc." style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;"></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-scheme-modal" style="padding: 9px 18px; border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-scheme" style="padding: 9px 22px; border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                        Save &amp; Publish Scheme
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== ORGANISATION PROFILE MODAL ==================== -->
+    <div class="custom-modal hidden" id="org-profile-modal" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.2rem;">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Edit Organisation Profile</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Update institutional details and contact info.</p>
+                    </div>
+                </div>
+                <button type="button" id="btn-close-org-profile-modal" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="org-profile-form">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Organisation / University Name *</label>
+                    <input type="text" id="input-org-name" class="research-input" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Short Name / Acronym</label>
+                        <input type="text" id="input-org-short-name" class="research-input" placeholder="e.g. CU" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Organisation Type</label>
+                        <select id="input-org-type" class="research-select" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                            <option value="University">University / College</option>
+                            <option value="Research Institute">Research Institute</option>
+                            <option value="Corporate R&D">Corporate R&amp;D Lab</option>
+                            <option value="Government Agency">Government / State Body</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Official Website</label>
+                    <input type="url" id="input-org-website" class="research-input" placeholder="https://www.chitkara.edu.in" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Contact Person</label>
+                        <input type="text" id="input-org-contact-name" class="research-input" placeholder="Dr. Research Dean" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Contact Phone</label>
+                        <input type="tel" id="input-org-contact-phone" class="research-input" placeholder="+91 98765 43210" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Country</label>
+                        <input type="text" id="input-org-country" class="research-input" value="India" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">City / State</label>
+                        <input type="text" id="input-org-city" class="research-input" placeholder="Punjab, India" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Organisation Description</label>
+                    <textarea id="input-org-desc" class="research-input" rows="3" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;"></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-org-profile-modal" style="padding: 9px 18px; border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-org-profile" style="padding: 9px 22px; border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
         <footer class="health-footer">
             <div class="health-status-container">
                 <div class="health-item working-orange" id="health-ollama" title="AI Model Status">
@@ -2372,6 +2716,7 @@ Minimum 50 characters required. For best results, paste the full document text."
     <script src="assets/js/novelty.js?v=2"></script>
     <script src="assets/js/funding.js?v=2"></script>
     <script src="assets/js/billing.js?v=1"></script>
+    <script src="assets/js/organisation.js?v=1"></script>
     <script src="assets/js/mobile-ui.js?v=36"></script>
     <script src="assets/js/ads-config.js?v=2"></script>
 </body>

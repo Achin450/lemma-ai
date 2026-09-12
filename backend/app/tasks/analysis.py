@@ -29,24 +29,53 @@ def _run_async(coro):
         return asyncio.run(coro)
 
 
-@celery_app.task(bind=True, name="app.tasks.analysis.analyze_document_task")
-def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
-    """
-    Background Celery task to parse a document, fetch web references, and perform plagiarism analysis.
-    """
-    logger.info(f"Starting analysis task for file: {original_filename} (temp path: {file_path})")
-    job_id = getattr(self.request, "id", None) or "dummy_job"
-    
-    def safe_progress(step: str, pct: int):
-        if getattr(self.request, "id", None):
-            try:
-                self.update_state(state="PROGRESS", meta={"step": step, "pct": pct})
-            except Exception:
-                pass
+class JobRegistry:
+    """Thread-safe in-memory job registry for instant real-time progress and results."""
+    _jobs = {}
+    _lock = threading.Lock()
+
+    @classmethod
+    def set_progress(cls, job_id: str, step: str, pct: int):
+        with cls._lock:
+            cls._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "processing",
+                "progress_step": step,
+                "progress_pct": pct
+            }
+
+    @classmethod
+    def set_completed(cls, job_id: str, result: dict):
+        with cls._lock:
+            cls._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "completed",
+                "result": result,
+                "progress_step": "Analysis complete!",
+                "progress_pct": 100
+            }
+
+    @classmethod
+    def set_failed(cls, job_id: str, error: str):
+        with cls._lock:
+            cls._jobs[job_id] = {
+                "job_id": job_id,
+                "status": "failed",
+                "error": error
+            }
+
+    @classmethod
+    def get(cls, job_id: str):
+        with cls._lock:
+            return cls._jobs.get(job_id)
+
+
+def execute_analysis_pipeline(job_id: str, file_path: str, original_filename: str) -> dict:
+    """Core analysis pipeline execution that safely runs in worker or daemon thread."""
+    logger.info(f"Starting analysis pipeline for file: {original_filename} (job: {job_id})")
+    JobRegistry.set_progress(job_id, "Reading uploaded document...", 10)
 
     try:
-        safe_progress("Reading uploaded document...", 10)
-        
         # Read the file from disk
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Temporary file not found at: {file_path}")
@@ -54,11 +83,11 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
         with open(file_path, "rb") as f:
             content = f.read()
         
-        safe_progress("Extracting text and structure...", 20)
+        JobRegistry.set_progress(job_id, "Extracting text and structure...", 20)
         # Run extractor
         text = DocumentExtractorService.extract_text(original_filename, content)
         
-        safe_progress("Segmenting sentences & coordinate mapping...", 30)
+        JobRegistry.set_progress(job_id, "Segmenting sentences & coordinate mapping...", 30)
         # Segment sentences
         sentences_data = SentenceSegmenterService.segment(text)
         
@@ -74,7 +103,7 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
         
         # 1. Ephemeral online candidate retrieval & caching
         if settings.ENABLE_ONLINE_RETRIEVAL:
-            safe_progress("Retrieving reference sources...", 45)
+            JobRegistry.set_progress(job_id, "Retrieving reference sources...", 45)
             try:
                 from app.services.online_retriever import OnlineRetrieverService
                 logger.info(f"Triggering online retrieval query generation for job: {job_id}")
@@ -85,20 +114,20 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
                 
                 _run_async(OnlineRetrieverService.seed_ephemeral_candidates(job_id, candidates))
             except Exception as e:
-                logger.warning(f"Failed to fetch/cache online candidate papers: {e}")
+                logger.error(f"Failed to fetch/cache online candidate papers: {e}")
 
         # 2. Run dual-tier plagiarism matcher
-        safe_progress("Running lexical & semantic matching...", 65)
+        JobRegistry.set_progress(job_id, "Running lexical & semantic matching...", 65)
         matcher = DualTierMatcher()
         analysis_report = matcher.analyze_document(sentences_data, job_id=job_id)
         
         # 3. Run AI Detection
-        safe_progress("Evaluating AI-generated content patterns...", 80)
+        JobRegistry.set_progress(job_id, "Evaluating AI-generated content patterns...", 80)
         logger.info(f"Running AI detection for job: {job_id}")
         ai_detection_report = AIDetectorService.analyze_document(text, sentences)
         
         # 4. Run Citation Analysis
-        safe_progress("Analyzing citation validity & final score...", 92)
+        JobRegistry.set_progress(job_id, "Analyzing citation validity & final score...", 92)
         logger.info(f"Running citation analysis for job: {job_id}")
         citation_analysis_report = CitationAnalyzerService.analyze(
             text, sentences, analysis_report.get("matches", [])
@@ -115,14 +144,16 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
             "ai_detection": ai_detection_report,
             "citation_analysis": citation_analysis_report
         }
+        JobRegistry.set_completed(job_id, result)
         return result
         
     except Exception as e:
-        logger.error(f"Error in analyze_document_task: {str(e)}", exc_info=True)
+        logger.error(f"Error in execute_analysis_pipeline for job {job_id}: {str(e)}", exc_info=True)
+        JobRegistry.set_failed(job_id, str(e))
         raise e
         
     finally:
-        # 3. Clean up the temporary uploaded file from disk
+        # Clean up the temporary uploaded file from disk
         if os.path.exists(file_path):
             try:
                 os.remove(file_path)
@@ -130,10 +161,28 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
             except Exception as e:
                 logger.warning(f"Failed to delete temp file {file_path}: {e}")
                 
-        # 4. Prune ephemeral database & Elasticsearch candidate records
+        # Prune ephemeral database & Elasticsearch candidate records
         if settings.ENABLE_ONLINE_RETRIEVAL:
             try:
                 from app.services.online_retriever import OnlineRetrieverService
                 OnlineRetrieverService.prune_cache(job_id)
             except Exception as e:
-                logger.debug(f"Cache pruning skipped for job {job_id}: {e}")
+                logger.error(f"Failed to prune cache for job {job_id}: {e}")
+
+
+def start_analysis_job(job_id: str, file_path: str, original_filename: str):
+    """Spawns an async analysis execution in a thread or Celery worker."""
+    JobRegistry.set_progress(job_id, "Queued for analysis...", 10)
+    worker_thread = threading.Thread(
+        target=execute_analysis_pipeline,
+        args=(job_id, file_path, original_filename),
+        daemon=True
+    )
+    worker_thread.start()
+
+
+@celery_app.task(bind=True, name="app.tasks.analysis.analyze_document_task")
+def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
+    """Background Celery task to parse a document, fetch web references, and perform plagiarism analysis."""
+    job_id = self.request.id or "dummy_job"
+    return execute_analysis_pipeline(job_id, file_path, original_filename)

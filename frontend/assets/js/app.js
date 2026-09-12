@@ -2053,7 +2053,8 @@ async function initUserSession() {
         const fullName = user.full_name || user.name || "Researcher";
         const rawRole = (user.role || "").toLowerCase();
         const isAdmin = rawRole === "super_admin" || rawRole === "institution_admin" || rawRole === "admin";
-        const role = isAdmin ? "SUPER ADMIN" : (user.role || "student").toUpperCase();
+        const isOrg = rawRole === "organisation_admin" || user.is_organisation;
+        const role = isAdmin ? "SUPER ADMIN" : (isOrg ? "ORGANISATION ADMIN" : (user.role || "student").toUpperCase());
         const initial = fullName.charAt(0).toUpperCase();
 
         if (avatarEl) avatarEl.textContent = initial;
@@ -2062,7 +2063,12 @@ async function initUserSession() {
         if (dropNameEl) dropNameEl.textContent = fullName;
         if (dropEmailEl) dropEmailEl.textContent = email;
         if (dropRoleEl) {
-            if (user.is_pro || (user.subscription_tier && user.subscription_tier !== "free")) {
+            if (isOrg) {
+                dropRoleEl.innerHTML = '<i class="fa-solid fa-building-columns" style="color: #10b981; margin-right: 4px;"></i> ORG ADMIN';
+                dropRoleEl.style.background = "rgba(16, 185, 129, 0.2)";
+                dropRoleEl.style.color = "#10b981";
+                dropRoleEl.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+            } else if (user.is_pro || (user.subscription_tier && user.subscription_tier !== "free")) {
                 const tierName = (user.subscription_tier || "pro").replace(/_/g, " ").toUpperCase();
                 dropRoleEl.innerHTML = `<i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 4px;"></i> ${tierName}`;
                 dropRoleEl.style.background = "linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.25))";

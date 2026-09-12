@@ -110,12 +110,6 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: str | None = os.getenv("GITHUB_CLIENT_SECRET", None)
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://lemma2.vercel.app")
     BACKEND_PUBLIC_URL: str = os.getenv("BACKEND_PUBLIC_URL", "https://lemma-ai-zi5o.onrender.com")
-    # Payment Gateway Settings (Razorpay & Stripe)
-    RAZORPAY_KEY_ID: str | None = os.getenv("RAZORPAY_KEY_ID", None)
-    RAZORPAY_KEY_SECRET: str | None = os.getenv("RAZORPAY_KEY_SECRET", None)
-    STRIPE_PUBLISHABLE_KEY: str | None = os.getenv("STRIPE_PUBLISHABLE_KEY", None)
-    STRIPE_SECRET_KEY: str | None = os.getenv("STRIPE_SECRET_KEY", None)
-    STRIPE_WEBHOOK_SECRET: str | None = os.getenv("STRIPE_WEBHOOK_SECRET", None)
 
     model_config = SettingsConfigDict(
         env_file=".env",

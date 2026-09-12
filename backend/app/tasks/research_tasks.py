@@ -32,7 +32,7 @@ def _run_async(coro):
 
 @celery_app.task(bind=True, name="app.tasks.research_tasks.generate_paper_task")
 def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
-                         length: str = "long", num_references: int = 30,
+                         length: str = "medium", num_references: int = 10,
                          ieee_format: bool = True) -> dict:
 
     """

@@ -786,7 +786,7 @@ Example output:
                     f"Finally, the output stage performs calibrated posterior probability estimation with integrated uncertainty quantification. "
                     f"An automated thresholding mechanism dynamically determines confidence bounds, rejecting low-confidence predictions to ensure zero false-positive cascades in safety-critical operational environments."
                 )
-            elif "EXPERIMENT" in st or "SETUP" in st:
+            elif ("EXPERIMENT" in st or "SETUP" in st) and "RESULT" not in st and "EVALUAT" not in st:
                 c1, c2 = all_nums[6] if len(all_nums) > 6 else 7, all_nums[7] if len(all_nums) > 8 else 8
                 return (
                     f"To rigorously evaluate the efficacy and scalability of our proposed framework for {topic}, we conducted extensive experimental benchmarking against leading baseline models [{c1}]. "

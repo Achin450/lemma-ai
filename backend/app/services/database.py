@@ -1,7 +1,10 @@
 import os
+import logging
 import psycopg2
 from psycopg2.extras import RealDictCursor, execute_values
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 class DatabaseService:
     """Manages PostgreSQL database connections, table creation, and metadata queries."""
@@ -29,11 +32,28 @@ class DatabaseService:
     def initialize_db(cls):
         """Creates the PostgreSQL tables and extensions if they do not already exist."""
         with cls.get_connection() as conn:
+            # 1. Enable pgcrypto for UUID generation if needed
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto;")
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
+                logger.debug(f"pgcrypto note: {e}")
+
+            # 2. Try to enable pgvector extension
+            has_vector = False
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+                conn.commit()
+                has_vector = True
+            except Exception as e:
+                conn.rollback()
+                logger.warning(f"pgvector extension not available, falling back to standard column storage: {e}")
+
             with conn.cursor() as cursor:
-                # Enable pgvector extension
-                cursor.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-                
-                # Create documents table
+                # 3. Create documents table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS documents (
                         id VARCHAR(255) PRIMARY KEY,
@@ -43,25 +63,38 @@ class DatabaseService:
                     );
                 """)
                 
-                # Create sentences table
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS sentences (
-                        id SERIAL PRIMARY KEY,
-                        document_id VARCHAR(255) NOT NULL,
-                        sentence_index INT NOT NULL,
-                        text TEXT NOT NULL,
-                        embedding vector(384),
-                        FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
-                    );
-                """)
+                # 4. Create sentences table
+                if has_vector:
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS sentences (
+                            id SERIAL PRIMARY KEY,
+                            document_id VARCHAR(255) NOT NULL,
+                            sentence_index INT NOT NULL,
+                            text TEXT NOT NULL,
+                            embedding vector(384),
+                            FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+                        );
+                    """)
+                    try:
+                        cursor.execute("""
+                            CREATE INDEX IF NOT EXISTS sentences_embedding_hnsw_idx 
+                            ON sentences USING hnsw (embedding vector_cosine_ops);
+                        """)
+                    except Exception:
+                        pass
+                else:
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS sentences (
+                            id SERIAL PRIMARY KEY,
+                            document_id VARCHAR(255) NOT NULL,
+                            sentence_index INT NOT NULL,
+                            text TEXT NOT NULL,
+                            embedding TEXT,
+                            FOREIGN KEY(document_id) REFERENCES documents(id) ON DELETE CASCADE
+                        );
+                    """)
                 
-                # Create HNSW index on the vector embedding column for fast cosine distance search
-                cursor.execute("""
-                    CREATE INDEX IF NOT EXISTS sentences_embedding_hnsw_idx 
-                    ON sentences USING hnsw (embedding vector_cosine_ops);
-                """)
-                
-                # Create institutions table
+                # 5. Create institutions table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS institutions (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,21 +106,24 @@ class DatabaseService:
                     );
                 """)
                 
-                # Create users table
+                # 6. Create users table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         email TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
+                        password_hash TEXT,
                         full_name TEXT NOT NULL,
                         role VARCHAR(32) NOT NULL DEFAULT 'student',
                         institution_id UUID REFERENCES institutions(id) ON DELETE SET NULL,
                         email_verified BOOLEAN DEFAULT FALSE,
+                        auth_provider VARCHAR(32) DEFAULT 'email',
+                        provider_id TEXT,
+                        avatar_url TEXT,
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     );
                 """)
                 
-                # Create api_keys table
+                # 7. Create api_keys table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS api_keys (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,7 +135,7 @@ class DatabaseService:
                     );
                 """)
                 
-                # Create submissions table (for instructor dashboard - Phase 3)
+                # 8. Create courses table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS courses (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -112,6 +148,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 9. Create assignments table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS assignments (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -122,6 +159,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 10. Create submissions table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS submissions (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -136,6 +174,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 11. Create cross_submission_matches table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS cross_submission_matches (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -146,6 +185,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 12. Create lti_platforms table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS lti_platforms (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -160,6 +200,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 13. Create api_usage_log table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS api_usage_log (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -170,6 +211,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 14. Create federation_peers table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS federation_peers (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -182,6 +224,7 @@ class DatabaseService:
                     );
                 """)
                 
+                # 15. Create federation_queries table
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS federation_queries (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -193,7 +236,7 @@ class DatabaseService:
                     );
                 """)
 
-                # Migration for OAuth social authentication
+                # 16. Migration for OAuth social authentication
                 cursor.execute("""
                     DO $$ 
                     BEGIN 
@@ -209,11 +252,6 @@ class DatabaseService:
                         END;
                         BEGIN
                             ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id TEXT;
-                        EXCEPTION
-                            WHEN others THEN NULL;
-                        END;
-                        BEGIN
-                            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
                         EXCEPTION
                             WHEN others THEN NULL;
                         END;
@@ -286,6 +324,53 @@ class DatabaseService:
                         novelty_checks_used INT DEFAULT 0,
                         humanizer_words_used INT DEFAULT 0,
                         total_credits_remaining INT DEFAULT 100,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # 17. Create organisations table for Organisation Sign-Up module
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS organisations (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        name TEXT NOT NULL,
+                        domain_email TEXT UNIQUE NOT NULL,
+                        domain TEXT NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        org_type VARCHAR(64) NOT NULL DEFAULT 'University',
+                        website TEXT,
+                        contact_person TEXT NOT NULL,
+                        contact_number TEXT,
+                        description TEXT,
+                        country TEXT DEFAULT 'India',
+                        city TEXT,
+                        region VARCHAR(32) DEFAULT 'India',
+                        verification_status VARCHAR(32) DEFAULT 'verified',
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # 18. Create funding_schemes table for Research Funding Schemes
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS funding_schemes (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+                        scheme_name TEXT NOT NULL,
+                        description TEXT,
+                        min_amount_inr INT DEFAULT 10000,
+                        max_amount_inr INT NOT NULL DEFAULT 10000,
+                        min_amount_usd INT DEFAULT 120,
+                        max_amount_usd INT DEFAULT 120,
+                        eligibility_criteria TEXT,
+                        application_deadline VARCHAR(64),
+                        application_link TEXT,
+                        research_area TEXT,
+                        publication_criteria JSONB DEFAULT '[]'::jsonb,
+                        accepted_indexing JSONB DEFAULT '[]'::jsonb,
+                        reward_tiers JSONB DEFAULT '[]'::jsonb,
+                        additional_requirements TEXT,
+                        is_active BOOLEAN DEFAULT TRUE,
                         created_at TIMESTAMPTZ DEFAULT NOW(),
                         updated_at TIMESTAMPTZ DEFAULT NOW()
                     );
