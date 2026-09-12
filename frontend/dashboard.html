@@ -160,12 +160,16 @@
                             <span>Publishing Grants</span>
                             <span class="badge" style="margin-left: auto; font-size: 0.65rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px; padding: 1px 5px; font-weight: 700;">10K+</span>
                         </a>
-                <!-- Organisation Portal Tab -->
-                <a href="#" class="nav-item" id="nav-org-dashboard" data-view="org-dashboard-view">
-                    <i class="fa-solid fa-building-columns"></i>
-                    <span>Org Portal</span>
-                    <span class="badge" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-left: auto;">GRANTS</span>
-                </a>
+                    </li>
+                    <li class="nav-item" id="nav-org-dashboard">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #818cf8;">
+                                <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"></path>
+                            </svg>
+                            <span>Org Portal</span>
+                            <span class="badge" style="margin-left: auto; font-size: 0.65rem; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 6px; padding: 1px 5px; font-weight: 700;">ENTERPRISE</span>
+                        </a>
                     </li>
                 </ul>
 
@@ -2074,6 +2078,9 @@ Minimum 50 characters required. For best results, paste the full document text."
                     <a href="/login.html" class="btn btn-primary" style="padding: 10px 22px; font-weight: 700; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
                         <i class="fa-solid fa-right-to-bracket"></i> Sign In / Register as Organisation
                     </a>
+                    <button type="button" class="btn btn-outline" onclick="window.enterOrgDemoMode()" style="padding: 10px 20px; font-weight: 700; border-radius: 10px; display: inline-flex; align-items: center; gap: 8px; border-color: #6366f1; color: #818cf8;">
+                        <i class="fa-solid fa-bolt"></i> Instant Demo: Chitkara University Portal
+                    </button>
                 </div>
             </div>
 
@@ -2103,7 +2110,7 @@ Minimum 50 characters required. For best results, paste the full document text."
                         <button class="btn btn-outline" id="btn-edit-org-profile" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 9px; font-weight: 600;">
                             <i class="fa-solid fa-pen-to-square"></i> Edit Profile
                         </button>
-                        <button class="btn btn-primary" id="btn-add-scheme-modal" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 9px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; gap: 6px;">
+                        <button class="btn btn-primary" id="btn-add-scheme-modal" onclick="window.openSchemeModal()" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 9px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); display: inline-flex; align-items: center; gap: 6px;">
                             <i class="fa-solid fa-plus"></i> Add Funding Scheme
                         </button>
                     </div>
@@ -2133,27 +2140,291 @@ Minimum 50 characters required. For best results, paste the full document text."
                     </div>
                 </div>
 
-                <!-- Schemes Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-                    <div>
-                        <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">Institutional Funding Schemes</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 3px 0 0;">All schemes published here appear in real-time in the Lemma Research Publishing Grants directory.</p>
+                <!-- Org Sub-Tabs Navigation -->
+                <div style="display: flex; gap: 8px; border-bottom: 2px solid var(--border-color); margin-bottom: 1.75rem; overflow-x: auto; padding-bottom: 2px;">
+                    <button class="org-subtab-btn active" id="tab-btn-schemes" onclick="window.switchOrgSubTab('schemes')" style="padding: 10px 18px; font-weight: 700; font-size: 0.9rem; border: none; background: transparent; color: var(--text-primary); border-bottom: 3px solid #6366f1; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-award" style="color: #818cf8;"></i> Research Funding Schemes
+                    </button>
+                    <button class="org-subtab-btn" id="tab-btn-billing" onclick="window.switchOrgSubTab('billing')" style="padding: 10px 18px; font-weight: 700; font-size: 0.9rem; border: none; background: transparent; color: var(--text-muted); border-bottom: 3px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Institutional Billing & Invoices
+                    </button>
+                    <button class="org-subtab-btn" id="tab-btn-seats" onclick="window.switchOrgSubTab('seats')" style="padding: 10px 18px; font-weight: 700; font-size: 0.9rem; border: none; background: transparent; color: var(--text-muted); border-bottom: 3px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-users-gear" style="color: #3b82f6;"></i> Campus Seat Manager (<span id="tab-seat-count-badge">0</span>)
+                    </button>
+                    <button class="org-subtab-btn" id="tab-btn-po" onclick="window.switchOrgSubTab('po')" style="padding: 10px 18px; font-weight: 700; font-size: 0.9rem; border: none; background: transparent; color: var(--text-muted); border-bottom: 3px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-contract" style="color: #f59e0b;"></i> Enterprise Plans & PO Generator
+                    </button>
+                </div>
+
+                <!-- ==================== TAB 1: SCHEMES ==================== -->
+                <div id="org-tab-pane-schemes">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                        <div>
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">Institutional Funding Schemes</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 3px 0 0;">All schemes published here appear in real-time in the Lemma Research Publishing Grants directory.</p>
+                        </div>
+                    </div>
+
+                    <div id="org-schemes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;"></div>
+
+                    <div id="org-schemes-empty" class="hidden" style="text-align: center; padding: 4rem 1.5rem; background: var(--bg-secondary); border-radius: 16px; border: 1px dashed var(--border-color);">
+                        <i class="fa-solid fa-file-invoice-dollar" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Funding Schemes Added Yet</h3>
+                        <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.5rem; line-height: 1.5;">
+                            Click "Add Funding Scheme" to configure publication bounties for Scopus Q1, Q2, Q3, Q4 journals, IEEE/ACM conferences, book chapters, and patents.
+                        </p>
+                        <button class="btn btn-primary" onclick="window.openSchemeModal ? window.openSchemeModal() : document.getElementById('btn-add-scheme-modal').click()" style="padding: 9px 20px; font-weight: 700; border-radius: 8px; background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fa-solid fa-plus"></i> Add Your First Scheme
+                        </button>
                     </div>
                 </div>
 
-                <!-- Schemes Grid -->
-                <div id="org-schemes-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem;"></div>
+                <!-- ==================== TAB 2: INSTITUTIONAL BILLING & INVOICES ==================== -->
+                <div id="org-tab-pane-billing" class="hidden">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" class="responsive-grid">
+                        <!-- Active Contract Card -->
+                        <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                <div>
+                                    <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px;">Active Institutional Contract</span>
+                                    <h3 id="billing-plan-title" style="font-size: 1.3rem; font-weight: 800; margin: 4px 0 0; color: var(--text-primary);">Campus-Wide Edition (5,000 Seats)</h3>
+                                </div>
+                                <span id="billing-contract-status-badge" style="padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                    ACTIVE (NET-30)
+                                </span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem;">
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Contract Number</span>
+                                    <strong id="billing-contract-num" style="font-size: 0.9rem; color: var(--text-primary); font-family: monospace;">LEMMA-CTR-2026-CU</strong>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">PO Reference</span>
+                                    <strong id="billing-contract-po" style="font-size: 0.9rem; color: var(--text-primary); font-family: monospace;">CU/PO/2026/089</strong>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Valid Period</span>
+                                    <strong id="billing-contract-period" style="font-size: 0.85rem; color: var(--text-primary);">2026 - 2027</strong>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn btn-outline" onclick="window.switchOrgSubTab('po')" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px;">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Upgrade / Renew Contract
+                                </button>
+                                <button class="btn btn-outline" onclick="window.switchOrgSubTab('seats')" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px;">
+                                    <i class="fa-solid fa-users"></i> Manage Allocated Seats
+                                </button>
+                            </div>
+                        </div>
 
-                <!-- Empty Schemes State -->
-                <div id="org-schemes-empty" class="hidden" style="text-align: center; padding: 4rem 1.5rem; background: var(--bg-secondary); border-radius: 16px; border: 1px dashed var(--border-color);">
-                    <i class="fa-solid fa-file-invoice-dollar" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
-                    <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No Funding Schemes Added Yet</h3>
-                    <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.5rem; line-height: 1.5;">
-                        Click "Add Funding Scheme" to configure publication bounties for Scopus Q1, Q2, Q3, Q4 journals, IEEE/ACM conferences, book chapters, and patents.
-                    </p>
-                    <button class="btn btn-primary" onclick="document.getElementById('btn-add-scheme-modal').click()" style="padding: 9px 20px; font-weight: 700; border-radius: 8px; background: linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fa-solid fa-plus"></i> Add Your First Scheme
-                    </button>
+                        <!-- Bank Wire Summary Card -->
+                        <div class="glass-card" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 16px; padding: 1.5rem;">
+                            <h4 style="margin: 0 0 8px; font-size: 0.95rem; font-weight: 700; color: #818cf8; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-building-columns"></i> Official Bank Remittance
+                            </h4>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 10px; line-height: 1.45;">
+                                University wire transfers (NEFT/RTGS/SWIFT) to Lemma AI Technologies Pvt. Ltd.:
+                            </p>
+                            <div style="font-size: 0.8rem; color: var(--text-primary); line-height: 1.6; font-family: monospace;">
+                                <div><strong>Bank:</strong> HDFC Bank Ltd.</div>
+                                <div><strong>A/C:</strong> 50200084920194</div>
+                                <div><strong>IFSC:</strong> HDFC0001234</div>
+                                <div><strong>GSTIN:</strong> 29AAACL8492K1ZX</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoices Section -->
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Proforma & GST Tax Invoices</h4>
+                            <button class="btn btn-outline" onclick="window.refreshOrgInvoices()" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 7px;">
+                                <i class="fa-solid fa-arrow-rotate-right"></i> Refresh
+                            </button>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">
+                                        <th style="padding: 10px 8px;">Invoice #</th>
+                                        <th style="padding: 10px 8px;">Date</th>
+                                        <th style="padding: 10px 8px;">PO Reference</th>
+                                        <th style="padding: 10px 8px;">Amount</th>
+                                        <th style="padding: 10px 8px;">GST (18%)</th>
+                                        <th style="padding: 10px 8px;">Status</th>
+                                        <th style="padding: 10px 8px; text-align: right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="billing-invoices-tbody">
+                                    <tr>
+                                        <td colspan="7" style="padding: 24px; text-align: center; color: var(--text-muted);">Loading institutional invoices...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 3: CAMPUS SEATS MANAGER ==================== -->
+                <div id="org-tab-pane-seats" class="hidden">
+                    <!-- Capacity Gauge Bar -->
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Campus Seat Capacity</span>
+                                <h3 style="margin: 2px 0 0; font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+                                    <span id="seat-gauge-allocated">0</span> / <span id="seat-gauge-total">5000</span> Seats Allocated
+                                </h3>
+                            </div>
+                            <span id="seat-gauge-percent" style="font-size: 1.2rem; font-weight: 800; color: #10b981;">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; margin-bottom: 12px;">
+                            <div id="seat-gauge-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #6366f1); border-radius: 5px; transition: width 0.4s ease;"></div>
+                        </div>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">
+                            Faculty and researchers with allocated seats get unlimited IEEE paper restructuring, high-speed GPU queues, and zero-retention plagiarism checks.
+                        </p>
+                    </div>
+
+                    <!-- Allocate New Seat Card -->
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                        <h4 style="margin: 0 0 12px; font-size: 1rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-user-plus" style="color: #10b981;"></i> Allocate New Scholar / Faculty Seat
+                        </h4>
+                        <form id="org-allocate-seat-form" style="display: grid; grid-template-columns: 2fr 1.5fr 1.5fr 1fr auto; gap: 10px; align-items: flex-end;" class="responsive-grid">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Faculty / Scholar Email *</label>
+                                <input type="email" id="input-seat-email" class="research-input" placeholder="dr.sharma@chitkara.edu.in" required style="width: 100%; box-sizing: border-box; padding: 0.55rem 0.8rem; font-size: 0.85rem; border-radius: 7px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Full Name</label>
+                                <input type="text" id="input-seat-name" class="research-input" placeholder="Prof. R. Sharma" style="width: 100%; box-sizing: border-box; padding: 0.55rem 0.8rem; font-size: 0.85rem; border-radius: 7px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Department</label>
+                                <input type="text" id="input-seat-dept" class="research-input" placeholder="Computer Science" value="Academic Faculty" style="width: 100%; box-sizing: border-box; padding: 0.55rem 0.8rem; font-size: 0.85rem; border-radius: 7px;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">Role</label>
+                                <select id="select-seat-role" class="research-input" style="width: 100%; box-sizing: border-box; padding: 0.55rem 0.6rem; font-size: 0.85rem; border-radius: 7px;">
+                                    <option value="faculty">Faculty Member</option>
+                                    <option value="phd_scholar">PhD Scholar</option>
+                                    <option value="researcher">PostDoc / Researcher</option>
+                                    <option value="student">Student</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary" id="btn-submit-seat-alloc" style="padding: 0.55rem 1.1rem; font-size: 0.85rem; font-weight: 700; border-radius: 7px; background: linear-gradient(135deg, #10b981, #059669); white-space: nowrap;">
+                                    <i class="fa-solid fa-plus"></i> Grant Seat
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Allocated Seats Table -->
+                    <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Active Campus Seat Allocations</h4>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" id="filter-seat-search" placeholder="Search by name or email..." class="research-input" style="padding: 5px 10px; font-size: 0.82rem; border-radius: 6px; width: 220px;" oninput="window.filterSeatsTable(this.value)">
+                            </div>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;">
+                                        <th style="padding: 10px 8px;">Scholar / Faculty</th>
+                                        <th style="padding: 10px 8px;">Domain Email</th>
+                                        <th style="padding: 10px 8px;">Department</th>
+                                        <th style="padding: 10px 8px;">Role</th>
+                                        <th style="padding: 10px 8px;">Assigned Date</th>
+                                        <th style="padding: 10px 8px;">Status</th>
+                                        <th style="padding: 10px 8px; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campus-seats-tbody">
+                                    <tr>
+                                        <td colspan="7" style="padding: 24px; text-align: center; color: var(--text-muted);">No campus seats allocated yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==================== TAB 4: ENTERPRISE TIERS & PO GENERATOR ==================== -->
+                <div id="org-tab-pane-po" class="hidden">
+                    <div style="text-align: center; max-width: 750px; margin: 0 auto 2rem;">
+                        <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #6366f1; letter-spacing: 1px;">Institutional Procurement</span>
+                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin: 6px 0;">Official Enterprise Editions & Purchase Orders</h3>
+                        <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+                            Submit an official University Purchase Order (PO) to instantly activate seats with Net-30 / Net-60 credit terms and receive a computer-generated GST Tax Invoice.
+                        </p>
+                    </div>
+
+                    <!-- Enterprise Plans Cards Grid -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <!-- Department Card -->
+                        <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #818cf8; background: rgba(99, 102, 241, 0.1); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">Department License</span>
+                                <h4 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: var(--text-primary);">Department Edition</h4>
+                                <div style="font-size: 1.7rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">₹49,999 <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">/ yr + GST</span></div>
+                                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Ideal for single academic departments, research labs & PG programs.</p>
+                                <ul style="list-style: none; padding: 0; margin: 0 0 1.5rem; font-size: 0.85rem; color: var(--text-primary); line-height: 1.8;">
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> <strong>250 Campus Seats</strong></li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> 5,000 High-Throughput Scans</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Canvas / Moodle LTI 1.3</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Net-30 Official Purchase Order</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-primary" onclick="window.openPoModal('enterprise_department', 'Department Edition (250 Seats)', 49999, 250)" style="width: 100%; padding: 10px; font-weight: 700; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                <i class="fa-solid fa-file-invoice"></i> Generate PO for Department
+                            </button>
+                        </div>
+
+                        <!-- Campus Wide Card (Featured) -->
+                        <div class="glass-card" style="background: rgba(16, 185, 129, 0.05); border: 2px solid #10b981; border-radius: 16px; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+                            <div style="position: absolute; top: -12px; right: 20px; background: #10b981; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 3px 12px; border-radius: 12px; text-transform: uppercase;">
+                                MOST POPULAR FOR UNIVERSITIES
+                            </div>
+                            <div>
+                                <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(16,185,129,0.2);">University-Wide</span>
+                                <h4 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: var(--text-primary);">Campus-Wide Edition</h4>
+                                <div style="font-size: 1.7rem; font-weight: 800; color: #10b981; margin-bottom: 4px;">₹1,99,999 <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">/ yr + GST</span></div>
+                                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Complete institution-wide deployment for entire faculty and student body.</p>
+                                <ul style="list-style: none; padding: 0; margin: 0 0 1.5rem; font-size: 0.85rem; color: var(--text-primary); line-height: 1.8;">
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> <strong>5,000 Campus Seats</strong></li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> <strong>Unlimited</strong> Plagiarism & Novelty</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> SAML SSO & Google Workspace</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> On-Premise GPU Neural Engine</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Net-60 PO & Wire Remittance</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-primary" onclick="window.openPoModal('enterprise_campus', 'Campus-Wide Edition (5,000 Seats)', 199999, 5000)" style="width: 100%; padding: 10px; font-weight: 700; border-radius: 9px; background: linear-gradient(135deg, #10b981, #059669);">
+                                <i class="fa-solid fa-file-invoice"></i> Generate PO for Campus-Wide
+                            </button>
+                        </div>
+
+                        <!-- Custom Consortium Card -->
+                        <div class="glass-card" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <span style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 3px 10px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.2);">State Consortia</span>
+                                <h4 style="font-size: 1.3rem; font-weight: 800; margin: 12px 0 6px; color: var(--text-primary);">Consortium & Custom Scale</h4>
+                                <div style="font-size: 1.7rem; font-weight: 800; color: var(--text-primary); margin-bottom: 4px;">Custom Pricing</div>
+                                <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1.25rem;">Multi-campus state higher education systems & national research councils.</p>
+                                <ul style="list-style: none; padding: 0; margin: 0 0 1.5rem; font-size: 0.85rem; color: var(--text-primary); line-height: 1.8;">
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> <strong>Unlimited</strong> Multi-Campus Seats</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Custom Fine-Tuned Neural Models</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Air-Gapped Sovereign Compliance</li>
+                                    <li><i class="fa-solid fa-check" style="color: #10b981; margin-right: 8px;"></i> Custom SLA & Master Agreement</li>
+                                </ul>
+                            </div>
+                            <button class="btn btn-outline" onclick="window.openQuoteModal()" style="width: 100%; padding: 10px; font-weight: 700; border-radius: 9px;">
+                                <i class="fa-solid fa-handshake"></i> Request Custom RFQ
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2162,8 +2433,128 @@ Minimum 50 characters required. For best results, paste the full document text."
 
         <!-- Sticky On-Device Engine Status Monitor -->
         
+    
+    <!-- ==================== PURCHASE ORDER (PO) GENERATOR MODAL ==================== -->
+    <div class="custom-modal hidden" id="org-po-modal" class="custom-modal hidden" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.2rem;">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-po-title" style="margin: 0; font-size: 1.25rem; font-weight: 700;">Submit Institutional Purchase Order</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Generate GST Tax invoice and activate Net-30 campus seats.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="window.closePoModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="org-po-form">
+                <input type="hidden" id="input-po-plan-id" value="enterprise_campus">
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Selected Enterprise Tier</label>
+                    <input type="text" id="input-po-plan-name" class="research-input" readonly style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem; background: rgba(255,255,255,0.05);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">University PO Number *</label>
+                        <input type="text" id="input-po-number" class="research-input" placeholder="e.g. CU/PO/2026/089" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">GSTIN / Tax ID</label>
+                        <input type="text" id="input-po-gstin" class="research-input" placeholder="e.g. 03AAACT1234F1Z9" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Finance Officer / Contact Name *</label>
+                        <input type="text" id="input-po-contact-name" class="research-input" placeholder="Dr. Accounts Registrar" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Finance Email for Invoices *</label>
+                        <input type="email" id="input-po-contact-email" class="research-input" placeholder="finance@chitkara.edu.in" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Official Campus Billing Address *</label>
+                    <textarea id="input-po-billing-address" class="research-input" rows="2" placeholder="Chitkara University Campus, Chandigarh-Patiala National Highway, Punjab 140401" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Payment Terms</label>
+                        <select id="select-po-payment-terms" class="research-input" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;">
+                            <option value="Net-30">Net 30 Days (Institutional Term)</option>
+                            <option value="Net-60">Net 60 Days (State University Term)</option>
+                            <option value="advance_wire">Advance Wire Transfer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Currency</label>
+                        <input type="text" value="INR (₹)" readonly class="research-input" style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem; background: rgba(255,255,255,0.05);">
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outline" onclick="window.closePoModal()" style="padding: 9px 18px; border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-po" style="padding: 9px 22px; border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fa-solid fa-check"></i> Generate Contract &amp; Invoices
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== SUBMIT BANK WIRE UTR MODAL ==================== -->
+    <div class="custom-modal hidden" id="org-wire-modal" class="custom-modal hidden" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 540px; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 1.2rem;">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Submit Wire / UTR Reference</h3>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);" id="wire-modal-inv-num">Invoice #: LEMMA-INV-2026-001</p>
+                    </div>
+                </div>
+                <button type="button" onclick="window.closeWireModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 4px 8px; border-radius: 6px;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="org-wire-form">
+                <input type="hidden" id="input-wire-inv-id">
+
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Bank Transaction ID / UTR Number / Cheque No. *</label>
+                    <input type="text" id="input-wire-ref" class="research-input" placeholder="e.g. UTR20260912839219" required style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem; font-family: monospace;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 5px;">Remittance Notes / Bank Name</label>
+                    <textarea id="input-wire-notes" class="research-input" rows="3" placeholder="e.g. Paid via State Bank of India NEFT on 12-Sep-2026 from University General Fund." style="width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 8px; font-size: 0.88rem;"></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outline" onclick="window.closeWireModal()" style="padding: 9px 18px; border-radius: 8px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-wire" style="padding: 9px 22px; border-radius: 8px; font-weight: 700; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                        <i class="fa-solid fa-check"></i> Submit Reference
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- ==================== ORGANISATION SCHEME MODAL ==================== -->
-    <div class="custom-modal hidden" id="org-scheme-modal" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div class="custom-modal hidden" id="org-scheme-modal" class="custom-modal hidden" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
         <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -2316,7 +2707,7 @@ Minimum 50 characters required. For best results, paste the full document text."
     </div>
 
     <!-- ==================== ORGANISATION PROFILE MODAL ==================== -->
-    <div class="custom-modal hidden" id="org-profile-modal" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div class="custom-modal hidden" id="org-profile-modal" class="custom-modal hidden" style="position: fixed; inset: 0; background: rgba(10, 15, 30, 0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 20px;">
         <div class="modal-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 14px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
@@ -2716,9 +3107,56 @@ Minimum 50 characters required. For best results, paste the full document text."
     <script src="assets/js/novelty.js?v=2"></script>
     <script src="assets/js/funding.js?v=2"></script>
     <script src="assets/js/billing.js?v=1"></script>
-    <script src="assets/js/organisation.js?v=1"></script>
+    <script src="assets/js/organisation.js?v=2"></script>
     <script src="assets/js/mobile-ui.js?v=36"></script>
     <script src="assets/js/ads-config.js?v=2"></script>
+
+    <!-- Inline Bulletproof Modal Controller -->
+    <script>
+    window.openSchemeModal = function(schemeToEdit) {
+        var modal = document.getElementById("org-scheme-modal");
+        if (!modal) {
+            console.error("Modal #org-scheme-modal not found!");
+            return;
+        }
+        modal.classList.remove("hidden");
+        modal.style.display = "flex";
+        modal.style.visibility = "visible";
+        modal.style.opacity = "1";
+        
+        var titleEl = document.getElementById("modal-scheme-title-text");
+        if (titleEl) {
+            titleEl.textContent = schemeToEdit ? "Edit Funding Scheme" : "Create New Research Funding Scheme";
+        }
+    };
+
+    window.closeSchemeModal = function() {
+        var modal = document.getElementById("org-scheme-modal");
+        if (modal) {
+            modal.classList.add("hidden");
+            modal.style.display = "none";
+        }
+    };
+
+    window.openOrgProfileModal = function() {
+        var modal = document.getElementById("org-profile-modal");
+        if (modal) {
+            modal.classList.remove("hidden");
+            modal.style.display = "flex";
+            modal.style.visibility = "visible";
+            modal.style.opacity = "1";
+        }
+    };
+
+    window.closeOrgProfileModal = function() {
+        var modal = document.getElementById("org-profile-modal");
+        if (modal) {
+            modal.classList.add("hidden");
+            modal.style.display = "none";
+        }
+    };
+    </script>
+
 </body>
 
 </html>

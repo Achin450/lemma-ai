@@ -1074,6 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
             'citations-workspace': 'nav-citations',
             'novelty-view': 'nav-novelty',
             'funding-view': 'nav-funding',
+            'org-dashboard-view': 'nav-org-dashboard',
             'billing-view': 'nav-billing',
         };
         const activeNavId = navMap[viewId];
@@ -1120,6 +1121,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (window.loadMyPapers) window.loadMyPapers();
             } else if (tabId === "nav-novelty") {
                 showView("novelty-view");
+            } else if (tabId === "nav-org-dashboard") {
+                showView("org-dashboard-view");
+                if (window.loadOrgData) window.loadOrgData();
             } else if (tabId === "nav-funding") {
                 showView("funding-view");
                 if (window.loadFundingDirectory) window.loadFundingDirectory();

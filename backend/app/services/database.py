@@ -375,6 +375,91 @@ class DatabaseService:
                         updated_at TIMESTAMPTZ DEFAULT NOW()
                     );
                 """)
+
+                # 19. Create enterprise_contracts table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS enterprise_contracts (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+                        contract_number VARCHAR(64) UNIQUE NOT NULL,
+                        plan_id VARCHAR(64) NOT NULL DEFAULT 'enterprise_department',
+                        plan_name VARCHAR(128) NOT NULL DEFAULT 'Department Edition',
+                        total_seats INT NOT NULL DEFAULT 250,
+                        allocated_seats INT NOT NULL DEFAULT 0,
+                        status VARCHAR(32) NOT NULL DEFAULT 'active',
+                        billing_cycle VARCHAR(32) NOT NULL DEFAULT 'annual',
+                        contract_value_inr FLOAT NOT NULL DEFAULT 49999.0,
+                        contract_value_usd FLOAT NOT NULL DEFAULT 699.0,
+                        payment_terms VARCHAR(32) NOT NULL DEFAULT 'net_30',
+                        payment_status VARCHAR(32) NOT NULL DEFAULT 'unpaid',
+                        po_number VARCHAR(128),
+                        gstin_tax_id VARCHAR(64),
+                        billing_contact_name VARCHAR(128),
+                        billing_contact_email VARCHAR(128),
+                        billing_address TEXT,
+                        start_date TIMESTAMPTZ DEFAULT NOW(),
+                        end_date TIMESTAMPTZ DEFAULT NOW() + INTERVAL '365 days',
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # 20. Create enterprise_invoices table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS enterprise_invoices (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        contract_id UUID REFERENCES enterprise_contracts(id) ON DELETE CASCADE,
+                        organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+                        invoice_number VARCHAR(64) UNIQUE NOT NULL,
+                        invoice_type VARCHAR(32) NOT NULL DEFAULT 'proforma',
+                        subtotal_inr FLOAT NOT NULL,
+                        tax_inr FLOAT NOT NULL DEFAULT 0,
+                        total_inr FLOAT NOT NULL,
+                        subtotal_usd FLOAT NOT NULL DEFAULT 0,
+                        total_usd FLOAT NOT NULL DEFAULT 0,
+                        currency VARCHAR(8) NOT NULL DEFAULT 'INR',
+                        status VARCHAR(32) NOT NULL DEFAULT 'issued',
+                        due_date TIMESTAMPTZ DEFAULT NOW() + INTERVAL '30 days',
+                        po_reference VARCHAR(128),
+                        bank_details JSONB DEFAULT '{}'::jsonb,
+                        payment_reference VARCHAR(128),
+                        payment_notes TEXT,
+                        paid_at TIMESTAMPTZ,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # 21. Create enterprise_seat_allocations table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS enterprise_seat_allocations (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        contract_id UUID REFERENCES enterprise_contracts(id) ON DELETE CASCADE,
+                        organisation_id UUID REFERENCES organisations(id) ON DELETE CASCADE,
+                        user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+                        user_email VARCHAR(255) NOT NULL,
+                        user_name VARCHAR(128),
+                        department VARCHAR(128) DEFAULT 'Academic Faculty',
+                        seat_role VARCHAR(32) DEFAULT 'faculty',
+                        status VARCHAR(32) DEFAULT 'active',
+                        assigned_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # 22. Create enterprise_quote_requests table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS enterprise_quote_requests (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        organisation_name TEXT NOT NULL,
+                        domain_email TEXT NOT NULL,
+                        contact_person TEXT NOT NULL,
+                        contact_phone TEXT,
+                        estimated_seats INT DEFAULT 500,
+                        requested_tier VARCHAR(64) DEFAULT 'enterprise_campus',
+                        requirements TEXT,
+                        status VARCHAR(32) DEFAULT 'pending',
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
             conn.commit()
 
     @classmethod

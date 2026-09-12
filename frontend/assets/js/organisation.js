@@ -90,6 +90,17 @@
                 if (e.target === modalSchemeEl) closeSchemeModal();
             });
         }
+        
+        // Enterprise Forms
+        const poForm = document.getElementById("org-po-form");
+        if (poForm) poForm.addEventListener("submit", handlePoSubmit);
+
+        const wireForm = document.getElementById("org-wire-form");
+        if (wireForm) wireForm.addEventListener("submit", handleWireSubmit);
+
+        const allocForm = document.getElementById("org-allocate-seat-form");
+        if (allocForm) allocForm.addEventListener("submit", handleAllocateSeatSubmit);
+
         if (formScheme) {
             formScheme.addEventListener("submit", handleSaveScheme);
         }
@@ -366,13 +377,18 @@
             titleEl.textContent = editingSchemeId ? "Edit Funding Scheme" : "Create New Research Funding Scheme";
         }
 
-        document.getElementById("input-scheme-title").value = schemeToEdit ? schemeToEdit.scheme_title : "";
-        document.getElementById("input-scheme-desc").value = schemeToEdit ? (schemeToEdit.description || "") : "";
-        document.getElementById("input-scheme-year").value = schemeToEdit ? (schemeToEdit.academic_year || "2026-2027") : "2026-2027";
-        document.getElementById("input-scheme-status").value = schemeToEdit ? schemeToEdit.status : "active";
-        document.getElementById("input-scheme-scope").value = schemeToEdit ? (schemeToEdit.eligibility_scope || "Faculty, Students, Global Co-Authors") : "Faculty, Students, Global Co-Authors";
-        document.getElementById("input-scheme-guidelines-url").value = schemeToEdit ? (schemeToEdit.guidelines_url || "") : "";
-        document.getElementById("input-scheme-contact-email").value = schemeToEdit ? (schemeToEdit.contact_email || (currentOrgProfile ? currentOrgProfile.official_email : "")) : (currentOrgProfile ? currentOrgProfile.official_email : "");
+        const safeSet = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        };
+
+        safeSet("input-scheme-title", schemeToEdit ? schemeToEdit.scheme_title : "");
+        safeSet("input-scheme-desc", schemeToEdit ? (schemeToEdit.description || "") : "");
+        safeSet("input-scheme-year", schemeToEdit ? (schemeToEdit.academic_year || "2026-2027") : "2026-2027");
+        safeSet("input-scheme-status", schemeToEdit ? schemeToEdit.status : "active");
+        safeSet("input-scheme-scope", schemeToEdit ? (schemeToEdit.eligibility_scope || "Faculty, Students, Global Co-Authors") : "Faculty, Students, Global Co-Authors");
+        safeSet("input-scheme-guidelines-url", schemeToEdit ? (schemeToEdit.guidelines_url || "") : "");
+        safeSet("input-scheme-contact-email", schemeToEdit ? (schemeToEdit.contact_email || (currentOrgProfile ? currentOrgProfile.official_email : "")) : (currentOrgProfile ? currentOrgProfile.official_email : ""));
 
         const defaultCriteriaMap = {
             "q1_sci": { enabled: true, amount: 100000, name: "Scopus Q1 / SCI Journal" },
@@ -420,12 +436,18 @@
             }
         });
 
-        if (modal) modal.classList.remove("hidden");
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.remove("hidden");
+        }
     }
 
     function closeSchemeModal() {
         const modal = document.getElementById("org-scheme-modal");
-        if (modal) modal.classList.add("hidden");
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.add("hidden");
+        }
         editingSchemeId = null;
     }
 
@@ -477,11 +499,12 @@
                 return;
             }
 
+            const statusEl = document.getElementById("input-scheme-status");
             const payload = {
                 scheme_title: document.getElementById("input-scheme-title").value.trim(),
                 description: document.getElementById("input-scheme-desc").value.trim(),
                 academic_year: document.getElementById("input-scheme-year").value.trim(),
-                status: document.getElementById("input-scheme-status").value,
+                status: statusEl ? statusEl.value : "active",
                 eligibility_scope: document.getElementById("input-scheme-scope").value.trim(),
                 guidelines_url: document.getElementById("input-scheme-guidelines-url").value.trim(),
                 contact_email: document.getElementById("input-scheme-contact-email").value.trim(),
@@ -573,12 +596,18 @@
         document.getElementById("input-org-country").value = currentOrgProfile.country || "India";
         document.getElementById("input-org-city").value = currentOrgProfile.city || "";
 
-        if (modal) modal.classList.remove("hidden");
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.remove("hidden");
+        }
     }
 
     function closeOrgProfileModal() {
         const modal = document.getElementById("org-profile-modal");
-        if (modal) modal.classList.add("hidden");
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.add("hidden");
+        }
     }
 
     async function handleSaveOrgProfile(e) {
@@ -648,6 +677,478 @@
             .replace(/'/g, "&#039;");
     }
 
+
+    // ============================================================================
+    // ENTERPRISE EDITION: BILLING, PO, GST INVOICES & CAMPUS SEAT MANAGEMENT
+    // ============================================================================
+
+    let allAllocatedSeats = [];
+
+    window.switchOrgSubTab = function(tabName) {
+        document.querySelectorAll(".org-subtab-btn").forEach(btn => {
+            btn.classList.remove("active");
+            btn.style.color = "var(--text-muted)";
+            btn.style.borderBottomColor = "transparent";
+        });
+        
+        const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+        if (activeBtn) {
+            activeBtn.classList.add("active");
+            activeBtn.style.color = "var(--text-primary)";
+            activeBtn.style.borderBottomColor = "#6366f1";
+        }
+
+        const panes = ["schemes", "billing", "seats", "po"];
+        panes.forEach(p => {
+            const el = document.getElementById(`org-tab-pane-${p}`);
+            if (el) {
+                if (p === tabName) {
+                    el.classList.remove("hidden");
+                } else {
+                    el.classList.add("hidden");
+                }
+            }
+        });
+
+        if (tabName === "billing") loadEnterpriseBilling();
+        if (tabName === "seats") loadCampusSeats();
+    };
+
+    // 1. Load Enterprise Billing & Invoices
+    async function loadEnterpriseBilling() {
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+        const tbody = document.getElementById("billing-invoices-tbody");
+
+        try {
+            // Fetch contracts
+            const ctrRes = await fetch(`${baseUrl}/api/v1/enterprise/contracts/me`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (ctrRes.ok) {
+                const contracts = await ctrRes.json();
+                if (contracts && contracts.length > 0) {
+                    const activeCtr = contracts[0];
+                    const planTitleEl = document.getElementById("billing-plan-title");
+                    const statusBadgeEl = document.getElementById("billing-contract-status-badge");
+                    const ctrNumEl = document.getElementById("billing-contract-num");
+                    const ctrPoEl = document.getElementById("billing-contract-po");
+                    const ctrPeriodEl = document.getElementById("billing-contract-period");
+
+                    if (planTitleEl) planTitleEl.textContent = `${activeCtr.plan_name} (${activeCtr.total_seats === -1 ? 'Unlimited' : activeCtr.total_seats} Seats)`;
+                    if (statusBadgeEl) {
+                        statusBadgeEl.textContent = `${activeCtr.status.toUpperCase()} (${activeCtr.payment_terms || 'NET-30'})`;
+                        statusBadgeEl.style.background = activeCtr.payment_status === 'paid' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+                        statusBadgeEl.style.color = activeCtr.payment_status === 'paid' ? '#10b981' : '#f59e0b';
+                    }
+                    if (ctrNumEl) ctrNumEl.textContent = activeCtr.contract_number;
+                    if (ctrPoEl) ctrPoEl.textContent = activeCtr.po_number || "Direct PO";
+                    if (ctrPeriodEl) ctrPeriodEl.textContent = `${activeCtr.start_date ? activeCtr.start_date.split('T')[0] : '2026'} to ${activeCtr.end_date ? activeCtr.end_date.split('T')[0] : '2027'}`;
+                }
+            }
+
+            // Fetch Invoices
+            const invRes = await fetch(`${baseUrl}/api/v1/enterprise/invoices`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (invRes.ok) {
+                const invoices = await invRes.json();
+                renderInvoicesTable(invoices);
+            }
+        } catch (err) {
+            console.error("Error loading enterprise billing:", err);
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="7" style="padding: 24px; text-align: center; color: #ef4444;">Failed to load invoices. Please ensure you are logged in.</td></tr>`;
+            }
+        }
+    }
+
+    window.refreshOrgInvoices = loadEnterpriseBilling;
+
+    function renderInvoicesTable(invoices) {
+        const tbody = document.getElementById("billing-invoices-tbody");
+        if (!tbody) return;
+
+        if (!invoices || invoices.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 30px; text-align: center; color: var(--text-muted);">No invoices generated yet. Submit a Purchase Order to create proforma tax invoice.</td></tr>`;
+            return;
+        }
+
+        const baseUrl = getApiBaseUrl();
+        const token = getAuthToken();
+
+        tbody.innerHTML = invoices.map(inv => {
+            const isPaid = inv.status === 'paid';
+            const isPendingVerif = inv.status === 'pending_verification';
+            const statusBg = isPaid ? 'rgba(16,185,129,0.15)' : (isPendingVerif ? 'rgba(99,102,241,0.15)' : 'rgba(245,158,11,0.15)');
+            const statusColor = isPaid ? '#10b981' : (isPendingVerif ? '#818cf8' : '#f59e0b');
+            const statusText = isPaid ? 'PAID & SETTLED' : (isPendingVerif ? 'UTR SUBMITTED (VERIFYING)' : 'PROFORMA / UNPAID');
+
+            return `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 12px 8px; font-family: monospace; font-weight: 700; color: var(--text-primary);">${escapeHtml(inv.invoice_number)}</td>
+                    <td style="padding: 12px 8px; color: var(--text-secondary);">${inv.created_at ? inv.created_at.split('T')[0] : 'Today'}</td>
+                    <td style="padding: 12px 8px; font-family: monospace; color: var(--text-secondary);">${escapeHtml(inv.po_reference || '-')}</td>
+                    <td style="padding: 12px 8px; font-weight: 600; color: var(--text-primary);">₹${inv.subtotal_inr.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 12px 8px; color: var(--text-muted);">₹${inv.tax_inr.toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="padding: 12px 8px;">
+                        <span style="padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; background: ${statusBg}; color: ${statusColor};">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td style="padding: 12px 8px; text-align: right; white-space: nowrap;">
+                        <a href="${baseUrl}/api/v1/enterprise/invoices/${inv.id}/download?token=${token}" target="_blank" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-right: 6px;">
+                            <i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Tax Invoice
+                        </a>
+                        ${!isPaid ? `
+                            <button class="btn btn-primary" onclick="window.openWireModal('${inv.id}', '${inv.invoice_number}')" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                <i class="fa-solid fa-receipt"></i> Submit UTR
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // 2. Load Campus Seats Management
+    async function loadCampusSeats() {
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+
+        try {
+            const res = await fetch(`${baseUrl}/api/v1/enterprise/seats`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                allAllocatedSeats = data.seats || [];
+                
+                // Update gauge
+                const total = data.total_seats;
+                const allocated = data.allocated_seats;
+                const percent = total > 0 ? Math.min(100, Math.round((allocated / total) * 100)) : 0;
+
+                const allocEl = document.getElementById("seat-gauge-allocated");
+                const totalEl = document.getElementById("seat-gauge-total");
+                const pctEl = document.getElementById("seat-gauge-percent");
+                const barEl = document.getElementById("seat-gauge-bar");
+                const badgeEl = document.getElementById("tab-seat-count-badge");
+
+                if (allocEl) allocEl.textContent = allocated;
+                if (totalEl) totalEl.textContent = total === -1 ? 'Unlimited' : total;
+                if (pctEl) pctEl.textContent = total === -1 ? 'Unlimited' : `${percent}%`;
+                if (barEl) barEl.style.width = total === -1 ? '100%' : `${percent}%`;
+                if (badgeEl) badgeEl.textContent = allocated;
+
+                renderSeatsTable(allAllocatedSeats);
+            }
+        } catch (err) {
+            console.error("Error loading campus seats:", err);
+        }
+    }
+
+    function renderSeatsTable(seats) {
+        const tbody = document.getElementById("campus-seats-tbody");
+        if (!tbody) return;
+
+        if (!seats || seats.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="padding: 30px; text-align: center; color: var(--text-muted);">No faculty or scholars allocated yet. Use the form above to grant seats.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = seats.map(s => {
+            const roleLabels = {
+                "faculty": "Faculty Member",
+                "phd_scholar": "PhD Scholar",
+                "researcher": "Researcher",
+                "student": "Student"
+            };
+
+            return `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 12px 8px; font-weight: 700; color: var(--text-primary);">${escapeHtml(s.user_name || 'Scholar')}</td>
+                    <td style="padding: 12px 8px; font-family: monospace; color: #818cf8;">${escapeHtml(s.user_email)}</td>
+                    <td style="padding: 12px 8px; color: var(--text-secondary);">${escapeHtml(s.department)}</td>
+                    <td style="padding: 12px 8px;"><span style="padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; background: rgba(99,102,241,0.1); color: #818cf8;">${roleLabels[s.seat_role] || s.seat_role}</span></td>
+                    <td style="padding: 12px 8px; color: var(--text-muted); font-size: 0.8rem;">${s.assigned_at ? s.assigned_at.split('T')[0] : 'Active'}</td>
+                    <td style="padding: 12px 8px;"><span style="color: #10b981; font-weight: 700; font-size: 0.78rem;"><i class="fa-solid fa-circle-check"></i> PRO Active</span></td>
+                    <td style="padding: 12px 8px; text-align: right;">
+                        <button class="btn btn-outline" onclick="window.revokeCampusSeat('${s.id}', '${escapeHtml(s.user_email)}')" style="padding: 4px 10px; font-size: 0.78rem; border-radius: 6px; color: #ef4444; border-color: rgba(239,68,68,0.3);">
+                            <i class="fa-solid fa-user-xmark"></i> Revoke
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    window.filterSeatsTable = function(query) {
+        const q = (query || "").toLowerCase().trim();
+        if (!q) {
+            renderSeatsTable(allAllocatedSeats);
+            return;
+        }
+        const filtered = allAllocatedSeats.filter(s => 
+            (s.user_email && s.user_email.toLowerCase().includes(q)) ||
+            (s.user_name && s.user_name.toLowerCase().includes(q)) ||
+            (s.department && s.department.toLowerCase().includes(q))
+        );
+        renderSeatsTable(filtered);
+    };
+
+    // 3. Purchase Order Modal & Submission
+    window.openPoModal = function(planId, planName, price, seats) {
+        const modal = document.getElementById("org-po-modal");
+        document.getElementById("input-po-plan-id").value = planId;
+        document.getElementById("input-po-plan-name").value = `${planName} - ₹${price.toLocaleString('en-IN')} / yr`;
+        
+        if (currentOrgProfile) {
+            document.getElementById("input-po-contact-name").value = currentOrgProfile.contact_person || "";
+            document.getElementById("input-po-contact-email").value = currentOrgProfile.domain_email || "";
+            document.getElementById("input-po-billing-address").value = `${currentOrgProfile.name}, ${currentOrgProfile.city || ''} ${currentOrgProfile.country || 'India'}`.trim();
+        }
+        
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.remove("hidden");
+        }
+    };
+
+    window.closePoModal = function() {
+        const modal = document.getElementById("org-po-modal");
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.add("hidden");
+        }
+    };
+
+    async function handlePoSubmit(e) {
+        e.preventDefault();
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+        const btnSubmit = document.getElementById("btn-submit-po");
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Contract & Invoice...';
+        }
+
+        try {
+            const payload = {
+                plan_id: document.getElementById("input-po-plan-id").value,
+                po_number: document.getElementById("input-po-number").value.trim(),
+                gstin_tax_id: document.getElementById("input-po-gstin").value.trim() || null,
+                billing_contact_name: document.getElementById("input-po-contact-name").value.trim(),
+                billing_contact_email: document.getElementById("input-po-contact-email").value.trim(),
+                billing_address: document.getElementById("input-po-billing-address").value.trim(),
+                payment_terms: document.getElementById("select-po-payment-terms").value,
+                currency: "INR"
+            };
+
+            const res = await fetch(`${baseUrl}/api/v1/enterprise/contracts/create-po`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Failed to create Purchase Order contract.");
+            }
+
+            showToast("Purchase Order approved! Institutional contract & GST Tax invoice generated.", "success");
+            window.closePoModal();
+            window.switchOrgSubTab("billing");
+        } catch (err) {
+            console.error("Error submitting PO:", err);
+            showToast(err.message || "Failed to submit Purchase Order.", "error");
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> Generate Contract & Invoices';
+            }
+        }
+    }
+
+    // 4. Wire UTR Modal & Submission
+    window.openWireModal = function(invId, invNum) {
+        const modal = document.getElementById("org-wire-modal");
+        document.getElementById("input-wire-inv-id").value = invId;
+        const lbl = document.getElementById("wire-modal-inv-num");
+        if (lbl) lbl.textContent = `Invoice #: ${invNum}`;
+
+        if (modal) {
+            modal.style.display = "flex";
+            modal.classList.remove("hidden");
+        }
+    };
+
+    window.closeWireModal = function() {
+        const modal = document.getElementById("org-wire-modal");
+        if (modal) {
+            modal.style.display = "none";
+            modal.classList.add("hidden");
+        }
+    };
+
+    async function handleWireSubmit(e) {
+        e.preventDefault();
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+        const btnSubmit = document.getElementById("btn-submit-wire");
+        const invId = document.getElementById("input-wire-inv-id").value;
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+        }
+
+        try {
+            const payload = {
+                payment_reference: document.getElementById("input-wire-ref").value.trim(),
+                payment_notes: document.getElementById("input-wire-notes").value.trim()
+            };
+
+            const res = await fetch(`${baseUrl}/api/v1/enterprise/invoices/${invId}/submit-offline-payment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Failed to submit wire reference.");
+            }
+
+            showToast("Bank Wire UTR reference submitted successfully! Invoice is pending verification.", "success");
+            window.closeWireModal();
+            loadEnterpriseBilling();
+        } catch (err) {
+            console.error("Error submitting wire reference:", err);
+            showToast(err.message || "Failed to submit wire reference.", "error");
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-check"></i> Submit Reference';
+            }
+        }
+    }
+
+    // 5. Seat Allocation & Revocation
+    async function handleAllocateSeatSubmit(e) {
+        e.preventDefault();
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+        const btnSubmit = document.getElementById("btn-submit-seat-alloc");
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Allocating...';
+        }
+
+        try {
+            const payload = {
+                user_email: document.getElementById("input-seat-email").value.trim(),
+                user_name: document.getElementById("input-seat-name").value.trim() || null,
+                department: document.getElementById("input-seat-dept").value.trim() || "Academic Faculty",
+                seat_role: document.getElementById("select-seat-role").value
+            };
+
+            const res = await fetch(`${baseUrl}/api/v1/enterprise/seats/allocate`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.detail || "Failed to allocate seat.");
+            }
+
+            showToast(`Enterprise Pro seat successfully granted to ${payload.user_email}!`, "success");
+            document.getElementById("input-seat-email").value = "";
+            document.getElementById("input-seat-name").value = "";
+            loadCampusSeats();
+        } catch (err) {
+            console.error("Error allocating seat:", err);
+            showToast(err.message || "Could not allocate seat.", "error");
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<i class="fa-solid fa-plus"></i> Grant Seat';
+            }
+        }
+    }
+
+    window.revokeCampusSeat = async function(seatId, email) {
+        if (!confirm(`Are you sure you want to revoke the Enterprise license from ${email}? The license will return to your institutional pool.`)) {
+            return;
+        }
+
+        const token = getAuthToken();
+        const baseUrl = getApiBaseUrl();
+
+        try {
+            const res = await fetch(`${baseUrl}/api/v1/enterprise/seats/${seatId}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.detail || "Failed to revoke seat.");
+            }
+
+            showToast(`License revoked for ${email} and returned to pool.`, "info");
+            loadCampusSeats();
+        } catch (err) {
+            console.error("Error revoking seat:", err);
+            showToast(err.message || "Failed to revoke seat.", "error");
+        }
+    };
+
+    
+    window.enterOrgDemoMode = function() {
+        const demoOrg = {
+            id: "demo-chitkara-univ",
+            name: "Chitkara University",
+            short_name: "CU",
+            domain_email: "research.dean@chitkara.edu.in",
+            domain: "chitkara.edu.in",
+            organisation_type: "University",
+            website: "https://www.chitkara.edu.in",
+            contact_person: "Dr. Research Director",
+            contact_phone: "+91 9876543210",
+            description: "Premier NAAC A+ Accredited University promoting high-impact research, Scopus Q1/Q2 journal publications, and innovation patents.",
+            country: "India",
+            city: "Punjab"
+        };
+        currentOrgProfile = demoOrg;
+        
+        const notLoggedContainer = document.getElementById("org-not-logged-in-state");
+        const loggedContainer = document.getElementById("org-logged-in-state");
+        if (notLoggedContainer) notLoggedContainer.classList.add("hidden");
+        if (loggedContainer) loggedContainer.classList.remove("hidden");
+        
+        renderOrgProfile(demoOrg);
+        loadOrgSchemes();
+        loadEnterpriseBilling();
+        loadCampusSeats();
+        showToast("Switched to Chitkara University Organisation Portal!", "success");
+    };
+
+    window.openSchemeModal = openSchemeModal;
+    window.closeSchemeModal = closeSchemeModal;
     window.loadOrgData = loadOrgData;
     window.initOrganisationDashboard = initOrganisationDashboard;
 

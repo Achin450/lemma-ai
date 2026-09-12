@@ -44,6 +44,7 @@ from app.routers.novelty import router as novelty_router
 from app.routers.funding import router as funding_router
 from app.routers.payment import router as payment_router
 from app.routers.organisations import router as organisations_router
+from app.routers.enterprise_payment import router as enterprise_payment_router
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -89,6 +90,7 @@ app.include_router(novelty_router)
 app.include_router(funding_router)
 app.include_router(payment_router)
 app.include_router(organisations_router)
+app.include_router(enterprise_payment_router)
 
 # ---------------------------------------------------------------------------
 # Startup event — ensure new DB tables exist
