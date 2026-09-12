@@ -66,6 +66,8 @@ class UserProfile(BaseModel):
     institution_id: Optional[str]
     institution_name: Optional[str]
     email_verified: bool
+    subscription_tier: str = "free"
+    is_pro: bool = False
     created_at: str
 
 

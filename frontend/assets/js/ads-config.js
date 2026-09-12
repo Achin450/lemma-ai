@@ -60,7 +60,18 @@ const LemmaAdsConfig = {
 // ------------------------------------------------------------------------------
 const LemmaAdsEngine = {
     init() {
-        if (!LemmaAdsConfig.enabled) return;
+        // Auto-disable ads if user is on a Pro plan
+        if (window.LemmaPaymentApp && window.LemmaPaymentApp.subscription && window.LemmaPaymentApp.subscription.is_pro) {
+            LemmaAdsConfig.enabled = false;
+        }
+
+        if (!LemmaAdsConfig.enabled) {
+            const adSidebar = document.getElementById("dashboard-ad-sidebar");
+            if (adSidebar) adSidebar.style.display = "none";
+            const landingContainer = document.getElementById("landing-ad-container");
+            if (landingContainer) landingContainer.style.display = "none";
+            return;
+        }
 
         // Render landing ad if container exists
         const landingContainer = document.getElementById("landing-ad-container");
@@ -188,7 +199,7 @@ const LemmaAdsEngine = {
                 <ul class="pro-features-list">
                     ${featuresHtml}
                 </ul>
-                <button class="btn btn-primary pro-upgrade-btn" onclick="alert('Payment Gateway Integration: Ready for Razorpay / Stripe checkout!'); LemmaAdsEngine.closeProModal();">
+                <button class="btn btn-primary pro-upgrade-btn" onclick="LemmaAdsEngine.closeProModal(); if (window.LemmaPaymentApp) { LemmaPaymentApp.openCheckout('pro_monthly'); } else { window.location.href='/dashboard.html'; }">
                     Upgrade to Lemma Pro Now
                 </button>
                 <p class="pro-modal-footer">Cancel anytime. 7-day academic money-back guarantee.</p>

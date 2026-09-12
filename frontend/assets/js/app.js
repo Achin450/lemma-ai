@@ -1074,6 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
             'citations-workspace': 'nav-citations',
             'novelty-view': 'nav-novelty',
             'funding-view': 'nav-funding',
+            'billing-view': 'nav-billing',
         };
         const activeNavId = navMap[viewId];
         if (activeNavId) {
@@ -1122,6 +1123,11 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (tabId === "nav-funding") {
                 showView("funding-view");
                 if (window.loadFundingDirectory) window.loadFundingDirectory();
+            } else if (tabId === "nav-billing" || tabId === "nav-settings") {
+                showView("billing-view");
+                if (window.LemmaPaymentApp) {
+                    window.LemmaPaymentApp.loadBillingData();
+                }
             } else if (tabId === "nav-plagiarism") {
                 showView("dashboard-workspace");
             } else if (tabId === "nav-aichat") {
@@ -2056,15 +2062,39 @@ async function initUserSession() {
         if (dropNameEl) dropNameEl.textContent = fullName;
         if (dropEmailEl) dropEmailEl.textContent = email;
         if (dropRoleEl) {
-            dropRoleEl.textContent = role;
-            if (isAdmin) {
-                dropRoleEl.style.background = "rgba(16, 185, 129, 0.2)";
-                dropRoleEl.style.color = "#10b981";
-                dropRoleEl.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+            if (user.is_pro || (user.subscription_tier && user.subscription_tier !== "free")) {
+                const tierName = (user.subscription_tier || "pro").replace(/_/g, " ").toUpperCase();
+                dropRoleEl.innerHTML = `<i class="fa-solid fa-crown" style="color: #fbbf24; margin-right: 4px;"></i> ${tierName}`;
+                dropRoleEl.style.background = "linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(236, 72, 153, 0.25))";
+                dropRoleEl.style.color = "#ffffff";
+                dropRoleEl.style.border = "1px solid rgba(168, 85, 247, 0.5)";
             } else {
-                dropRoleEl.style.background = "";
-                dropRoleEl.style.color = "";
-                dropRoleEl.style.border = "";
+                dropRoleEl.textContent = role;
+                if (isAdmin) {
+                    dropRoleEl.style.background = "rgba(16, 185, 129, 0.2)";
+                    dropRoleEl.style.color = "#10b981";
+                    dropRoleEl.style.border = "1px solid rgba(16, 185, 129, 0.4)";
+                } else {
+                    dropRoleEl.style.background = "";
+                    dropRoleEl.style.color = "";
+                    dropRoleEl.style.border = "";
+                }
+            }
+        }
+
+        // Update sidebar billing badge
+        const sideBadge = document.getElementById("sidebar-plan-badge");
+        if (sideBadge) {
+            if (user.is_pro || (user.subscription_tier && user.subscription_tier !== "free")) {
+                sideBadge.textContent = "PRO";
+                sideBadge.style.background = "linear-gradient(135deg, #6366f1, #a855f7)";
+                sideBadge.style.color = "#ffffff";
+                sideBadge.style.border = "none";
+            } else {
+                sideBadge.textContent = "FREE";
+                sideBadge.style.background = "rgba(99, 102, 241, 0.2)";
+                sideBadge.style.color = "var(--accent-purple)";
+                sideBadge.style.border = "1px solid rgba(99, 102, 241, 0.4)";
             }
         }
         if (welcomeTitle) {

@@ -209,6 +209,17 @@
 
                 <div class="nav-section-title">System</div>
                 <ul>
+                    <li class="nav-item" id="nav-billing">
+                        <a href="#">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-purple);">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            <span>Account &amp; Billing</span>
+                            <span class="badge" id="sidebar-plan-badge" style="margin-left: auto; font-size: 0.65rem; background: rgba(99, 102, 241, 0.2); color: var(--accent-purple); border: 1px solid rgba(99, 102, 241, 0.4); border-radius: 6px; padding: 1px 5px; font-weight: 700;">FREE</span>
+                        </a>
+                    </li>
                     <li class="nav-item" id="nav-settings">
                         <a href="#">
                             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
@@ -345,6 +356,9 @@
                                 </button>
                                 <button class="dropdown-item" onclick="showView('mypapers-view'); toggleProfileDropdown(false);">
                                     <i class="fa-solid fa-folder-open"></i> My Research Library
+                                </button>
+                                <button class="dropdown-item" id="profile-billing-link" onclick="LemmaPaymentApp.showBillingStudio(); toggleProfileDropdown(false);">
+                                    <i class="fa-solid fa-credit-card" style="color: var(--accent-purple);"></i> Account &amp; Billing
                                 </button>
                                 <button class="dropdown-item" id="profile-admin-console-link" style="display: none;" onclick="window.location.href='/admin.html';">
                                     <i class="fa-solid fa-shield-halved" style="color: var(--accent-purple);"></i> Admin Console
@@ -1034,6 +1048,202 @@
                         </button>
                     </div>
                 </section>
+            </div>
+
+            <!-- ==================== 6. PERSONAL ACCOUNT, SUBSCRIPTIONS & BILLING ==================== -->
+            <div class="workspace-view hidden" id="billing-view" style="padding: 28px; overflow-y: auto;">
+                <div class="research-view-header">
+                    <div>
+                        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 0.75rem;">
+                            <i class="fa-solid fa-credit-card" style="color: var(--accent-purple); font-size: 0.85rem;"></i>
+                            <span style="font-size: 0.82rem; font-weight: 600; color: var(--accent-purple);">Personal Account &amp; Billing Studio</span>
+                        </div>
+                        <h2 class="research-view-title" style="font-size: 1.8rem; font-weight: 800;">Subscription &amp; Compute Quotas</h2>
+                        <p class="research-view-subtitle">Manage your personal academic plan, monitor AI generation &amp; plagiarism check quotas, and view tax invoices.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-outline" id="btn-refresh-billing" onclick="LemmaPaymentApp.loadBillingData()" title="Refresh Status">
+                            <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                        </button>
+                        <button class="btn btn-primary" id="btn-quick-upgrade-top" onclick="LemmaPaymentApp.openCheckout('pro_monthly')">
+                            <i class="fa-solid fa-bolt"></i> Upgrade to Pro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Current Active Plan & Quotas Overview Banner -->
+                <div class="billing-overview-grid">
+                    <!-- Left: Current Plan Card -->
+                    <div class="billing-card active-plan-card">
+                        <div class="plan-card-top">
+                            <span class="plan-status-pill" id="current-plan-status-pill">Active Plan</span>
+                            <span class="plan-badge-tag" id="current-plan-badge">FREE EXPLORER</span>
+                        </div>
+                        <h3 class="current-plan-title" id="current-plan-name">Free Explorer Plan</h3>
+                        <p class="current-plan-desc" id="current-plan-desc">Essential academic writing and basic integrity verification.</p>
+                        
+                        <div class="plan-cycle-info">
+                            <div class="cycle-item">
+                                <span class="cycle-label">Billing Cycle:</span>
+                                <span class="cycle-value" id="current-billing-cycle">Free Forever</span>
+                            </div>
+                            <div class="cycle-item">
+                                <span class="cycle-label">Renews / Resets On:</span>
+                                <span class="cycle-value" id="current-period-end">—</span>
+                            </div>
+                            <div class="cycle-item">
+                                <span class="cycle-label">Status:</span>
+                                <span class="cycle-value" id="current-renewal-status">Free Standard</span>
+                            </div>
+                        </div>
+
+                        <div class="plan-action-buttons">
+                            <button class="btn btn-primary" id="btn-plan-primary-action" onclick="LemmaPaymentApp.scrollToPlans()">
+                                <i class="fa-solid fa-arrow-up-right-dots"></i> Upgrade Plan
+                            </button>
+                            <button class="btn btn-ghost" id="btn-cancel-sub-action" onclick="LemmaPaymentApp.toggleCancelAutoRenew()" style="display: none;">
+                                Cancel Auto-Renew
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right: Resource Usage & Quota Meters -->
+                    <div class="billing-card quotas-card">
+                        <div class="quotas-card-header">
+                            <div>
+                                <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-chart-pie" style="color: var(--accent-purple);"></i> Monthly Resource Quotas
+                                </h4>
+                                <p style="margin: 3px 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">Allowances reset automatically on your next billing date.</p>
+                            </div>
+                            <span class="pro-unlimited-pill" id="pro-unlimited-tag" style="display: none;">
+                                <i class="fa-solid fa-infinity"></i> Pro Unlocked
+                            </span>
+                        </div>
+
+                        <div class="quota-meters-list">
+                            <!-- Quota 1: Plagiarism & Similarity Scans -->
+                            <div class="quota-meter-item">
+                                <div class="meter-header">
+                                    <span class="meter-name"><i class="fa-solid fa-shield-halved"></i> Similarity &amp; Plagiarism Scans</span>
+                                    <span class="meter-count" id="quota-scans-text">0 / 5 checks</span>
+                                </div>
+                                <div class="meter-progress-track">
+                                    <div class="meter-progress-bar" id="quota-scans-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quota 2: Paper Generations -->
+                            <div class="quota-meter-item">
+                                <div class="meter-header">
+                                    <span class="meter-name"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Paper Generations</span>
+                                    <span class="meter-count" id="quota-gens-text">0 / 3 papers</span>
+                                </div>
+                                <div class="meter-progress-track">
+                                    <div class="meter-progress-bar" id="quota-gens-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quota 3: IEEE Restructures -->
+                            <div class="quota-meter-item">
+                                <div class="meter-header">
+                                    <span class="meter-name"><i class="fa-solid fa-file-invoice"></i> IEEE Paper Restructures</span>
+                                    <span class="meter-count" id="quota-restruct-text">0 / 3 docs</span>
+                                </div>
+                                <div class="meter-progress-track">
+                                    <div class="meter-progress-bar" id="quota-restruct-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quota 4: Novelty Advisor Checks -->
+                            <div class="quota-meter-item">
+                                <div class="meter-header">
+                                    <span class="meter-name"><i class="fa-solid fa-lightbulb"></i> Novelty Claim Checks</span>
+                                    <span class="meter-count" id="quota-novelty-text">0 / 5 checks</span>
+                                </div>
+                                <div class="meter-progress-track">
+                                    <div class="meter-progress-bar" id="quota-novelty-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Quota 5: Academic Humanizer Words -->
+                            <div class="quota-meter-item">
+                                <div class="meter-header">
+                                    <span class="meter-name"><i class="fa-solid fa-feather-pointed"></i> AI Humanizer Words</span>
+                                    <span class="meter-count" id="quota-words-text">0 / 1,500 words</span>
+                                </div>
+                                <div class="meter-progress-track">
+                                    <div class="meter-progress-bar" id="quota-words-bar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Plans Tier Comparison Section -->
+                <div class="pricing-tier-section" id="pricing-plans-anchor" style="margin-top: 2.5rem;">
+                    <div class="pricing-section-header">
+                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">Available Subscription Tiers</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0 auto 1.5rem auto; max-width: 600px;">
+                            Choose the capacity that fits your research workload. Switch or cancel at any time.
+                        </p>
+                        
+                        <!-- Billing Cycle Switcher & Currency Toggle -->
+                        <div class="billing-control-bar">
+                            <div class="billing-cycle-toggle-group">
+                                <button type="button" class="cycle-toggle-btn active" id="btn-cycle-monthly" onclick="LemmaPaymentApp.setCycle('monthly')">Monthly Billing</button>
+                                <button type="button" class="cycle-toggle-btn" id="btn-cycle-annual" onclick="LemmaPaymentApp.setCycle('annual')">
+                                    Annual Billing <span class="badge-save">SAVE 20%</span>
+                                </button>
+                            </div>
+                            <div class="currency-toggle-group">
+                                <button type="button" class="curr-toggle-btn active" id="btn-curr-inr" onclick="LemmaPaymentApp.setCurrency('INR')">₹ INR</button>
+                                <button type="button" class="curr-toggle-btn" id="btn-curr-usd" onclick="LemmaPaymentApp.setCurrency('USD')">$ USD</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Plan Cards Grid -->
+                    <div class="pricing-cards-grid" id="pricing-cards-container">
+                        <!-- Populated dynamically via LemmaPaymentApp.renderPlans() -->
+                    </div>
+                </div>
+
+                <!-- Billing History & Invoices Section -->
+                <div class="invoices-section" style="margin-top: 2.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">Payment History &amp; Academic Receipts</h3>
+                            <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 3px 0 0 0;">Download PDF/HTML receipts for grant reimbursements and institutional accounting.</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="LemmaPaymentApp.loadInvoices()">
+                            <i class="fa-solid fa-rotate"></i> Refresh Receipts
+                        </button>
+                    </div>
+
+                    <div class="invoices-table-card">
+                        <table class="invoices-table">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Date</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Payment Method</th>
+                                    <th>Status</th>
+                                    <th style="text-align: right;">Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-table-body">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                                        Loading billing history...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
         <!-- ===== RESEARCH VIEWS ===== -->
@@ -2016,6 +2226,141 @@ Minimum 50 characters required. For best results, paste the full document text."
         </div>
     </div>
 
+    <!-- ==================== CHECKOUT & PAYMENT MODAL ==================== -->
+    <div class="checkout-modal-backdrop" id="lemma-checkout-modal" style="display: none;">
+        <div class="checkout-modal-card">
+            <button class="checkout-modal-close" onclick="LemmaPaymentApp.closeCheckout()">&times;</button>
+            <div class="checkout-modal-header">
+                <div class="checkout-badge-pill" id="checkout-modal-badge">LEMMA PRO UPGRADE</div>
+                <h2 id="checkout-plan-title">Upgrade to Lemma Pro</h2>
+                <p id="checkout-plan-subtitle">Instant activation with dedicated GPU queue and ad-free experience.</p>
+            </div>
+
+            <div class="checkout-order-summary">
+                <div class="summary-line">
+                    <span id="checkout-item-title">Lemma Pro (Monthly Plan)</span>
+                    <strong id="checkout-item-price">₹199</strong>
+                </div>
+                <div class="summary-line discount-line" id="checkout-discount-row" style="display: none;">
+                    <span>Annual Commitment Discount</span>
+                    <strong id="checkout-discount-val">-20%</strong>
+                </div>
+                <div class="summary-divider"></div>
+                <div class="summary-line total-line">
+                    <span>Total Due Today:</span>
+                    <strong class="total-price" id="checkout-total-price">₹199</strong>
+                </div>
+            </div>
+
+            <!-- Payment Gateway Selector Tabs -->
+            <div class="checkout-gateways-tabs">
+                <button type="button" class="gateway-tab-btn active" id="tab-gw-razorpay" onclick="LemmaPaymentApp.selectGateway('razorpay')">
+                    <i class="fa-solid fa-qrcode"></i> UPI / Razorpay (India &amp; Global)
+                </button>
+                <button type="button" class="gateway-tab-btn" id="tab-gw-stripe" onclick="LemmaPaymentApp.selectGateway('stripe')">
+                    <i class="fa-solid fa-credit-card"></i> Stripe (Cards &amp; Apple Pay)
+                </button>
+            </div>
+
+            <!-- Razorpay UPI / Cards Payment View -->
+            <div class="gateway-pane" id="pane-razorpay">
+                <div class="payment-method-selector">
+                    <label class="pay-option-radio active" onclick="LemmaPaymentApp.setPaymentMethod('upi', this)">
+                        <input type="radio" name="pay_method" value="upi" checked>
+                        <div class="radio-info">
+                            <strong>Instant UPI &amp; QR Code</strong>
+                            <span>GPay, PhonePe, Paytm, BHIM, Cred</span>
+                        </div>
+                        <i class="fa-solid fa-bolt" style="color: #10b981; margin-left: auto;"></i>
+                    </label>
+
+                    <!-- Rich UPI Detail Form (Visible when UPI selected) -->
+                    <div class="upi-interactive-box" id="upi-interactive-box" style="margin-top: 0.5rem; margin-bottom: 0.5rem; padding: 0.85rem; background: rgba(16, 185, 129, 0.05); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 10px;">
+                        <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Select Preferred UPI App or Enter VPA:</label>
+                        
+                        <!-- Quick UPI App Chips -->
+                        <div class="upi-app-chips" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;">
+                            <button type="button" class="btn btn-sm btn-outline upi-chip active" onclick="LemmaPaymentApp.selectUpiApp('gpay', this)" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;"><i class="fa-brands fa-google-pay" style="color: #4285F4;"></i> Google Pay</button>
+                            <button type="button" class="btn btn-sm btn-outline upi-chip" onclick="LemmaPaymentApp.selectUpiApp('phonepe', this)" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;"><i class="fa-solid fa-mobile-screen" style="color: #5f259f;"></i> PhonePe</button>
+                            <button type="button" class="btn btn-sm btn-outline upi-chip" onclick="LemmaPaymentApp.selectUpiApp('paytm', this)" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;"><i class="fa-solid fa-wallet" style="color: #00b9f5;"></i> Paytm</button>
+                            <button type="button" class="btn btn-sm btn-outline upi-chip" onclick="LemmaPaymentApp.selectUpiApp('bhim', this)" style="font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;"><i class="fa-solid fa-building-columns" style="color: #00796b;"></i> BHIM / Cred</button>
+                        </div>
+
+                        <div class="upi-vpa-input-group" style="display: flex; gap: 6px;">
+                            <input type="text" id="upi-vpa-input" class="research-input" placeholder="e.g. researcher@okhdfcbank" style="padding: 0.5rem 0.75rem; font-size: 0.85rem; flex: 1;">
+                            <button type="button" class="btn btn-sm btn-outline" id="btn-toggle-upi-qr" onclick="LemmaPaymentApp.toggleUpiQr()" style="white-space: nowrap; font-size: 0.78rem;" title="Show Dynamic QR Code">
+                                <i class="fa-solid fa-qrcode"></i> Show QR
+                            </button>
+                        </div>
+
+                        <!-- Dynamic QR Code Container (Collapsible) -->
+                        <div id="upi-qr-display-box" style="display: none; margin-top: 10px; text-align: center; background: #ffffff; padding: 12px; border-radius: 8px;">
+                            <img id="upi-qr-code-img" src="" alt="Scan to pay via any UPI App" style="width: 150px; height: 150px; display: block; margin: 0 auto; border-radius: 4px;">
+                            <p style="color: #1f2937; font-size: 0.72rem; margin: 6px 0 0 0; font-weight: 600;">Scan with GPay, PhonePe, Paytm or BHIM</p>
+                        </div>
+                    </div>
+
+                    <label class="pay-option-radio" onclick="LemmaPaymentApp.setPaymentMethod('card', this)">
+                        <input type="radio" name="pay_method" value="card">
+                        <div class="radio-info">
+                            <strong>Credit / Debit Card</strong>
+                            <span>Visa, MasterCard, RuPay, Maestro</span>
+                        </div>
+                        <i class="fa-solid fa-credit-card" style="color: var(--accent-purple); margin-left: auto;"></i>
+                    </label>
+
+                    <label class="pay-option-radio" onclick="LemmaPaymentApp.setPaymentMethod('netbanking', this)">
+                        <input type="radio" name="pay_method" value="netbanking">
+                        <div class="radio-info">
+                            <strong>Net Banking</strong>
+                            <span>HDFC, ICICI, SBI, Axis &amp; 50+ Banks</span>
+                        </div>
+                        <i class="fa-solid fa-building-columns" style="color: var(--accent-blue); margin-left: auto;"></i>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Stripe Payment View -->
+            <div class="gateway-pane hidden" id="pane-stripe">
+                <div class="stripe-card-box">
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Cardholder Name</label>
+                        <input type="text" id="stripe-cardholder-name" class="research-input" placeholder="e.g. Dr. Jane Doe" style="padding: 0.6rem 0.85rem; font-size: 0.88rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0;">Card Number</label>
+                            <span id="card-brand-badge" style="font-size: 0.75rem; font-weight: 700; color: var(--accent-purple); display: flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-credit-card"></i> Card
+                            </span>
+                        </div>
+                        <input type="text" id="stripe-card-number" class="research-input" placeholder="4242 •••• •••• 4242" maxlength="19" style="padding: 0.6rem 0.85rem; font-size: 0.88rem; font-family: monospace; letter-spacing: 1px;">
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Expiry Date</label>
+                            <input type="text" id="stripe-card-expiry" class="research-input" placeholder="MM/YY" maxlength="5" style="padding: 0.6rem 0.85rem; font-size: 0.88rem; font-family: monospace;">
+                        </div>
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">CVC / CVV</label>
+                            <input type="password" id="stripe-card-cvc" class="research-input" placeholder="123" maxlength="4" style="padding: 0.6rem 0.85rem; font-size: 0.88rem; font-family: monospace;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pay Now Button -->
+            <button class="btn btn-primary checkout-pay-btn" id="btn-execute-payment" onclick="LemmaPaymentApp.processPayment()">
+                <i class="fa-solid fa-lock"></i> <span id="checkout-pay-btn-label">Pay ₹199 &amp; Activate Pro</span>
+            </button>
+
+            <div class="checkout-footer-notes">
+                <p><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> 256-bit SSL encrypted. 7-day academic money-back guarantee.</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Direct payment gateway integration with simulated instant fallback.</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Error/Notification Toast -->
     <div class="toast-container" id="toast-container"></div>
 
@@ -2026,6 +2371,7 @@ Minimum 50 characters required. For best results, paste the full document text."
     <script src="assets/js/research.js?v=52"></script>
     <script src="assets/js/novelty.js?v=2"></script>
     <script src="assets/js/funding.js?v=2"></script>
+    <script src="assets/js/billing.js?v=1"></script>
     <script src="assets/js/mobile-ui.js?v=36"></script>
     <script src="assets/js/ads-config.js?v=2"></script>
 </body>

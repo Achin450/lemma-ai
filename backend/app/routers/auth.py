@@ -56,6 +56,8 @@ def _get_user_by_id(user_id: str) -> Optional[dict]:
 
 
 def _build_profile(row: dict) -> UserProfile:
+    tier = row.get("subscription_tier") or "free"
+    is_pro = bool(row.get("is_pro") or tier in ("pro_monthly", "pro_annual", "scholar_ultra"))
     return UserProfile(
         id=str(row["id"]),
         email=row["email"],
@@ -64,6 +66,8 @@ def _build_profile(row: dict) -> UserProfile:
         institution_id=str(row["institution_id"]) if row.get("institution_id") else None,
         institution_name=row.get("institution_name"),
         email_verified=row.get("email_verified", False),
+        subscription_tier=tier,
+        is_pro=is_pro,
         created_at=str(row.get("created_at", "")),
     )
 

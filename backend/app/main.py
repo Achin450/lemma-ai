@@ -42,6 +42,7 @@ from app.routers.research import router as research_router
 from app.routers.plagiarism import router as plagiarism_check_router
 from app.routers.novelty import router as novelty_router
 from app.routers.funding import router as funding_router
+from app.routers.payment import router as payment_router
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -85,6 +86,7 @@ app.include_router(research_router)
 app.include_router(plagiarism_check_router)
 app.include_router(novelty_router)
 app.include_router(funding_router)
+app.include_router(payment_router)
 
 # ---------------------------------------------------------------------------
 # Startup event — ensure new DB tables exist

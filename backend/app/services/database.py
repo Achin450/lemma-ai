@@ -217,7 +217,78 @@ class DatabaseService:
                         EXCEPTION
                             WHEN others THEN NULL;
                         END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_tier VARCHAR(32) DEFAULT 'free';
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS is_pro BOOLEAN DEFAULT FALSE;
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
+                        BEGIN
+                            ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(32) DEFAULT 'active';
+                        EXCEPTION
+                            WHEN others THEN NULL;
+                        END;
                     END $$;
+                """)
+
+                # Create subscriptions table for Personal Accounts
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS subscriptions (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                        plan_id VARCHAR(64) NOT NULL DEFAULT 'free',
+                        status VARCHAR(32) NOT NULL DEFAULT 'active',
+                        billing_cycle VARCHAR(32) NOT NULL DEFAULT 'free',
+                        current_period_start TIMESTAMPTZ DEFAULT NOW(),
+                        current_period_end TIMESTAMPTZ DEFAULT NOW() + INTERVAL '30 days',
+                        cancel_at_period_end BOOLEAN DEFAULT FALSE,
+                        payment_gateway VARCHAR(32) DEFAULT 'simulated',
+                        gateway_subscription_id TEXT,
+                        gateway_customer_id TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # Create payment_transactions table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS payment_transactions (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                        subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
+                        amount FLOAT NOT NULL,
+                        currency VARCHAR(8) NOT NULL DEFAULT 'INR',
+                        status VARCHAR(32) NOT NULL DEFAULT 'succeeded',
+                        payment_method VARCHAR(32) DEFAULT 'card',
+                        gateway VARCHAR(32) DEFAULT 'simulated',
+                        gateway_order_id TEXT,
+                        gateway_payment_id TEXT,
+                        invoice_number VARCHAR(64) UNIQUE NOT NULL,
+                        receipt_url TEXT,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """)
+
+                # Create user_quotas table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS user_quotas (
+                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                        period_start TIMESTAMPTZ DEFAULT NOW(),
+                        period_end TIMESTAMPTZ DEFAULT NOW() + INTERVAL '30 days',
+                        plagiarism_scans_used INT DEFAULT 0,
+                        paper_generations_used INT DEFAULT 0,
+                        restructures_used INT DEFAULT 0,
+                        novelty_checks_used INT DEFAULT 0,
+                        humanizer_words_used INT DEFAULT 0,
+                        total_credits_remaining INT DEFAULT 100,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
                 """)
             conn.commit()
 
