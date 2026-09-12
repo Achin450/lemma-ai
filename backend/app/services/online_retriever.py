@@ -399,14 +399,22 @@ class OnlineRetrieverService:
         seen_titles = set()
         
         tasks = []
-        for query in queries[:8]:
-            tasks.append(cls.fetch_openalex_candidates(query, limit=10))
-            tasks.append(cls.fetch_crossref_candidates(query, limit=10))
-            tasks.append(cls.fetch_arxiv_candidates(query, limit=10))
-            tasks.append(cls.fetch_wikipedia_candidates(query, limit=4))
-            tasks.append(cls.fetch_semantic_scholar_candidates(query, limit=8))
+        for query in queries[:4]:
+            tasks.append(cls.fetch_openalex_candidates(query, limit=5))
+            tasks.append(cls.fetch_crossref_candidates(query, limit=5))
+            tasks.append(cls.fetch_arxiv_candidates(query, limit=5))
+            tasks.append(cls.fetch_wikipedia_candidates(query, limit=3))
+            tasks.append(cls.fetch_semantic_scholar_candidates(query, limit=5))
             
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        try:
+            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.warning("Online candidate retrieval timed out after 10s. Continuing with cached/mock references.")
+            return []
+        except Exception as e:
+            logger.warning(f"Online candidate retrieval failed: {e}")
+            return []
+
         for cand_list in results:
             if isinstance(cand_list, list):
                 for cand in cand_list:
@@ -435,7 +443,7 @@ class OnlineRetrieverService:
         for cand in candidates:
             doc_id = f"job_{job_id}_{cand['doc_id']}"
             
-            # Write document metadata to PostgreSQL
+            # Write document metadata to PostgreSQL (best-effort)
             try:
                 DatabaseService.insert_reference_document(
                     doc_id=doc_id,
@@ -444,15 +452,17 @@ class OnlineRetrieverService:
                     source=cand["source"]
                 )
             except Exception as e:
-                logger.error(f"Failed to write ephemeral document {doc_id} metadata: {e}")
-                continue
+                logger.debug(f"Ephemeral document {doc_id} DB write skipped ({e}).")
 
             sentences = SentenceSegmenterService.segment(cand["text"])
             for idx, s in enumerate(sentences):
                 flat_sentences.append({
                     "document_id": doc_id,
                     "sentence_index": idx,
-                    "text": s["text"]
+                    "text": s["text"],
+                    "title": cand.get("title", "Unknown"),
+                    "author": cand.get("author", "N/A"),
+                    "source": cand.get("source", "N/A")
                 })
 
         if not flat_sentences:
@@ -467,16 +477,19 @@ class OnlineRetrieverService:
             for s, emb in zip(flat_sentences, embeddings):
                 s["embedding"] = emb.tolist()
         except Exception as e:
-            logger.error(f"Failed to generate embeddings for ephemeral sentences: {e}")
-            return
+            logger.debug(f"Failed to generate embeddings for ephemeral sentences: {e}")
 
-        # 3. Dual-Write to PostgreSQL and Elasticsearch
+        # 3. Dual-Write to PostgreSQL and Elasticsearch / In-Memory BM25
         try:
             DatabaseService.insert_reference_sentences(flat_sentences)
+        except Exception as e:
+            logger.debug(f"PostgreSQL sentence insert skipped ({e}).")
+            
+        try:
             index_sentence_bulk(flat_sentences)
             logger.info(f"Successfully cached {len(flat_sentences)} sentences locally for job: {job_id}")
         except Exception as e:
-            logger.error(f"Dual-Write caching failed for job {job_id}: {e}")
+            logger.error(f"Candidate indexing failed for job {job_id}: {e}")
 
     @classmethod
     def prune_cache(cls, job_id: str) -> None:

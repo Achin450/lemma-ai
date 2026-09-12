@@ -35,10 +35,17 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
     Background Celery task to parse a document, fetch web references, and perform plagiarism analysis.
     """
     logger.info(f"Starting analysis task for file: {original_filename} (temp path: {file_path})")
-    job_id = self.request.id or "dummy_job"
+    job_id = getattr(self.request, "id", None) or "dummy_job"
     
+    def safe_progress(step: str, pct: int):
+        if getattr(self.request, "id", None):
+            try:
+                self.update_state(state="PROGRESS", meta={"step": step, "pct": pct})
+            except Exception:
+                pass
+
     try:
-        self.update_state(state="PROGRESS", meta={"step": "Reading uploaded document...", "pct": 10})
+        safe_progress("Reading uploaded document...", 10)
         
         # Read the file from disk
         if not os.path.exists(file_path):
@@ -47,11 +54,11 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
         with open(file_path, "rb") as f:
             content = f.read()
         
-        self.update_state(state="PROGRESS", meta={"step": "Extracting text and structure...", "pct": 20})
+        safe_progress("Extracting text and structure...", 20)
         # Run extractor
         text = DocumentExtractorService.extract_text(original_filename, content)
         
-        self.update_state(state="PROGRESS", meta={"step": "Segmenting sentences & coordinate mapping...", "pct": 30})
+        safe_progress("Segmenting sentences & coordinate mapping...", 30)
         # Segment sentences
         sentences_data = SentenceSegmenterService.segment(text)
         
@@ -67,7 +74,7 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
         
         # 1. Ephemeral online candidate retrieval & caching
         if settings.ENABLE_ONLINE_RETRIEVAL:
-            self.update_state(state="PROGRESS", meta={"step": "Retrieving reference sources...", "pct": 45})
+            safe_progress("Retrieving reference sources...", 45)
             try:
                 from app.services.online_retriever import OnlineRetrieverService
                 logger.info(f"Triggering online retrieval query generation for job: {job_id}")
@@ -78,20 +85,20 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
                 
                 _run_async(OnlineRetrieverService.seed_ephemeral_candidates(job_id, candidates))
             except Exception as e:
-                logger.error(f"Failed to fetch/cache online candidate papers: {e}")
+                logger.warning(f"Failed to fetch/cache online candidate papers: {e}")
 
         # 2. Run dual-tier plagiarism matcher
-        self.update_state(state="PROGRESS", meta={"step": "Running lexical & semantic matching...", "pct": 65})
+        safe_progress("Running lexical & semantic matching...", 65)
         matcher = DualTierMatcher()
         analysis_report = matcher.analyze_document(sentences_data, job_id=job_id)
         
         # 3. Run AI Detection
-        self.update_state(state="PROGRESS", meta={"step": "Evaluating AI-generated content patterns...", "pct": 80})
+        safe_progress("Evaluating AI-generated content patterns...", 80)
         logger.info(f"Running AI detection for job: {job_id}")
         ai_detection_report = AIDetectorService.analyze_document(text, sentences)
         
         # 4. Run Citation Analysis
-        self.update_state(state="PROGRESS", meta={"step": "Analyzing citation validity & final score...", "pct": 92})
+        safe_progress("Analyzing citation validity & final score...", 92)
         logger.info(f"Running citation analysis for job: {job_id}")
         citation_analysis_report = CitationAnalyzerService.analyze(
             text, sentences, analysis_report.get("matches", [])
@@ -129,4 +136,4 @@ def analyze_document_task(self, file_path: str, original_filename: str) -> dict:
                 from app.services.online_retriever import OnlineRetrieverService
                 OnlineRetrieverService.prune_cache(job_id)
             except Exception as e:
-                logger.error(f"Failed to prune cache for job {job_id}: {e}")
+                logger.debug(f"Cache pruning skipped for job {job_id}: {e}")
