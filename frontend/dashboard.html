@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- KaTeX for Scientific Equations -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=52">
+    <link rel="stylesheet" href="assets/css/style.css?v=55">
     <link rel="stylesheet" href="assets/css/mobile.css?v=39">
 </head>
 
@@ -1193,19 +1193,23 @@
                 <!-- Plans Tier Comparison Section -->
                 <div class="pricing-tier-section" id="pricing-plans-anchor" style="margin-top: 2.5rem;">
                     <div class="pricing-section-header">
-                        <h3 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem;">Available Subscription Tiers</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0 auto 1.5rem auto; max-width: 600px;">
-                            Choose the capacity that fits your research workload. Switch or cancel at any time.
+                        <div class="pricing-badge-tag"><i class="fa-solid fa-sparkles"></i> Transparent Academic Pricing</div>
+                        <h3 class="pricing-section-title">Invest in Your Research Excellence</h3>
+                        <p class="pricing-section-desc">
+                            Select the ideal capacity for your research workload. Switch between monthly and annual plans or cancel anytime.
                         </p>
                         
                         <!-- Billing Cycle Switcher & Currency Toggle -->
                         <div class="billing-control-bar">
                             <div class="billing-cycle-toggle-group">
-                                <button type="button" class="cycle-toggle-btn active" id="btn-cycle-monthly" onclick="LemmaPaymentApp.setCycle('monthly')">Monthly Billing</button>
+                                <button type="button" class="cycle-toggle-btn active" id="btn-cycle-monthly" onclick="LemmaPaymentApp.setCycle('monthly')">
+                                    <i class="fa-regular fa-calendar"></i> Monthly Billing
+                                </button>
                                 <button type="button" class="cycle-toggle-btn" id="btn-cycle-annual" onclick="LemmaPaymentApp.setCycle('annual')">
-                                    Annual Billing <span class="badge-save">SAVE 20%</span>
+                                    <i class="fa-solid fa-bolt"></i> Annual Billing <span class="badge-save">SAVE 20%</span>
                                 </button>
                             </div>
+                            <div style="width: 1px; height: 22px; background: rgba(255, 255, 255, 0.12); margin: 0 4px;"></div>
                             <div class="currency-toggle-group">
                                 <button type="button" class="curr-toggle-btn active" id="btn-curr-inr" onclick="LemmaPaymentApp.setCurrency('INR')">₹ INR</button>
                                 <button type="button" class="curr-toggle-btn" id="btn-curr-usd" onclick="LemmaPaymentApp.setCurrency('USD')">$ USD</button>

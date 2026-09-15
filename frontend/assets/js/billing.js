@@ -307,11 +307,6 @@ const LemmaPaymentApp = {
         const container = document.getElementById("pricing-cards-container");
         if (!container) return;
 
-        if (!this.plans || this.plans.length === 0) {
-            container.innerHTML = `<div style="grid-column: span 3; text-align: center; color: var(--text-muted); padding: 2rem;">Loading plans...</div>`;
-            return;
-        }
-
         const isAnnual = this.selectedCycle === "annual";
         const isINR = this.selectedCurrency === "INR";
         const sym = isINR ? "₹" : "$";
@@ -319,78 +314,214 @@ const LemmaPaymentApp = {
         // Current user plan id
         const userPlanId = (this.subscription && this.subscription.plan_id) || "free";
 
-        const cardsHtml = this.plans.map(plan => {
-            // Free plan is always free
-            let priceDisplay = "Free";
-            let periodDisplay = "forever";
-            let actionBtnText = "Current Plan";
-            let actionBtnClass = "btn btn-outline plan-cta-btn disabled";
-            let isCurrent = userPlanId === plan.id;
-            let targetPlanKey = plan.id;
+        // Find plans or fallback
+        const findPlan = (id) => (this.plans || []).find(p => p.id === id) || null;
+        const freePlan = findPlan("free") || {
+            name: "Free Explorer",
+            headline: "Essential academic writing and basic integrity verification for students.",
+            features: [
+                "5 Plagiarism & similarity checks / month",
+                "3 IEEE Paper Restructurings / month",
+                "3 AI Paper Generations / month",
+                "Standard queue processing speed",
+                "Ad-supported research workspace",
+                "Basic text & Markdown exports"
+            ]
+        };
 
-            if (plan.id === "pro_monthly" || plan.id === "pro_annual") {
-                // Adapt based on cycle toggle
-                if (isAnnual) {
-                    targetPlanKey = "pro_annual";
-                    const p = isINR ? 1999 : 79.99;
-                    priceDisplay = `${sym}${p}`;
-                    periodDisplay = "/ year";
-                    isCurrent = userPlanId === "pro_annual";
-                } else {
-                    targetPlanKey = "pro_monthly";
-                    const p = isINR ? 199 : 9.99;
-                    priceDisplay = `${sym}${p}`;
-                    periodDisplay = "/ month";
-                    isCurrent = userPlanId === "pro_monthly";
-                }
-            } else if (plan.id === "scholar_ultra") {
-                const p = isINR ? plan.price_inr : plan.price_usd;
-                priceDisplay = `${sym}${p}`;
-                periodDisplay = "/ year";
-            }
+        const proPlan = findPlan(isAnnual ? "pro_annual" : "pro_monthly") || {
+            name: "Lemma Pro",
+            headline: "Dedicated GPU compute and unrestricted research tools for active scholars.",
+            features: isAnnual ? [
+                "🚫 100% Ad-Free Research Studio",
+                "⚡ Top Priority GPU & Multi-Agent Queue",
+                "📄 350 IEEE & Springer Restructures / month",
+                "🔍 500 Plagiarism & Similarity Scans / month",
+                "💾 Unlimited Camera-Ready PDF, DOCX & BibTeX Exports",
+                "🛡️ Cryptographically Signed Integrity Certificates",
+                "🌟 Early Access to Next-Gen Deep Reasoning Models",
+                "✉️ Priority 1-on-1 Researcher Support"
+            ] : [
+                "🚫 100% Ad-Free Research Studio",
+                "⚡ 3x Faster Priority GPU & LLM Queue",
+                "📄 100 Monthly IEEE & Springer Paper Restructures",
+                "🔍 150 Dual-Tier Similarity & Plagiarism Scans",
+                "💾 Unlimited Camera-Ready PDF, DOCX & BibTeX Exports",
+                "💡 Novelty Claim Analysis & Rebuttal Advisor",
+                "✉️ Priority Researcher Email Support"
+            ]
+        };
 
-            if (!isCurrent) {
-                if (plan.id === "free") {
-                    actionBtnText = "Downgrade";
-                    actionBtnClass = "btn btn-outline plan-cta-btn";
-                } else {
-                    actionBtnText = `Upgrade to ${plan.name.split(" ")[1] || "Pro"}`;
-                    actionBtnClass = "btn btn-primary plan-cta-btn";
-                }
-            }
+        const ultraPlan = findPlan("scholar_ultra") || {
+            name: "Scholar Ultra",
+            headline: "High-throughput synthesis, unlimited checks, and API keys for faculty and labs.",
+            features: [
+                "♾️ Unlimited Scans, Restructures & Generations",
+                "🔑 Developer REST API Key Included (10k req/mo)",
+                "⚡ Dedicated High-Speed Compute Instance",
+                "🚫 100% Zero-Telemetry Enterprise Privacy",
+                "📚 Automated Grant & Publication Venue Matching",
+                "🎓 Multi-author Lab Collaboration (Up to 5 seats)"
+            ]
+        };
 
-            const featuresList = (plan.features || []).map(f => `
-                <li><i class="fa-solid fa-circle-check" style="color: ${plan.id === 'free' ? 'var(--text-muted)' : '#10b981'};"></i> ${f}</li>
-            `).join("");
+        // Pricing calculations
+        const freePriceDisplay = "0";
+        const proPriceNum = isAnnual ? (isINR ? "1,999" : "79.99") : (isINR ? "199" : "9.99");
+        const ultraPriceNum = isINR ? "4,999" : "199";
 
-            const badgeHtml = plan.badge ? `<div class="pricing-badge-ribbon">${plan.badge}</div>` : "";
+        const targetProKey = isAnnual ? "pro_annual" : "pro_monthly";
 
+        // Current status flags
+        const isFreeCurrent = userPlanId === "free";
+        const isProCurrent = userPlanId === targetProKey;
+        const isUltraCurrent = userPlanId === "scholar_ultra";
+
+        // Helper to format feature item
+        const renderFeatureLi = (text, tierClass) => {
+            const formatted = text.replace(/(\d+%?|\bUnlimited\b|\bTop Priority\b|\b3x Faster\b|\bREST API\b)/g, '<strong>$1</strong>');
             return `
-                <div class="pricing-card ${isCurrent ? 'current-active' : ''} ${plan.id.includes('pro') ? 'popular-card' : ''}">
-                    ${badgeHtml}
-                    <div class="pricing-card-header">
-                        <h4 class="plan-title">${plan.name}</h4>
-                        <p class="plan-headline">${plan.headline}</p>
-                        <div class="price-wrap">
-                            <span class="price-num">${priceDisplay}</span>
-                            <span class="price-cycle">${periodDisplay}</span>
-                        </div>
-                    </div>
+                <li>
+                    <span class="feature-check-icon ${tierClass}"><i class="fa-solid fa-check"></i></span>
+                    <span>${formatted}</span>
+                </li>
+            `;
+        };
 
-                    <div class="pricing-card-body">
-                        <ul class="plan-features-ul">
-                            ${featuresList}
-                        </ul>
+        const cardsHtml = `
+            <!-- Card 1: Free Explorer -->
+            <div class="pricing-card ${isFreeCurrent ? 'current-active' : ''}">
+                <div class="pricing-card-header">
+                    <div class="plan-tier-icon-wrap free-icon">
+                        <i class="fa-solid fa-seedling"></i>
                     </div>
-
-                    <div class="pricing-card-footer">
-                        <button class="${actionBtnClass}" ${isCurrent ? 'disabled' : ''} onclick="LemmaPaymentApp.handlePlanSelect('${targetPlanKey}')">
-                            ${actionBtnText}
-                        </button>
+                    <h4 class="plan-title">${freePlan.name}</h4>
+                    <p class="plan-headline">${freePlan.headline}</p>
+                    <div class="price-wrap">
+                        <span class="price-currency">${sym}</span>
+                        <span class="price-num">${freePriceDisplay}</span>
+                        <span class="price-cycle">/ forever</span>
+                    </div>
+                    <div class="card-guarantee-note" style="justify-content: flex-start; margin-top: 4px;">
+                        <i class="fa-solid fa-shield-halved"></i> No credit card required
                     </div>
                 </div>
-            `;
-        }).join("");
+
+                <div class="pricing-card-body">
+                    <div class="features-header-tag">Included Capacities</div>
+                    <ul class="plan-features-ul">
+                        ${(freePlan.features || []).map(f => renderFeatureLi(f, 'free')).join('')}
+                    </ul>
+                </div>
+
+                <div class="pricing-card-footer">
+                    ${isFreeCurrent ? `
+                        <button class="plan-cta-btn disabled" disabled>
+                            <i class="fa-solid fa-circle-check"></i> Current Plan
+                        </button>
+                    ` : `
+                        <button class="plan-cta-btn outline-btn" onclick="LemmaPaymentApp.handlePlanSelect('free')">
+                            Downgrade to Free
+                        </button>
+                    `}
+                    <div class="card-guarantee-note">Essential tools for students</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Lemma Pro (Most Popular) -->
+            <div class="pricing-card popular-card ${isProCurrent ? 'current-active' : ''}">
+                <div class="pricing-badge-ribbon">
+                    <i class="fa-solid fa-fire"></i> ${isAnnual ? 'SAVE 20% · BEST VALUE' : 'MOST POPULAR'}
+                </div>
+                <div class="pricing-card-header">
+                    <div class="plan-tier-icon-wrap pro-icon">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h4 class="plan-title">Lemma Pro</h4>
+                    <p class="plan-headline">${proPlan.headline}</p>
+                    <div class="price-wrap">
+                        <span class="price-currency">${sym}</span>
+                        <span class="price-num">${proPriceNum}</span>
+                        <span class="price-cycle">${isAnnual ? '/ year' : '/ month'}</span>
+                    </div>
+                    ${isAnnual ? `
+                        <div class="annual-savings-pill">
+                            <i class="fa-solid fa-sparkles"></i> Save 20% · ${sym}${isINR ? '166' : '6.67'}/mo equivalent
+                        </div>
+                    ` : `
+                        <div class="card-guarantee-note" style="justify-content: flex-start; margin-top: 4px;">
+                            <i class="fa-solid fa-rotate"></i> Billed monthly · Cancel anytime
+                        </div>
+                    `}
+                </div>
+
+                <div class="pricing-card-body">
+                    <div class="features-header-tag">Pro Research Arsenal</div>
+                    <ul class="plan-features-ul">
+                        ${(proPlan.features || []).map(f => renderFeatureLi(f, 'pro')).join('')}
+                    </ul>
+                </div>
+
+                <div class="pricing-card-footer">
+                    ${isProCurrent ? `
+                        <button class="plan-cta-btn disabled" disabled>
+                            <i class="fa-solid fa-circle-check"></i> Current Plan
+                        </button>
+                    ` : `
+                        <button class="plan-cta-btn pro-primary-btn" onclick="LemmaPaymentApp.handlePlanSelect('${targetProKey}')">
+                            <i class="fa-solid fa-bolt"></i> Upgrade to Pro <i class="fa-solid fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </button>
+                    `}
+                    <div class="card-guarantee-note">
+                        <i class="fa-solid fa-lock"></i> Instant activation • Cancel anytime • 100% secure
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Scholar Ultra (Lab & Faculty) -->
+            <div class="pricing-card ${isUltraCurrent ? 'current-active' : ''}">
+                <div class="pricing-badge-ribbon ultra-ribbon">
+                    <i class="fa-solid fa-graduation-cap"></i> LAB &amp; FACULTY
+                </div>
+                <div class="pricing-card-header">
+                    <div class="plan-tier-icon-wrap ultra-icon">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <h4 class="plan-title">${ultraPlan.name}</h4>
+                    <p class="plan-headline">${ultraPlan.headline}</p>
+                    <div class="price-wrap">
+                        <span class="price-currency">${sym}</span>
+                        <span class="price-num">${ultraPriceNum}</span>
+                        <span class="price-cycle">/ year</span>
+                    </div>
+                    <div class="card-guarantee-note" style="justify-content: flex-start; margin-top: 4px;">
+                        <i class="fa-solid fa-users"></i> Up to 5 lab seats included
+                    </div>
+                </div>
+
+                <div class="pricing-card-body">
+                    <div class="features-header-tag">Enterprise Research Power</div>
+                    <ul class="plan-features-ul">
+                        ${(ultraPlan.features || []).map(f => renderFeatureLi(f, 'ultra')).join('')}
+                    </ul>
+                </div>
+
+                <div class="pricing-card-footer">
+                    ${isUltraCurrent ? `
+                        <button class="plan-cta-btn disabled" disabled>
+                            <i class="fa-solid fa-circle-check"></i> Current Plan
+                        </button>
+                    ` : `
+                        <button class="plan-cta-btn ultra-btn" onclick="LemmaPaymentApp.handlePlanSelect('scholar_ultra')">
+                            <i class="fa-solid fa-rocket"></i> Get Scholar Ultra <i class="fa-solid fa-arrow-right" style="font-size: 0.8rem;"></i>
+                        </button>
+                    `}
+                    <div class="card-guarantee-note">
+                        <i class="fa-solid fa-file-invoice"></i> Official GST invoices for grants
+                    </div>
+                </div>
+            </div>
+        `;
 
         container.innerHTML = cardsHtml;
     },
