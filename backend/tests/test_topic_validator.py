@@ -31,9 +31,21 @@ def test_topic_validator_heuristics():
     res = TopicValidator.check_heuristics("how to make maggi easily")
     assert res is not None
     assert res.is_valid is False
-    assert res.error_code == "NON_ACADEMIC_CONTENT"
+    assert res.error_code in ("NON_ACADEMIC_CONTENT", "CHATBOT_PROMPT")
 
-    # 6. Valid scholarly topic passes heuristics
+    # 6. Chatbot prompt rejection
+    res = TopicValidator.check_heuristics("write an essay on global warming")
+    assert res is not None
+    assert res.is_valid is False
+    assert res.error_code == "CHATBOT_PROMPT"
+
+    # 7. Lack of academic substance
+    res = TopicValidator.check_heuristics("my dog likes to play in park")
+    assert res is not None
+    assert res.is_valid is False
+    assert res.error_code == "LACKS_ACADEMIC_SUBSTANCE"
+
+    # 8. Valid scholarly topic passes heuristics
     res = TopicValidator.check_heuristics("Deep Reinforcement Learning in Autonomous Robotics")
     assert res is None
 

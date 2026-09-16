@@ -2524,6 +2524,23 @@
             return;
         }
 
+        // Client-side 0ms Heuristic Guardrail
+        const heuristic = validateTopicHeuristics(topic);
+        if (!heuristic.valid) {
+            const promptInput = document.getElementById('blank-prompt-input');
+            if (promptInput && promptInput.parentElement) {
+                promptInput.parentElement.classList.add('input-shake');
+                setTimeout(() => promptInput.parentElement.classList.remove('input-shake'), 400);
+            }
+            const dynamicSugg = getAcademicAutocompleteMatches(topic).slice(0, 3).map(m => m.topic);
+            showInvalidTopicModal(topic, heuristic.reason, dynamicSugg.length ? dynamicSugg : [
+                "Deep Reinforcement Learning in Autonomous Robotics",
+                "Graph Neural Networks for Drug Discovery and Molecular Modeling",
+                "Transformer Architectures for Natural Language Understanding"
+            ]);
+            return;
+        }
+
         try {
             showProgressView(`Generating: "${topic.trim()}"`, 'Analyzing research topic and finding academic sources...');
 
@@ -2755,20 +2772,114 @@
         return escHtml(text).replace(regex, '<span class="match-highlight">$1</span>');
     }
 
+    // ---------------------------------------------------------------------------
+    // Academic Guardrail Patterns & Heuristics
+    // ---------------------------------------------------------------------------
+    const KEYBOARD_WALKS = [
+        "qwerty", "asdfgh", "zxcvbn", "12345", "67890",
+        "qwer", "asdf", "zxcv", "hjkl", "yuio", "bnm"
+    ];
+
+    const CHATBOT_COMMAND_PATTERNS = [
+        /^(write|compose|draft|generate|create|make|produce)\s+(me\s+)?(an?\s+)?(paper|research\s+paper|essay|story|article|paragraph|poem|blog|letter|script|summary|speech|assignment|notes|review|report|code|program)\b/i,
+        /^(can\s+you|could\s+you|please|plz|kindly|will\s+you|would\s+you)\s+(write|help|give|tell|make|generate|code|solve|explain|create|show|do)\b/i,
+        /^(how\s+to|how\s+can\s+i|how\s+do\s+i|ways\s+to|steps\s+to)\s+(make|cook|bake|prepare|hack|crack|bypass|earn|get|buy|sell|lose|gain|impress|flirt|download|install|fix|repair|jailbreak|cheat|watch|find)\b/i,
+        /^(tell\s+me|show\s+me|give\s+me|explain\s+to\s+me|teach\s+me)\s+(about|how|why|what|a\s+story|a\s+joke|some|tips|tricks|steps)\b/i,
+        /^(what\s+is|who\s+is|where\s+is|when\s+is|which\s+is)\s+(your|my|the\s+best|the\s+top|the\s+cheapest|the\s+price|the\s+weather|the\s+score|a\s+good|a\s+cheap)\b/i,
+        /^(i\s+want|i\s+need|help\s+me)\s+(to\s+know|to\s+learn|to\s+write|to\s+make|to\s+cook|with\s+my|you\s+to)\b/i,
+        /^(do\s+my|finish\s+my|solve\s+my)\s+(homework|assignment|exam|quiz|math|project)\b/i,
+        /^(translate|summarize|paraphrase|rewrite)\s+(this|the\s+following|in|into)\b/i,
+        /^(solve|calculate|evaluate)\s+(the\s+equation|for\s+x|this\s+math|\d+)\b/i,
+    ];
+
+    const NON_ACADEMIC_PATTERNS = [
+        // Slang & Chit-chat (English & Hinglish)
+        /\b(hi|hello|hey|heyya|hola|yo|sup|dude|bhai|bro|broda|yaar|boss|sir|madam|kese\s+ho|kaisa\s+hai|kaise\s+ho|kya\s+hal|kya\s+chal|haan|nahi|nahin|accha|theek|sahi|pagal|chutiya|bakwas|timepass|shukriya|dhanyawad|thanks|thank\s+you|good\s+morning|good\s+night|gud\s+mrng|gm|gn)\b/i,
+        // Recipes & Everyday Cooking
+        /\b(recipe|recipes|cook\s+food|how\s+to\s+cook|maggi|chai|tea|coffee|pizza|burger|pasta|biryani|curry|samosa|momos|sandwich|paneer|chicken\s+tikka|breakfast|lunch|dinner|tasty\s+food|delicious\s+food|yummy)\b/i,
+        // Casual Entertainment, Pop Culture, Music, Movies, Celebrities
+        /\b(movie|movies|cinema|film\s+review|song|songs|lyrics|singer|singers|actor|actress|bollywood|hollywood|netflix|hotstar|prime\s+video|anime|manga|naruto|goku|marvel|avengers|batman|spiderman|superman|disney|trailer|box\s+office|celebrity|celebrities)\b/i,
+        // Casual Sports & Betting
+        /\b(cricket\s+match|ipl\s+match|ipl\s+202\d|bcci|icc|world\s+cup|virat\s+kohli|ms\s+dhoni|rohit\s+sharma|messi|ronaldo|football\s+match|fifa|badminton|tennis|match\s+score|live\s+score|dream11|my11circle|betting|satta|gambling|casino|lottery)\b/i,
+        // Casual Video Gaming & Cheats
+        /\b(pubg|bgmi|free\s+fire|gta\s*5|gta\s*v|gta\s*6|fortnite|minecraft|valorant|call\s+of\s+duty|cod\s+warzone|roblox|gameplay|walkthrough|cheat\s+codes?|aimbot|esports\s+tournament)\b/i,
+        // Casual Dating, Romance, Family & Personal
+        /\b(girlfriend|boyfriend|gf|bf|crush|breakup|dating|tinder|bumble|shaadi|shadi|marriage\s+advice|wedding|proposal|propose\s+a\s+girl|love\s+letter|love\s+story|flirt|romantic|husband|wife|divorce)\b/i,
+        // Adult, Vulgar & Explicit
+        /\b(porn|pornography|xxx|sex|sexy|nude|nudes|boobs|penis|vagina|erotic|adult\s+video|leaked\s+mms|strip)\b/i,
+        // Money-Making & Financial Scams
+        /\b(make\s+money\s+online|earn\s+money\s+online|earn\s+daily|free\s+crypto|free\s+bitcoin|get\s+rich\s+quick|easy\s+money|passive\s+income\s+fast|quick\s+cash|ponzi|binary\s+options|stock\s+tips|trading\s+calls)\b/i,
+        // Hacking, Cracking & Piracy
+        /\b(hack\s+wifi|crack\s+wifi|wifi\s+password|hack\s+instagram|hack\s+facebook|hack\s+whatsapp|free\s+netflix|pirated|crack\s+software|torrent\s+download|keygen|serial\s+key|free\s+recharge)\b/i,
+        // Casual Fitness, Diet, Beauty, Astrology
+        /\b(lose\s+weight\s+fast|lose\s+belly\s+fat|abs\s+workout|gym\s+workout\s+routine|diet\s+plan\s+for\s+weight\s+loss|skin\s+whitening|acne\s+cure|horoscope|rashifal|astrology\s+prediction|zodiac\s+sign|kundali|vastu|tarot\s+card)\b/i,
+        // Shopping & Commercial Deals
+        /\b(best\s+phone\s+under|best\s+laptop\s+under|cheap\s+flights|discount\s+coupon|promo\s+code|flipkart\s+sale|amazon\s+sale|unboxing\s+video|review\s+of\s+iphone)\b/i,
+    ];
+
+    const ACADEMIC_ANCHORS = new Set([
+        // Methodological / Scientific inquiry
+        "analysis", "analytical", "algorithm", "algorithms", "algorithmic", "framework", "frameworks",
+        "model", "models", "modeling", "modelling", "optimization", "optimisation", "empirical",
+        "evaluation", "investigation", "synthesis", "architecture", "architectures", "methodology",
+        "methodologies", "paradigm", "paradigms", "simulation", "simulations", "benchmark",
+        "benchmarks", "systematic", "theoretical", "experimental", "assessment", "comparative",
+        "quantitative", "qualitative", "statistical", "probabilistic", "stochastic", "heuristic",
+        "protocol", "protocols", "validation", "verification", "hypothesis", "survey", "taxonomy",
+        // Computer Science & AI
+        "neural", "network", "networks", "deep", "learning", "machine", "artificial", "intelligence",
+        "transformer", "transformers", "reinforcement", "supervised", "unsupervised", "semi-supervised",
+        "computational", "cryptography", "cryptographic", "blockchain", "decentralized", "cybersecurity",
+        "autonomous", "robotics", "robotic", "kinematics", "mechatronics", "distributed", "parallel",
+        "scalable", "scalability", "latency", "throughput", "bandwidth", "infrastructure", "microservices",
+        "detection", "segmentation", "classification", "regression", "clustering", "federated",
+        "hyperparameter", "convolutional", "recurrent", "lstm", "attention", "diffusion", "generative",
+        "graph", "graphs", "ontology", "ontologies", "consensus", "zero-knowledge", "fault-tolerant",
+        "cloud", "edge", "iot", "sensor", "sensors", "database", "query", "compiler",
+        "microprocessor", "vlsi", "fpga", "embedded", "firmware", "kernel", "operating", "software",
+        // Physics, Chemistry, Materials
+        "quantum", "photovoltaic", "perovskite", "semiconductor", "semiconductors", "thermodynamic",
+        "aerodynamic", "electromagnetic", "spectroscopy", "fluorescence", "microscopy", "photonic",
+        "superconducting", "nanotechnology", "nanoparticles", "graphene", "polymer", "polymers",
+        "catalysis", "catalytic", "crystallography", "spectrometry", "diffraction", "plasma",
+        "thermodynamics", "optics", "quantum-resistant", "neuromorphic",
+        // Biology, Medicine, Healthcare
+        "genomic", "genomics", "biomedical", "molecular", "cellular", "protein", "proteins", "dna",
+        "rna", "crispr", "oncology", "pathology", "clinical", "diagnostic", "therapeutics", "pharmacology",
+        "epidemiology", "neuroscience", "cognitive", "biomechanical", "biocompatible", "biodegradable",
+        "physiological", "pathogen", "mutation", "immunology", "pharmacokinetics", "cardiovascular",
+        "metabolism", "metabolic", "microbiome", "sequencing",
+        // Mathematics & Engineering
+        "calculus", "differential", "integral", "algebraic", "topology", "manifold", "matrix",
+        "eigenvalue", "eigenvector", "tensor", "tensors", "convex", "gradient", "convergence",
+        "asymptotic", "dynamical", "fourier", "wavelet", "laplace", "finite-element", "fluid",
+        "mechanics", "acoustics", "telecommunications", "signal",
+        // Economics, Law, Social Sciences
+        "econometrics", "macroeconomic", "microeconomic", "jurisprudence", "constitutional",
+        "sociological", "ethnographic", "psycholinguistics", "governance", "policy", "monetary",
+        "inflation", "fiscal", "equilibrium", "game-theoretic", "socioeconomic", "geopolitical"
+    ]);
+
+    const ACADEMIC_PHRASES = [
+        /\b(investigation\s+of|comparative\s+study|empirical\s+analysis|systematic\s+review|impact\s+of|role\s+of|performance\s+evaluation|design\s+and\s+implementation|applications?\s+of|advancements?\s+in|challenges\s+and\s+opportunities|state\s+of\s+the\s+art|a\s+novel\s+approach|theoretical\s+framework|experimental\s+assessment|influence\s+of|efficacy\s+of|optimization\s+of|synthesis\s+of|modeling\s+of|mitigation\s+of|assessment\s+of|characterization\s+of|mechanism\s+of|formulation\s+of)\b/i
+    ];
+
     function getAcademicAutocompleteMatches(userQuery) {
         const raw = (userQuery || '').trim();
         if (raw.length < 2) return [];
 
-        // 1. Immediately reject colloquial, conversational, non-scholarly input
-        const nonAcademicPattern = /\b(hi|hello|hey|bhai|bro|dude|sup|kese|kaisa|kya|haan|nahi|how to|recipe|maggi|chai|tea|pizza|burger|kutta|billi|dog|cat|pyar|love|shadi|joke|prank|meme|funny|lol|lmao|xxx|who are you|song|lyrics|movie|cricket|ipl)\b/i;
-        if (nonAcademicPattern.test(raw)) {
-            return [];
+        const lowerRaw = raw.toLowerCase();
+
+        // 1. Immediately reject chatbot commands & non-scholarly input
+        for (const pat of CHATBOT_COMMAND_PATTERNS) {
+            if (pat.test(lowerRaw)) return [];
+        }
+        for (const pat of NON_ACADEMIC_PATTERNS) {
+            if (pat.test(lowerRaw)) return [];
         }
 
         // 2. Reject keyboard sweeps and unnatural repetitions
-        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv", "hjkl"];
-        const lowerRaw = raw.toLowerCase();
-        for (const w of walks) {
+        for (const w of KEYBOARD_WALKS) {
             if (lowerRaw.includes(w)) return [];
         }
         if (/(.)\1{4,}/.test(lowerRaw)) return [];
@@ -2835,6 +2946,7 @@
         const raw = (topic || '').trim();
         const cleaned = raw.replace(/[^a-zA-Z0-9\s\-_]/g, '').trim();
         const words = cleaned.split(/\s+/).filter(w => w.length > 0);
+        const lower = raw.toLowerCase();
 
         if (raw.length < 5) {
             return {
@@ -2864,9 +2976,7 @@
             };
         }
 
-        const walks = ["qwerty", "asdfgh", "zxcvbn", "12345", "67890", "qwer", "asdf", "zxcv", "hjkl"];
-        const lower = raw.toLowerCase();
-        for (const w of walks) {
+        for (const w of KEYBOARD_WALKS) {
             if (lower.includes(w)) {
                 return {
                     valid: false,
@@ -2884,21 +2994,34 @@
             }
         }
 
-        const nonAcademic = [
-            /\b(hi|hello|hey|bhai|bro|dude|sup|kese|kaisa|kya|haan|nahi)\b/i,
-            /\b(how to make|how to cook|recipe|maggi|chai|tea|pizza|burger)\b/i,
-            /\b(kutta|billi|dog|cat|girlfriend|boyfriend|pyar|love|shadi)\b/i,
-            /\b(joke|prank|meme|funny|lol|lmao|rofl|sexy|porn|xxx)\b/i,
-            /\b(who are you|what is your name|mera naam|apka naam)\b/i,
-            /\b(song|lyrics|movie|actor|cricket|ipl|score)\b/i
-        ];
-        for (const pat of nonAcademic) {
+        // Chatbot Command Patterns
+        for (const pat of CHATBOT_COMMAND_PATTERNS) {
             if (pat.test(lower)) {
                 return {
                     valid: false,
-                    reason: "The query appears to be informal conversation, colloquial chat, or non-scholarly text."
+                    reason: "Conversational instructions (e.g., 'write an essay', 'how to') are not valid paper topics. Please enter a formal scientific topic."
                 };
             }
+        }
+
+        // Non-Academic Domain Patterns
+        for (const pat of NON_ACADEMIC_PATTERNS) {
+            if (pat.test(lower)) {
+                return {
+                    valid: false,
+                    reason: "The query appears to be informal conversation, lifestyle, or non-scholarly text. Lemma AI exclusively generates peer-reviewed scientific papers."
+                };
+            }
+        }
+
+        // Academic Substance Check for short or casual queries
+        const hasPhrase = ACADEMIC_PHRASES.some(pat => pat.test(lower));
+        const hasAnchor = words.some(w => ACADEMIC_ANCHORS.has(w.toLowerCase()));
+        if (!hasPhrase && !hasAnchor) {
+            return {
+                valid: false,
+                reason: "The query lacks recognized academic or scientific context. Please provide a specific scholarly topic or research question."
+            };
         }
 
         return { valid: true };

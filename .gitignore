@@ -29,8 +29,8 @@ backend/papers/
 *.patch.py
 fix_*.py
 patch_*.py
-/test_*.py
 !backend/tests/**
+backend/tests/__pycache__/
 
 # AI Agent Context Files
 lemma/Project Context/
