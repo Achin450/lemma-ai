@@ -685,8 +685,19 @@
     let allAllocatedSeats = [];
 
     window.switchOrgSubTab = function(tabName) {
+        // Ensure org-dashboard-view is displayed
         if (typeof window.showView === 'function') {
             window.showView("org-dashboard-view");
+        } else {
+            document.querySelectorAll(".workspace-view").forEach(v => {
+                v.classList.add("hidden");
+                v.style.display = "none";
+            });
+            const target = document.getElementById("org-dashboard-view");
+            if (target) {
+                target.classList.remove("hidden");
+                target.style.display = "block";
+            }
         }
 
         // Map tabName aliases
@@ -713,8 +724,10 @@
             if (el) {
                 if (p === targetPane) {
                     el.classList.remove("hidden");
+                    el.style.display = "block";
                 } else {
                     el.classList.add("hidden");
+                    el.style.display = "none";
                 }
             }
         });
@@ -738,6 +751,21 @@
         if (targetPane === "billing") loadEnterpriseBilling();
         if (targetPane === "seats") loadCampusSeats();
     };
+
+    // Delegated click listener for org-sidebar-nav
+    document.addEventListener("click", function(e) {
+        const orgNavItem = e.target.closest("#org-sidebar-nav .nav-item");
+        if (orgNavItem) {
+            e.preventDefault();
+            const tab = orgNavItem.getAttribute("data-org-tab");
+            const action = orgNavItem.getAttribute("data-org-action");
+            if (action === "profile" && typeof window.openOrgProfileModal === "function") {
+                window.openOrgProfileModal();
+            } else if (tab) {
+                window.switchOrgSubTab(tab);
+            }
+        }
+    });
 
 
     // 1. Load Enterprise Billing & Invoices
