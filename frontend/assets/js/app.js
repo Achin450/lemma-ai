@@ -2386,6 +2386,19 @@ window.switchAuthTab = function (tab) {
     }
 };
 
+// Delegated click listener for auth role switching
+document.addEventListener("click", function (e) {
+    const roleBtn = e.target.closest("[data-auth-role], #auth-role-student-btn, #auth-role-org-btn");
+    if (roleBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const role = roleBtn.getAttribute("data-auth-role") || (roleBtn.id === "auth-role-org-btn" ? "org" : "student");
+        if (typeof window.switchAuthRole === "function") {
+            window.switchAuthRole(role);
+        }
+    }
+});
+
 window.requireAuthForDownload = function (callback, options = {}) {
     const token = sessionStorage.getItem("lemma_access_token") || localStorage.getItem("lemma_access_token");
     if (token) {
