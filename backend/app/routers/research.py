@@ -29,7 +29,8 @@ from app.services.paper_store import PaperStore
 from app.schemas.research import (
     GenerateRequest, PaperStatusResponse, PaperStatus, PaperLength,
     PaperSummaryResponse, ImproveRequest, ResearchPaper,
-    PaperUpdateRequest, PaperSection
+    PaperUpdateRequest, PaperSection,
+    CustomRewriteSectionRequest, CustomRewriteSectionResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -584,4 +585,136 @@ async def improve_paper_section(
         "improved_content": improved,
         "section_similarity_score": target_section.similarity_score,
     }
+
+
+# ---------------------------------------------------------------------------
+# POST /{paper_id}/custom-rewrite-section — User-Guided Matter Customizer
+# ---------------------------------------------------------------------------
+@router.post(
+    "/{paper_id}/custom-rewrite-section",
+    response_model=CustomRewriteSectionResponse,
+    summary="Customize / rewrite section matter according to user prompt and tone style",
+    description=(
+        "Transforms a specific section (or Abstract) according to user custom instructions / prompts. "
+        "Preserves IEEE research validity, mathematical rigor, and citation references."
+    ),
+)
+async def custom_rewrite_paper_section(
+    paper_id: str,
+    payload: CustomRewriteSectionRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    paper = PaperStore.load(paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail=f"Paper '{paper_id}' not found.")
+
+    from app.services.llm import LLMService
+
+    target_sec_num = str(payload.section_number).strip().lower()
+    topic_str = paper.topic or paper.title or "Advanced Computational Research"
+    domain_str = paper.domain or "Computer Science & Engineering"
+
+    # Handle Abstract customization
+    if target_sec_num in ("abstract", "0", "sec_abstract"):
+        orig_content = paper.abstract or ""
+        content_to_rewrite = payload.passage or orig_content
+        if not content_to_rewrite:
+            content_to_rewrite = f"This paper presents a theoretical and empirical study on {topic_str}."
+
+        updated = await LLMService.customize_section_matter(
+            section_content=content_to_rewrite,
+            section_title="Abstract",
+            topic=topic_str,
+            custom_instruction=payload.custom_instruction,
+            style=payload.style or "academic_rigorous",
+            domain=domain_str,
+        )
+
+        if payload.passage and orig_content:
+            paper.abstract = orig_content.replace(payload.passage, updated, 1)
+        else:
+            paper.abstract = updated
+
+        PaperStore.save(paper)
+        words = len(paper.abstract.split())
+
+        return CustomRewriteSectionResponse(
+            paper_id=paper_id,
+            section_number="Abstract",
+            section_title="Abstract",
+            original_content=orig_content,
+            updated_content=paper.abstract,
+            word_count=words,
+            similarity_score=paper.similarity_score,
+            message="Abstract successfully customized according to user instructions."
+        )
+
+    # Handle Sections (I, II, III, IV, V, VI, etc. or numbered)
+    target_section = None
+    for section in paper.sections:
+        if str(section.number).strip().lower() == target_sec_num:
+            target_section = section
+            break
+        # Also match if title contains section or number match
+        if target_sec_num in str(section.number).lower() or target_sec_num in str(section.title).lower():
+            target_section = section
+            break
+
+    # If still not found, check 1-based index (e.g. 1 -> section 0)
+    if not target_section and target_sec_num.isdigit():
+        idx = int(target_sec_num) - 1
+        if 0 <= idx < len(paper.sections):
+            target_section = paper.sections[idx]
+
+    if not target_section:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Section '{payload.section_number}' not found in paper '{paper_id}'."
+        )
+
+    orig_content = target_section.content or ""
+    content_to_rewrite = payload.passage or orig_content
+    if not content_to_rewrite:
+        content_to_rewrite = f"This section discusses the core methodology and foundations for {topic_str}."
+
+    updated = await LLMService.customize_section_matter(
+        section_content=content_to_rewrite,
+        section_title=f"{target_section.number}. {target_section.title}",
+        topic=topic_str,
+        custom_instruction=payload.custom_instruction,
+        style=payload.style or "academic_rigorous",
+        domain=domain_str,
+    )
+
+    if payload.passage and orig_content:
+        target_section.content = orig_content.replace(payload.passage, updated, 1)
+    else:
+        target_section.content = updated
+
+    # Re-calculate similarity score for section if possible
+    try:
+        from app.services.segmenter import SentenceSegmenterService
+        from app.services.matcher import DualTierMatcher
+        sec_sentences = SentenceSegmenterService.segment(target_section.content)
+        if sec_sentences:
+            matcher = DualTierMatcher()
+            sec_analysis = matcher.analyze_document(sec_sentences)
+            target_section.similarity_score = sec_analysis.get("plagiarism_score", 0.0)
+    except Exception as e:
+        logger.debug(f"Section similarity recalculation: {e}")
+
+    PaperStore.save(paper)
+    words = len(target_section.content.split())
+
+    return CustomRewriteSectionResponse(
+        paper_id=paper_id,
+        section_number=target_section.number,
+        section_title=target_section.title,
+        original_content=orig_content,
+        updated_content=target_section.content,
+        word_count=words,
+        similarity_score=target_section.similarity_score,
+        message=f"Section {target_section.number} ({target_section.title}) matter successfully customized."
+    )
+
 

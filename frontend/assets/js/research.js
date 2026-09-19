@@ -17,6 +17,186 @@
 (function () {
     'use strict';
 
+    
+    // ===========================================================================
+    // AI SECTION MATTER CUSTOMIZER & DIALOGUE BOX CONTROLLER
+    // ===========================================================================
+    function initSectionMatterCustomizer() {
+        const applyBtn = document.getElementById('btn-apply-section-customization');
+        const secSelect = document.getElementById('customizer-section-select');
+        const promptTextarea = document.getElementById('customizer-user-prompt');
+
+        // Wire quick prompt pills
+        document.querySelectorAll('.custom-prompt-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                const promptText = pill.getAttribute('data-prompt') || pill.textContent;
+                if (promptTextarea) {
+                    promptTextarea.value = promptText;
+                    promptTextarea.focus();
+                }
+                showToast('Prompt suggestion applied to dialogue box.', 'info');
+            });
+        });
+
+        // Wire section selection change
+        if (secSelect) {
+            secSelect.addEventListener('change', (e) => {
+                const selectedVal = e.target.value;
+                const pill = document.getElementById('customizer-current-sec-pill');
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                if (pill && selectedOption) {
+                    pill.textContent = `Section: ${selectedOption.text}`;
+                }
+                // Scroll to target section in paper preview
+                scrollToSection(selectedVal, state.currentPaper);
+            });
+        }
+
+        // Wire submit button
+        if (applyBtn) {
+            applyBtn.addEventListener('click', handleCustomSectionRewriteSubmit);
+        }
+    }
+
+    function populateCustomizerSections(paper) {
+        const secSelect = document.getElementById('customizer-section-select');
+        const pill = document.getElementById('customizer-current-sec-pill');
+        if (!secSelect || !paper) return;
+
+        let optionsHtml = `<option value="abstract">Abstract</option>`;
+        (paper.sections || []).forEach(sec => {
+            optionsHtml += `<option value="${escHtml(sec.number)}">${escHtml(sec.number)}. ${escHtml(sec.title)}</option>`;
+        });
+
+        secSelect.innerHTML = optionsHtml;
+
+        // Set initial selected
+        const currentSec = state.currentSection || 'abstract';
+        secSelect.value = currentSec;
+        const selectedOpt = secSelect.options[secSelect.selectedIndex];
+        if (pill && selectedOpt) {
+            pill.textContent = `Section: ${selectedOpt.text}`;
+        }
+    }
+
+    function syncCustomizerSection(sectionId) {
+        const secSelect = document.getElementById('customizer-section-select');
+        const pill = document.getElementById('customizer-current-sec-pill');
+        if (!secSelect) return;
+
+        secSelect.value = sectionId;
+        const selectedOpt = secSelect.options[secSelect.selectedIndex];
+        if (pill && selectedOpt) {
+            pill.textContent = `Section: ${selectedOpt.text}`;
+        }
+    }
+
+    async function handleCustomSectionRewriteSubmit() {
+        const applyBtn = document.getElementById('btn-apply-section-customization');
+        const secSelect = document.getElementById('customizer-section-select');
+        const styleSelect = document.getElementById('customizer-style-select');
+        const promptTextarea = document.getElementById('customizer-user-prompt');
+        const statusMsg = document.getElementById('customizer-status-msg');
+
+        if (!state.currentPaperId) {
+            showToast('No active research paper loaded.', 'error');
+            return;
+        }
+
+        const sectionNumber = secSelect ? secSelect.value : 'abstract';
+        let customInstruction = promptTextarea ? promptTextarea.value.trim() : '';
+        const stylePreset = styleSelect ? styleSelect.value : 'academic_rigorous';
+
+        if (!customInstruction) {
+            const styleDefaults = {
+                'academic_rigorous': 'Refine and elevate the academic vocabulary, structure, and formal scholarly narrative.',
+                'mathematical': 'Incorporate comprehensive mathematical equations, theoretical formulation, and proofs.',
+                'methodology_deep': 'Provide deep architectural and algorithmic detail, explaining pipeline steps and complexity.',
+                'concise_crisp': 'Make this section concise, punchy, and direct, highlighting essential findings.',
+                'plagiarism_zero': 'Heavily rephrase all sentences and structures to achieve 0% textual similarity.',
+                'novelty_focused': 'Emphasize the unique novelty, paradigm shift, and scientific contribution over existing prior art.',
+                'experimental_data': 'Expand empirical benchmark evaluation, metrics, and quantitative comparative tables.'
+            };
+            customInstruction = styleDefaults[stylePreset] || 'Improve and expand this section with high academic rigor.';
+        }
+
+        try {
+            if (applyBtn) {
+                applyBtn.disabled = true;
+                applyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Customizing Section Matter...</span>';
+            }
+            if (statusMsg) {
+                statusMsg.innerHTML = '<span style="color: #818cf8;"><i class="fa-solid fa-wand-magic-sparkles fa-spin"></i> Neural Engine is synthesizing and rewriting section matter...</span>';
+            }
+
+            const res = await fetch(`${apiBase()}/api/v1/research/${state.currentPaperId}/custom-rewrite-section`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    paper_id: state.currentPaperId,
+                    section_number: sectionNumber,
+                    custom_instruction: customInstruction,
+                    style: stylePreset
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.detail || 'Custom rewrite request failed.');
+            }
+
+            const data = await res.json();
+
+            // Update in-memory paper state
+            if (state.currentPaper) {
+                if (sectionNumber.toLowerCase() === 'abstract') {
+                    state.currentPaper.abstract = data.updated_content;
+                } else {
+                    const sec = (state.currentPaper.sections || []).find(s => 
+                        s.number.toLowerCase() === sectionNumber.toLowerCase() ||
+                        s.number.toLowerCase() === data.section_number.toLowerCase()
+                    );
+                    if (sec) {
+                        sec.content = data.updated_content;
+                        if (data.similarity_score !== undefined) {
+                            sec.similarity_score = data.similarity_score;
+                        }
+                    }
+                }
+
+                // Re-render paper view
+                renderPaperContent(state.currentPaper);
+
+                // Highlight and scroll to modified section
+                const targetDomId = sectionNumber.toLowerCase() === 'abstract' ? 'section-abstract' : `section-${sectionNumber}`;
+                const targetEl = document.getElementById(targetDomId);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    targetEl.classList.add('section-updated-highlight');
+                    setTimeout(() => targetEl.classList.remove('section-updated-highlight'), 3500);
+                }
+            }
+
+            showToast(data.message || `Section matter successfully updated!`, 'success');
+
+            if (statusMsg) {
+                statusMsg.innerHTML = `<span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> Section matter successfully updated (${data.word_count} words). Citations preserved.</span>`;
+            }
+
+        } catch (e) {
+            console.error('Error customizing section:', e);
+            showToast(`Could not customize section: ${e.message}`, 'error');
+            if (statusMsg) {
+                statusMsg.innerHTML = `<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${escHtml(e.message)}</span>`;
+            }
+        } finally {
+            if (applyBtn) {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Rewrite Section Matter</span>';
+            }
+        }
+    }
+
     // ---------------------------------------------------------------------------
     // State
     // ---------------------------------------------------------------------------
@@ -1131,6 +1311,7 @@
 
         // Render the paper content
         renderPaperContent(paper);
+        populateCustomizerSections(paper);
     }
 
     function renderPaperContent(paper) {
@@ -1386,6 +1567,7 @@
         `;
 
         state.currentSection = sec.number;
+        syncCustomizerSection(sec.number);
 
         // Show improve button if similarity is high
         if (sec.similarity_score !== null && sec.similarity_score > 0.30) {
@@ -4307,6 +4489,7 @@
         initSimilarityCheck();
         initExport();
         initPaperEditing();
+        initSectionMatterCustomizer();
         initPaperBack();
         initMyPapers();
         initProgressCancel();

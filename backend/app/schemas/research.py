@@ -178,6 +178,27 @@ class ImproveRequest(BaseModel):
     passage: Optional[str] = None   # Specific passage to rewrite (optional)
 
 
+class CustomRewriteSectionRequest(BaseModel):
+    """Request body for user-guided custom section rewriting."""
+    paper_id: str
+    section_number: str = Field(..., description="Target section number e.g. 'abstract', 'I', 'II', 'III', etc.")
+    custom_instruction: str = Field(..., min_length=3, description="User prompt or instructions describing how to change the section matter")
+    style: Optional[str] = Field("academic_rigorous", description="Style preset: academic_rigorous, mathematical, methodology_deep, concise_crisp, plagiarism_zero, novelty_focused, experimental_data")
+    passage: Optional[str] = Field(None, description="Optional specific passage or paragraph within section to change")
+
+
+class CustomRewriteSectionResponse(BaseModel):
+    """Response returned after rewriting a section."""
+    paper_id: str
+    section_number: str
+    section_title: str
+    original_content: str
+    updated_content: str
+    word_count: int
+    similarity_score: Optional[float] = None
+    message: str = "Section matter successfully customized according to user instructions."
+
+
 class PaperStatusResponse(BaseModel):
     """Response for GET /api/v1/research/status/{job_id}"""
     job_id: str

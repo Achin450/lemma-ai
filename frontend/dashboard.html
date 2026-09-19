@@ -1526,6 +1526,79 @@ Minimum 50 characters required. For best results, paste the full document text."
                             <div class="paper-loading-line" style="width: 88%;"></div>
                         </div>
                     </div>
+
+                    <!-- ==================== SECTION MATTER CUSTOMIZER DIALOGUE BOX ==================== -->
+                    <div class="section-customizer-card" id="section-customizer-box">
+                        <div class="section-customizer-header">
+                            <div class="customizer-title-wrap">
+                                <div class="customizer-icon-badge">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                </div>
+                                <div>
+                                    <h3 class="customizer-title">Section Matter AI Customizer &amp; Dialogue Box</h3>
+                                    <p class="customizer-subtitle">Want to change the matter of any section? Select the section, write your custom prompt or select a tone, and Lemma AI will rewrite the matter accordingly.</p>
+                                </div>
+                            </div>
+                            <div class="customizer-header-actions">
+                                <span class="customizer-badge" id="customizer-current-sec-pill">Section: Abstract</span>
+                            </div>
+                        </div>
+
+                        <div class="section-customizer-body">
+                            <!-- Row 1: Section Selection & Style Preset -->
+                            <div class="customizer-controls-row">
+                                <div class="customizer-field-group">
+                                    <label for="customizer-section-select"><i class="fa-solid fa-layer-group"></i> Target Section</label>
+                                    <select id="customizer-section-select" class="customizer-select">
+                                        <option value="abstract">Abstract</option>
+                                    </select>
+                                </div>
+                                <div class="customizer-field-group">
+                                    <label for="customizer-style-select"><i class="fa-solid fa-sliders"></i> Tone / Focus Style</label>
+                                    <select id="customizer-style-select" class="customizer-select">
+                                        <option value="academic_rigorous">🎓 Academic &amp; Rigorous (IEEE/SCI standard)</option>
+                                        <option value="mathematical">📐 Mathematical &amp; Theoretical Proofs</option>
+                                        <option value="methodology_deep">🔬 Deep Methodological &amp; Algorithmic</option>
+                                        <option value="concise_crisp">⚡ Concise &amp; High-Impact Summary</option>
+                                        <option value="plagiarism_zero">🛡️ Maximum Paraphrase &amp; Zero Similarity</option>
+                                        <option value="novelty_focused">✨ Novelty &amp; Innovation Highlighted</option>
+                                        <option value="experimental_data">📊 Empirical &amp; Benchmark Data Heavy</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Quick Prompt Suggestion Pills -->
+                            <div class="customizer-pills-row">
+                                <span class="pills-label">Quick Prompts:</span>
+                                <div class="pills-container">
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Expand with detailed mathematical formulation, equations, and theoretical justification.">📐 Add Math &amp; Equations</button>
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Make this section substantially more detailed with in-depth technical discussion and architecture flow.">📖 Expand Technical Depth</button>
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Rewrite to be more concise, punchy, and impactful while keeping key discoveries.">⚡ Make Crisp &amp; Concise</button>
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Emphasize the unique novelty, paradigm shift, and scientific contribution of our approach over baseline prior art.">✨ Highlight Novelty</button>
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Add step-by-step algorithmic pipeline, training hyperparameters, and complexity analysis.">🤖 Add Algorithmic Flow</button>
+                                    <button type="button" class="custom-prompt-pill" data-prompt="Paraphrase deeply to achieve 0% similarity while preserving all citations [1], [2].">🛡️ Lower Similarity</button>
+                                </div>
+                            </div>
+
+                            <!-- Prompt Textarea -->
+                            <div class="customizer-prompt-area">
+                                <label for="customizer-user-prompt"><i class="fa-solid fa-pen-fancy"></i> Custom Prompt / Instruction for this Section</label>
+                                <textarea id="customizer-user-prompt" class="customizer-textarea" rows="3" placeholder="e.g. 'Rewrite this section to focus on deep reinforcement learning in autonomous robotics with 5-fold cross validation and state-of-the-art benchmark comparisons...'"></textarea>
+                            </div>
+
+                            <!-- Action Button & Status -->
+                            <div class="customizer-footer">
+                                <div class="customizer-status" id="customizer-status-msg">
+                                    <i class="fa-solid fa-circle-info"></i> Ready. All existing IEEE citations [1], [2] will be preserved in the new matter.
+                                </div>
+                                <button type="button" class="btn btn-primary customizer-submit-btn" id="btn-apply-section-customization">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Rewrite Section Matter</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Right sidebar: Section details + improve -->
@@ -1554,6 +1627,9 @@ Minimum 50 characters required. For best results, paste the full document text."
                         <div id="section-detail-info">
                             <p style="color: var(--text-muted); font-size: 0.8rem;">Click a section to view details.</p>
                         </div>
+                        <button type="button" class="btn btn-full btn-outline" onclick="document.getElementById('section-customizer-box').scrollIntoView({behavior: 'smooth', block: 'center'}); document.getElementById('customizer-user-prompt').focus();" style="margin-top: 10px; font-size: 0.8rem; border-color: rgba(99, 102, 241, 0.4); color: #818cf8; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Customize Section Matter</span>
+                        </button>
                     </div>
                     <div class="paper-sidebar-card" id="section-improve-card" style="display: none;">
                         <h4>Improve Section</h4>
