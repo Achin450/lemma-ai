@@ -2451,18 +2451,24 @@ window.handleAuthModalSubmit = async function (e, mode) {
             };
         } else if (mode === "org_login") {
             endpoint = `${base}/api/v1/organisations/login`;
+            const orgLoginEmail = (document.getElementById("auth-org-login-email") ? document.getElementById("auth-org-login-email").value : "").trim();
             payload = {
-                official_email: document.getElementById("auth-org-login-email").value.trim(),
-                password: document.getElementById("auth-org-login-password").value
+                domain_email: orgLoginEmail,
+                official_email: orgLoginEmail,
+                password: (document.getElementById("auth-org-login-password") ? document.getElementById("auth-org-login-password").value : "")
             };
         } else if (mode === "org_register") {
             endpoint = `${base}/api/v1/organisations/register`;
-            const orgEmail = document.getElementById("auth-org-reg-email").value.trim();
+            const orgName = (document.getElementById("auth-org-reg-name") ? document.getElementById("auth-org-reg-name").value : "").trim();
+            const orgEmail = (document.getElementById("auth-org-reg-email") ? document.getElementById("auth-org-reg-email").value : "").trim();
+            const contactPerson = (document.getElementById("auth-org-reg-contact") ? document.getElementById("auth-org-reg-contact").value.trim() : "") || orgName || "University Dean";
             payload = {
-                name: document.getElementById("auth-org-reg-name").value.trim(),
+                name: orgName,
+                domain_email: orgEmail,
                 official_email: orgEmail,
-                password: document.getElementById("auth-org-reg-password").value,
-                contact_person_name: document.getElementById("auth-org-reg-contact").value.trim(),
+                password: (document.getElementById("auth-org-reg-password") ? document.getElementById("auth-org-reg-password").value : ""),
+                contact_person: contactPerson,
+                contact_person_name: contactPerson,
                 org_type: "University"
             };
         }

@@ -55,12 +55,20 @@ class OrganisationRegister(BaseModel):
         if isinstance(data, dict):
             if "official_email" in data and "domain_email" not in data:
                 data["domain_email"] = data["official_email"]
+            if "email" in data and "domain_email" not in data:
+                data["domain_email"] = data["email"]
             if "organisation_type" in data and "org_type" not in data:
                 data["org_type"] = data["organisation_type"]
             if "contact_phone" in data and "contact_number" not in data:
                 data["contact_number"] = data["contact_phone"]
             if "contact_name" in data and "contact_person" not in data:
                 data["contact_person"] = data["contact_name"]
+            if "contact_person_name" in data and "contact_person" not in data:
+                data["contact_person"] = data["contact_person_name"]
+            if "dean_name" in data and "contact_person" not in data:
+                data["contact_person"] = data["dean_name"]
+            if "contact_person" not in data or not data.get("contact_person"):
+                data["contact_person"] = data.get("name", "University Dean")
         return data
 
 
@@ -75,6 +83,8 @@ class OrganisationLogin(BaseModel):
         if isinstance(data, dict):
             if "official_email" in data and "domain_email" not in data:
                 data["domain_email"] = data["official_email"]
+            if "email" in data and "domain_email" not in data:
+                data["domain_email"] = data["email"]
         return data
 
 
