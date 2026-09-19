@@ -685,24 +685,33 @@
     let allAllocatedSeats = [];
 
     window.switchOrgSubTab = function(tabName) {
+        if (typeof window.showView === 'function') {
+            window.showView("org-dashboard-view");
+        }
+
+        // Map tabName aliases
+        let targetPane = tabName;
+        if (tabName === "plans" || tabName === "po_plans") targetPane = "po";
+        if (tabName === "overview") targetPane = "schemes";
+
         document.querySelectorAll(".org-subtab-btn").forEach(btn => {
             btn.classList.remove("active");
             btn.style.color = "var(--text-muted)";
             btn.style.borderBottomColor = "transparent";
         });
         
-        const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+        const activeBtn = document.getElementById(`tab-btn-${targetPane}`);
         if (activeBtn) {
             activeBtn.classList.add("active");
             activeBtn.style.color = "var(--text-primary)";
-            activeBtn.style.borderBottomColor = "#6366f1";
+            activeBtn.style.borderBottomColor = "#10b981";
         }
 
         const panes = ["schemes", "billing", "seats", "po"];
         panes.forEach(p => {
             const el = document.getElementById(`org-tab-pane-${p}`);
             if (el) {
-                if (p === tabName) {
+                if (p === targetPane) {
                     el.classList.remove("hidden");
                 } else {
                     el.classList.add("hidden");
@@ -710,9 +719,26 @@
             }
         });
 
-        if (tabName === "billing") loadEnterpriseBilling();
-        if (tabName === "seats") loadCampusSeats();
+        // Sync sidebar active state in org-sidebar-nav
+        const orgNavMap = {
+            'overview': 'nav-org-overview',
+            'schemes': 'nav-org-schemes',
+            'billing': 'nav-org-billing',
+            'seats': 'nav-org-seats',
+            'po': 'nav-org-plans',
+            'plans': 'nav-org-plans'
+        };
+        const activeOrgNavId = orgNavMap[tabName] || orgNavMap[targetPane];
+        if (activeOrgNavId) {
+            document.querySelectorAll("#org-sidebar-nav .nav-item").forEach(item => item.classList.remove("active"));
+            const targetNav = document.getElementById(activeOrgNavId);
+            if (targetNav) targetNav.classList.add("active");
+        }
+
+        if (targetPane === "billing") loadEnterpriseBilling();
+        if (targetPane === "seats") loadCampusSeats();
     };
+
 
     // 1. Load Enterprise Billing & Invoices
     async function loadEnterpriseBilling() {

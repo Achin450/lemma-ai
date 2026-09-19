@@ -8594,3 +8594,91 @@ body.in-paper-editor .main-content {
     }
 }
 
+/* ==========================================================================
+   ORGANISATION PORTAL SIDEBAR ACTIVE STYLING
+   ========================================================================== */
+
+.portal-mode-switcher-wrap {
+    padding: 0.25rem 0.85rem 0.85rem 0.85rem;
+    box-sizing: border-box;
+}
+
+.portal-mode-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+html[data-theme="light"] .portal-mode-switcher {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.portal-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    outline: none;
+}
+
+.portal-switch-btn i {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.portal-switch-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.portal-switch-btn.active#btn-portal-student {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(16, 185, 129, 0.22));
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+html[data-theme="light"] .portal-switch-btn.active#btn-portal-student {
+    background: #ffffff;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: #4f46e5;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.portal-switch-btn.active#btn-portal-org {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.portal-switch-btn.active i {
+    transform: scale(1.1);
+}
+
+#org-sidebar-nav .nav-item a {
+    transition: all 0.2s ease;
+}
+
+#org-sidebar-nav .nav-item.active a {
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+

@@ -1074,7 +1074,7 @@ document.addEventListener("DOMContentLoaded", () => {
             'citations-workspace': 'nav-citations',
             'novelty-view': 'nav-novelty',
             'funding-view': 'nav-funding',
-            'org-dashboard-view': 'nav-org-dashboard',
+            'org-dashboard-view': 'nav-org-overview',
             'billing-view': 'nav-billing',
         };
         const activeNavId = navMap[viewId];
@@ -1084,6 +1084,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     window.showView = showView;
+
+    // ---------------------------------------------------------------------------
+    // Role-Based Portal Controller (Scholar vs Organisation Portal)
+    // ---------------------------------------------------------------------------
+    function switchPortalMode(mode, targetView) {
+        const studentNav = document.getElementById("student-sidebar-nav");
+        const orgNav = document.getElementById("org-sidebar-nav");
+
+        if (mode === "organisation") {
+            if (studentNav) studentNav.style.display = "none";
+            if (orgNav) orgNav.style.display = "block";
+            localStorage.setItem("lemma_active_portal", "organisation");
+
+            const viewToOpen = targetView || "org-dashboard-view";
+            showView(viewToOpen);
+            if (window.loadOrgData) window.loadOrgData();
+        } else {
+            if (studentNav) studentNav.style.display = "block";
+            if (orgNav) orgNav.style.display = "none";
+            localStorage.setItem("lemma_active_portal", "student");
+
+            const viewToOpen = targetView || "dashboard-home-view";
+            showView(viewToOpen);
+        }
+    }
+    window.switchPortalMode = switchPortalMode;
+
+
 
     navItems.forEach(item => {
         item.addEventListener("click", (e) => {
@@ -2116,10 +2144,35 @@ async function initUserSession() {
         if (logoutItem) logoutItem.style.display = "flex";
         if (adminNav) adminNav.style.display = isAdmin ? "block" : "none";
         if (profileAdmin) profileAdmin.style.display = isAdmin ? "flex" : "none";
+
+        // Role-based sidebar menu visibility
+        const studentNav = document.getElementById("student-sidebar-nav");
+        const orgNav = document.getElementById("org-sidebar-nav");
+        if (isOrg) {
+            if (studentNav) studentNav.style.display = "none";
+            if (orgNav) orgNav.style.display = "block";
+            const currentView = sessionStorage.getItem("lemma_active_view");
+            if (!currentView || currentView === "dashboard-home-view") {
+                showView("org-dashboard-view");
+            }
+            if (window.loadOrgData) window.loadOrgData();
+        } else {
+            if (studentNav) studentNav.style.display = "block";
+            if (orgNav) orgNav.style.display = "none";
+            const currentView = sessionStorage.getItem("lemma_active_view");
+            if (currentView === "org-dashboard-view") {
+                showView("dashboard-home-view");
+            }
+        }
     }
 
     if (!token) {
-        // Guest / Unauthenticated State
+        // Guest / Unauthenticated State -> Show Student workspace
+        const studentNav = document.getElementById("student-sidebar-nav");
+        const orgNav = document.getElementById("org-sidebar-nav");
+        if (studentNav) studentNav.style.display = "block";
+        if (orgNav) orgNav.style.display = "none";
+
         if (avatarEl) avatarEl.innerHTML = '<i class="fa-regular fa-user" style="font-size: 0.85rem;"></i>';
         if (nameEl) nameEl.textContent = "Sign In";
         if (dropAvatarEl) dropAvatarEl.innerHTML = '<i class="fa-regular fa-user" style="font-size: 1.1rem;"></i>';
@@ -2171,6 +2224,8 @@ async function initUserSession() {
     }
 }
 
+
+
 function toggleProfileDropdown(forceState) {
     const menu = document.getElementById("profile-dropdown");
     if (!menu) return;
@@ -2205,9 +2260,10 @@ document.addEventListener("click", (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// Download Auth Modal Controller & Interceptor
+// Download Auth Modal Controller & Interceptor (Student & Organisation)
 // ---------------------------------------------------------------------------
 let _pendingAuthDownloadAction = null;
+let _currentAuthRole = "student";
 
 window.openAuthModal = function (options = {}) {
     const modal = document.getElementById("download-auth-modal");
@@ -2227,11 +2283,12 @@ window.openAuthModal = function (options = {}) {
         alertEl.style.display = "none";
     }
 
+    switchAuthRole(options.role || "student");
     switchAuthTab("login");
     modal.classList.remove("hidden");
     modal.style.display = "flex";
 
-    const emailInput = document.getElementById("auth-login-email");
+    const emailInput = document.getElementById(_currentAuthRole === "org" ? "auth-org-login-email" : "auth-login-email");
     if (emailInput) setTimeout(() => emailInput.focus(), 150);
 };
 
@@ -2243,11 +2300,59 @@ window.closeAuthModal = function () {
     }
 };
 
+window.switchAuthRole = function (role) {
+    _currentAuthRole = role;
+    const studentBtn = document.getElementById("auth-role-student-btn");
+    const orgBtn = document.getElementById("auth-role-org-btn");
+    const studentCont = document.getElementById("auth-student-container");
+    const orgCont = document.getElementById("auth-org-container");
+    const iconEl = document.getElementById("auth-modal-icon");
+    const titleEl = document.getElementById("auth-modal-title");
+    const subEl = document.getElementById("auth-modal-subtitle");
+
+    if (role === "org") {
+        if (studentBtn) {
+            studentBtn.classList.remove("active");
+            studentBtn.style.background = "transparent";
+            studentBtn.style.color = "var(--text-muted)";
+        }
+        if (orgBtn) {
+            orgBtn.classList.add("active");
+            orgBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+            orgBtn.style.color = "#ffffff";
+        }
+        if (studentCont) studentCont.style.display = "none";
+        if (orgCont) orgCont.style.display = "block";
+        if (iconEl) iconEl.innerHTML = '<i class="fa-solid fa-building-columns"></i>';
+        if (titleEl) titleEl.textContent = "Organisation Portal Access";
+        if (subEl) subEl.textContent = "Sign in or register your university with an official institutional domain.";
+    } else {
+        if (studentBtn) {
+            studentBtn.classList.add("active");
+            studentBtn.style.background = "#6366f1";
+            studentBtn.style.color = "#ffffff";
+        }
+        if (orgBtn) {
+            orgBtn.classList.remove("active");
+            orgBtn.style.background = "transparent";
+            orgBtn.style.color = "var(--text-muted)";
+        }
+        if (studentCont) studentCont.style.display = "block";
+        if (orgCont) orgCont.style.display = "none";
+        if (iconEl) iconEl.innerHTML = '<i class="fa-solid fa-graduation-cap"></i>';
+        if (titleEl) titleEl.textContent = "Sign In to Lemma";
+        if (subEl) subEl.textContent = "Sign in or create a free scholar account to access papers and analysis reports.";
+    }
+    switchAuthTab("login");
+};
+
 window.switchAuthTab = function (tab) {
     const loginTab = document.getElementById("auth-tab-login");
     const regTab = document.getElementById("auth-tab-register");
-    const loginForm = document.getElementById("auth-form-login");
-    const regForm = document.getElementById("auth-form-register");
+    const studentLoginForm = document.getElementById("auth-form-login");
+    const studentRegForm = document.getElementById("auth-form-register");
+    const orgLoginForm = document.getElementById("auth-form-org-login");
+    const orgRegForm = document.getElementById("auth-form-org-register");
     const alertEl = document.getElementById("auth-modal-alert");
 
     if (alertEl) {
@@ -2259,13 +2364,25 @@ window.switchAuthTab = function (tab) {
     if (tab === "login") {
         if (loginTab) loginTab.classList.add("active");
         if (regTab) regTab.classList.remove("active");
-        if (loginForm) { loginForm.classList.remove("hidden"); loginForm.style.display = "block"; }
-        if (regForm) { regForm.classList.add("hidden"); regForm.style.display = "none"; }
+
+        if (_currentAuthRole === "org") {
+            if (orgLoginForm) { orgLoginForm.classList.remove("hidden"); orgLoginForm.style.display = "block"; }
+            if (orgRegForm) { orgRegForm.classList.add("hidden"); orgRegForm.style.display = "none"; }
+        } else {
+            if (studentLoginForm) { studentLoginForm.classList.remove("hidden"); studentLoginForm.style.display = "block"; }
+            if (studentRegForm) { studentRegForm.classList.add("hidden"); studentRegForm.style.display = "none"; }
+        }
     } else {
         if (regTab) regTab.classList.add("active");
         if (loginTab) loginTab.classList.remove("active");
-        if (regForm) { regForm.classList.remove("hidden"); regForm.style.display = "block"; }
-        if (loginForm) { loginForm.classList.add("hidden"); loginForm.style.display = "none"; }
+
+        if (_currentAuthRole === "org") {
+            if (orgRegForm) { orgRegForm.classList.remove("hidden"); orgRegForm.style.display = "block"; }
+            if (orgLoginForm) { orgLoginForm.classList.add("hidden"); orgLoginForm.style.display = "none"; }
+        } else {
+            if (studentRegForm) { studentRegForm.classList.remove("hidden"); studentRegForm.style.display = "block"; }
+            if (studentLoginForm) { studentLoginForm.classList.add("hidden"); studentLoginForm.style.display = "none"; }
+        }
     }
 };
 
@@ -2285,9 +2402,12 @@ window.requireAuthForDownload = function (callback, options = {}) {
 window.handleAuthModalSubmit = async function (e, mode) {
     e.preventDefault();
     const alertEl = document.getElementById("auth-modal-alert");
-    const submitBtn = mode === "login" 
-        ? document.getElementById("btn-auth-login-submit") 
-        : document.getElementById("btn-auth-reg-submit");
+    
+    let submitBtn = null;
+    if (mode === "login" || mode === "student_login") submitBtn = document.getElementById("btn-auth-login-submit");
+    else if (mode === "register" || mode === "student_register") submitBtn = document.getElementById("btn-auth-reg-submit");
+    else if (mode === "org_login") submitBtn = document.getElementById("btn-auth-org-login-submit");
+    else if (mode === "org_register") submitBtn = document.getElementById("btn-auth-org-reg-submit");
         
     const originalText = submitBtn ? submitBtn.innerHTML : "";
     if (submitBtn) {
@@ -2303,17 +2423,34 @@ window.handleAuthModalSubmit = async function (e, mode) {
         let endpoint = `${base}/api/v1/auth/login`;
         let payload = {};
 
-        if (mode === "login") {
+        if (mode === "login" || mode === "student_login") {
+            endpoint = `${base}/api/v1/auth/login`;
             payload = {
                 email: document.getElementById("auth-login-email").value.trim(),
                 password: document.getElementById("auth-login-password").value
             };
-        } else {
+        } else if (mode === "register" || mode === "student_register") {
             endpoint = `${base}/api/v1/auth/register`;
             payload = {
                 full_name: document.getElementById("auth-reg-name").value.trim(),
                 email: document.getElementById("auth-reg-email").value.trim(),
                 password: document.getElementById("auth-reg-password").value
+            };
+        } else if (mode === "org_login") {
+            endpoint = `${base}/api/v1/organisations/login`;
+            payload = {
+                official_email: document.getElementById("auth-org-login-email").value.trim(),
+                password: document.getElementById("auth-org-login-password").value
+            };
+        } else if (mode === "org_register") {
+            endpoint = `${base}/api/v1/organisations/register`;
+            const orgEmail = document.getElementById("auth-org-reg-email").value.trim();
+            payload = {
+                name: document.getElementById("auth-org-reg-name").value.trim(),
+                official_email: orgEmail,
+                password: document.getElementById("auth-org-reg-password").value,
+                contact_person_name: document.getElementById("auth-org-reg-contact").value.trim(),
+                org_type: "University"
             };
         }
 
@@ -2334,8 +2471,19 @@ window.handleAuthModalSubmit = async function (e, mode) {
 
         // Store tokens
         sessionStorage.setItem("lemma_access_token", data.access_token);
-        sessionStorage.setItem("lemma_refresh_token", data.refresh_token);
-        if (data.user) {
+        sessionStorage.setItem("lemma_refresh_token", data.refresh_token || data.access_token);
+        
+        if (mode.startsWith("org_")) {
+            const orgUser = {
+                id: data.organisation ? data.organisation.id : (data.user ? data.user.id : "org-admin"),
+                email: data.organisation ? data.organisation.official_email : (payload.official_email || "research@chitkara.edu.in"),
+                full_name: data.organisation ? data.organisation.name : (payload.name || "University Admin"),
+                role: "organisation_admin",
+                is_organisation: true,
+                org_data: data.organisation || {}
+            };
+            sessionStorage.setItem("lemma_user", JSON.stringify(orgUser));
+        } else if (data.user) {
             sessionStorage.setItem("lemma_user", JSON.stringify(data.user));
         }
 
@@ -2346,14 +2494,14 @@ window.handleAuthModalSubmit = async function (e, mode) {
 
         if (alertEl) {
             alertEl.className = "auth-modal-alert success";
-            alertEl.textContent = "Signed in successfully! Starting your download...";
+            alertEl.textContent = mode.startsWith("org_") ? "Organisation verified! Opening portal..." : "Signed in successfully!";
             alertEl.style.display = "flex";
         }
 
         setTimeout(() => {
             closeAuthModal();
             if (typeof showToast === "function") {
-                showToast("Signed in successfully! Starting download...", "success");
+                showToast(mode.startsWith("org_") ? "Welcome to Organisation Portal!" : "Signed in successfully!", "success");
             }
             if (typeof _pendingAuthDownloadAction === "function") {
                 const action = _pendingAuthDownloadAction;
@@ -2365,7 +2513,7 @@ window.handleAuthModalSubmit = async function (e, mode) {
     } catch (err) {
         if (alertEl) {
             alertEl.className = "auth-modal-alert error";
-            alertEl.textContent = err.message || "An error occurred during authentication.";
+            alertEl.textContent = err.message || "Authentication failed.";
             alertEl.style.display = "flex";
         }
     } finally {
@@ -2375,5 +2523,3 @@ window.handleAuthModalSubmit = async function (e, mode) {
         }
     }
 };
-
-
