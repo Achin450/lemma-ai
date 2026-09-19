@@ -6867,26 +6867,40 @@ body.in-paper-editor .main-content {
     display: block;
     font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: #cbd5e1;
     margin-bottom: 5px;
 }
 
 .auth-input-group input {
     width: 100%;
     padding: 0.65rem 0.85rem;
-    background: #15151f;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #181826 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 8px;
-    color: var(--text-primary);
+    color: #ffffff !important;
     font-size: 0.9rem;
     outline: none;
     box-sizing: border-box;
     transition: var(--transition-fast);
 }
 
+.auth-input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.35) !important;
+}
+
 .auth-input-group input:focus {
-    border-color: var(--accent-purple);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+    color: #ffffff !important;
+    background: #1c1c2e !important;
+}
+
+.auth-input-group input:-webkit-autofill,
+.auth-input-group input:-webkit-autofill:hover, 
+.auth-input-group input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0px 1000px #181826 inset !important;
+    transition: background-color 5000s ease-in-out 0s;
 }
 
 .auth-submit-btn {
