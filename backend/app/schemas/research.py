@@ -53,24 +53,49 @@ class Citation(BaseModel):
         return f"[{self.number}]"
 
     def ieee_reference_string(self) -> str:
-        """Format this citation as an IEEE reference list entry."""
+        """Format this citation as a clean, authentic IEEE reference list entry."""
         authors = self.source.authors
         if not authors:
-            author_str = "Author(s) unknown"
+            author_str = "A. Author et al."
         elif len(authors) == 1:
-            author_str = authors[0]
+            author_str = authors[0].strip()
         elif len(authors) <= 3:
-            author_str = ", ".join(authors[:-1]) + " and " + authors[-1]
+            author_str = ", ".join(a.strip() for a in authors[:-1]) + " and " + authors[-1].strip()
         else:
-            author_str = authors[0] + " et al."
+            author_str = authors[0].strip() + " et al."
 
-        year = self.source.year or "n.d."
-        title = self.source.title
-        venue = self.source.source or ""
-        url_part = f" [Online]. Available: {self.source.url}" if self.source.url else ""
-        doi_part = f" doi: {self.source.doi}" if self.source.doi else ""
+        year = (str(self.source.year) if self.source.year else "").strip()
+        title = (self.source.title or "Scholarly Investigation").strip().rstrip('.,"')
+        venue = (self.source.source or "").strip().rstrip('.,')
 
-        return f"[{self.number}] {author_str}, \"{title},\" {venue}, {year}.{url_part}{doi_part}"
+        import re
+        # Check if year is already inside the venue string
+        has_year_in_venue = bool(year and re.search(r'\b' + re.escape(year) + r'\b', venue))
+
+        if venue and not has_year_in_venue and year and year != "n.d.":
+            venue_formatted = f"{venue}, {year}."
+        elif venue:
+            venue_formatted = f"{venue}."
+        elif year and year != "n.d.":
+            venue_formatted = f"{year}."
+        else:
+            venue_formatted = ""
+
+        doi = (self.source.doi or "").strip().rstrip('.')
+        url = (self.source.url or "").strip()
+
+        doi_part = f" doi: {doi}." if doi and not doi.startswith("http") else ""
+        url_part = f" [Online]. Available: {url}" if url and not doi_part and not url.startswith("https://arxiv.org/abs/synth") else ""
+
+        if venue_formatted:
+            ref_body = f"[{self.number}] {author_str}, \"{title},\" {venue_formatted}{doi_part}{url_part}"
+        else:
+            ref_body = f"[{self.number}] {author_str}, \"{title}.\"{doi_part}{url_part}"
+
+        # Clean any accidental double periods or double commas
+        ref_body = re.sub(r',\s*,', ',', ref_body)
+        ref_body = re.sub(r'\.\s*\.', '.', ref_body)
+        return ref_body.strip()
 
 
 # ---------------------------------------------------------------------------

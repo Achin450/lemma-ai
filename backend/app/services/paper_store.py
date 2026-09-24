@@ -123,9 +123,9 @@ class PaperStore:
                     cursor.execute("""
                         INSERT INTO research_papers (
                             id, job_id, title, topic, status, paper_type,
-                            similarity_score, sections_count, citations_count, updated_at
+                            similarity_score, sections_count, citations_count, created_at, updated_at
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                         ON CONFLICT (job_id) DO UPDATE SET
                             title = EXCLUDED.title,
                             topic = EXCLUDED.topic,
@@ -320,7 +320,7 @@ class PaperStore:
                                    created_at, updated_at
                             FROM research_papers
                             WHERE user_id = %s OR user_id IS NULL
-                            ORDER BY created_at DESC
+                            ORDER BY COALESCE(updated_at, created_at) DESC
                             LIMIT %s
                         """, (user_id, limit))
                     else:
@@ -329,7 +329,7 @@ class PaperStore:
                                    similarity_score, sections_count, citations_count,
                                    created_at, updated_at
                             FROM research_papers
-                            ORDER BY created_at DESC
+                            ORDER BY COALESCE(updated_at, created_at) DESC
                             LIMIT %s
                         """, (limit,))
                     rows = cursor.fetchall()
@@ -343,7 +343,7 @@ class PaperStore:
                             if isinstance(d.get("updated_at"), datetime):
                                 d["updated_at"] = d["updated_at"].isoformat()
                             if d.get("id"):
-                                d["id"] = str(d["id"])
+                                d["id"] = str(d.get("job_id") or d["id"])
                             if d.get("user_id"):
                                 d["user_id"] = str(d["user_id"])
                             results.append(d)
