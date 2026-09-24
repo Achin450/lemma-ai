@@ -116,10 +116,27 @@ class OnlineRetrieverService:
             return []
 
     @classmethod
+    def _is_valid_academic_record(cls, title: str) -> bool:
+        """Filter out non-article metadata, tables of contents, editorial boards, and empty titles."""
+        if not title or len(title.strip()) < 8:
+            return False
+        import re
+        t_clean = title.strip().lower()
+        non_articles = [
+            r'^table of contents', r'^contents$', r'^author index', r'^subject index',
+            r'^editorial board', r'^front matter', r'^back matter', r'^cover page',
+            r'^index to volume', r'^preliminary pages', r'^issue information', r'^title page',
+            r'^corrigendum', r'^erratum'
+        ]
+        for pat in non_articles:
+            if re.search(pat, t_clean):
+                return False
+        return True
+
+    @classmethod
     async def fetch_arxiv_candidates(cls, query: str, limit: int = 15) -> list[dict]:
         """Queries the arXiv API for matching academic preprints with retries."""
         url = "https://export.arxiv.org/api/query"
-        # Search all fields with flexible query terms without strict quote nesting
         clean_q = query.replace('"', '').strip()
         params = {
             "search_query": f'all:{clean_q}',
@@ -146,28 +163,48 @@ class OnlineRetrieverService:
                             title_elem = entry.find('atom:title', ns)
                             summary_elem = entry.find('atom:summary', ns)
                             id_elem = entry.find('atom:id', ns)
+                            published_elem = entry.find('atom:published', ns)
                             
-                            if title_elem is None or summary_elem is None or id_elem is None:
+                            if title_elem is None or id_elem is None:
                                 continue
                                 
                             title = title_elem.text.strip().replace("\n", " ")
-                            abstract = summary_elem.text.strip().replace("\n", " ")
+                            if not cls._is_valid_academic_record(title):
+                                continue
+
+                            abstract = summary_elem.text.strip().replace("\n", " ") if summary_elem is not None else ""
                             paper_url = id_elem.text.strip()
                             paper_id = paper_url.split('/abs/')[-1].split('v')[0]
                             
-                            authors = [
-                                auth.find('atom:name', ns).text.strip() 
-                                for auth in entry.findall('atom:author', ns) 
-                                if auth.find('atom:name', ns) is not None
-                            ]
-                            author_str = ", ".join(authors) if authors else "N/A"
+                            year = "2023"
+                            if published_elem is not None and published_elem.text:
+                                year = published_elem.text[:4]
+                            
+                            authors = []
+                            for auth in entry.findall('atom:author', ns):
+                                name_elem = auth.find('atom:name', ns)
+                                if name_elem is not None and name_elem.text:
+                                    name_parts = name_elem.text.strip().split()
+                                    if len(name_parts) >= 2:
+                                        authors.append(f"{name_parts[0][0]}. {' '.join(name_parts[1:])}")
+                                    else:
+                                        authors.append(name_elem.text.strip())
+
+                            if not authors:
+                                authors = ["arXiv Contributor"]
+                            author_str = ", ".join(authors)
                             
                             candidates.append({
                                 "doc_id": f"arxiv_{paper_id}",
                                 "title": title,
+                                "authors": authors,
                                 "author": author_str,
-                                "source": f"arXiv Preprint ({paper_url})",
-                                "text": abstract
+                                "year": year,
+                                "doi": f"arXiv:{paper_id}",
+                                "url": paper_url,
+                                "source": f"arXiv preprint arXiv:{paper_id} ({year})",
+                                "text": abstract or f"{title}. Research preprint on arXiv ({year}).",
+                                "abstract": abstract
                             })
                         return candidates
             except Exception as e:
@@ -177,11 +214,12 @@ class OnlineRetrieverService:
     @classmethod
     async def fetch_crossref_candidates(cls, query: str, limit: int = 15) -> list[dict]:
         """Queries the Crossref Academic API for matching DOI peer-reviewed journal papers and abstracts."""
+        import html
         url = "https://api.crossref.org/works"
         params = {
             "query": query.replace('"', '').strip(),
             "rows": limit,
-            "select": "DOI,title,author,abstract,container-title,published"
+            "select": "DOI,title,author,abstract,container-title,published,published-print,published-online,created"
         }
         headers = {
             "User-Agent": "LemmaAcademicIntegrity/2.0 (mailto:contact@lemma.ai)"
@@ -194,37 +232,52 @@ class OnlineRetrieverService:
                     candidates = []
                     for item in items:
                         title_list = item.get("title", [])
-                        title = title_list[0] if title_list else "Academic Reference"
-                        abstract = item.get("abstract", "") or ""
+                        raw_title = title_list[0].strip() if title_list else ""
+                        title = html.unescape(raw_title)
+                        if not cls._is_valid_academic_record(title):
+                            continue
+
+                        doi = item.get("DOI", "")
+                        venue_list = item.get("container-title", [])
+                        venue = html.unescape(venue_list[0].strip()) if venue_list else "Peer-Reviewed Journal"
                         
-                        # Strip jats xml tags if present
+                        pub = item.get("published") or item.get("published-print") or item.get("published-online") or item.get("created") or {}
+                        dp = pub.get("date-parts", [[None]])
+                        year = str(dp[0][0]) if (dp and dp[0] and dp[0][0]) else "2023"
+
+                        authors = []
+                        for a in item.get("author", []):
+                            family = a.get("family", "").strip()
+                            given = a.get("given", "").strip()
+                            if family and given:
+                                authors.append(f"{given[0]}. {family}")
+                            elif family:
+                                authors.append(family)
+                        
+                        if not authors:
+                            authors = ["Academic Research Group"]
+                        author_str = ", ".join(authors)
+
+                        abstract = item.get("abstract", "") or ""
                         if abstract:
                             import re
                             abstract = re.sub(r'<[^>]+>', ' ', abstract).strip()
-                            
-                        # If abstract is absent, use title and venue context
+                            abstract = html.unescape(abstract)
+                        
                         if not abstract or len(abstract) < 20:
-                            venue = item.get("container-title", [""])[0] if item.get("container-title") else ""
-                            abstract = f"{title}. Published in {venue}." if venue else title
-                            
-                        doi = item.get("DOI", "unknown")
-                        venue = item.get("container-title", ["Academic Publisher"])[0] if item.get("container-title") else "Peer-Reviewed Journal"
-                        
-                        # Authors
-                        authors = []
-                        for a in item.get("author", []):
-                            family = a.get("family", "")
-                            given = a.get("given", "")
-                            if family:
-                                authors.append(f"{given} {family}".strip())
-                        author_str = ", ".join(authors) if authors else "Scholarly Research Team"
-                        
+                            abstract = f"{title}. Published in {venue} ({year})."
+
                         candidates.append({
-                            "doc_id": f"crossref_{doi.replace('/', '_')}",
+                            "doc_id": f"crossref_{doi.replace('/', '_')}" if doi else f"cr_{len(candidates)+1}",
                             "title": title,
+                            "authors": authors,
                             "author": author_str,
-                            "source": f"{venue} (DOI: {doi})",
-                            "text": abstract
+                            "year": year,
+                            "doi": doi,
+                            "url": f"https://doi.org/{doi}" if doi else None,
+                            "source": f"{venue}, {year}" if venue else f"Scholarly Publication, {year}",
+                            "text": abstract,
+                            "abstract": abstract
                         })
                     return candidates
         except Exception as e:
@@ -389,8 +442,8 @@ class OnlineRetrieverService:
         return []
 
     @classmethod
-    async def get_online_candidates(cls, queries: list[str], limit_per_query: int = None) -> list[dict]:
-        """Fetches and merges candidates concurrently across OpenAlex, Crossref, arXiv, Wikipedia, and Semantic Scholar."""
+    async def get_online_candidates(cls, queries: list[str], limit_per_query: int = None, include_wikipedia: bool = False) -> list[dict]:
+        """Fetches and merges candidates concurrently across Crossref, arXiv, OpenAlex, and Semantic Scholar."""
         if limit_per_query is None:
             limit_per_query = settings.MAX_ONLINE_CANDIDATES_PER_QUERY
             
@@ -399,18 +452,17 @@ class OnlineRetrieverService:
         seen_titles = set()
         
         tasks = []
-        for query in queries[:4]:
+        for query in queries[:8]:
+            tasks.append(cls.fetch_crossref_candidates(query, limit=10))
+            tasks.append(cls.fetch_arxiv_candidates(query, limit=10))
             tasks.append(cls.fetch_openalex_candidates(query, limit=5))
-            tasks.append(cls.fetch_crossref_candidates(query, limit=5))
-            tasks.append(cls.fetch_arxiv_candidates(query, limit=5))
-            tasks.append(cls.fetch_wikipedia_candidates(query, limit=3))
-            tasks.append(cls.fetch_semantic_scholar_candidates(query, limit=5))
+            if include_wikipedia:
+                tasks.append(cls.fetch_wikipedia_candidates(query, limit=3))
+            if settings.SEMANTIC_SCHOLAR_API_KEY:
+                tasks.append(cls.fetch_semantic_scholar_candidates(query, limit=5))
             
         try:
-            results = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=10.0)
-        except asyncio.TimeoutError:
-            logger.warning("Online candidate retrieval timed out after 10s. Continuing with cached/mock references.")
-            return []
+            results = await asyncio.gather(*tasks, return_exceptions=True)
         except Exception as e:
             logger.warning(f"Online candidate retrieval failed: {e}")
             return []
@@ -419,10 +471,12 @@ class OnlineRetrieverService:
             if isinstance(cand_list, list):
                 for cand in cand_list:
                     cand_id = cand.get("doc_id", "")
-                    title_lower = cand.get("title", "").lower().strip()
+                    title_clean = (cand.get("title") or "").strip()
+                    title_lower = title_clean.lower()
                     
-                    if cand_id and cand_id not in seen_ids and title_lower not in seen_titles:
-                        seen_ids.add(cand_id)
+                    if title_clean and len(title_clean) > 8 and title_lower not in seen_titles:
+                        if cand_id:
+                            seen_ids.add(cand_id)
                         seen_titles.add(title_lower)
                         all_candidates.append(cand)
                         

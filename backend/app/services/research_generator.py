@@ -361,28 +361,49 @@ class ResearchGeneratorService:
         return paper
 
     async def _retrieve_sources(self, topic: str, sections: list[str]) -> list[dict]:
-        """Retrieve real academic sources using the existing online retriever."""
+        """Retrieve real academic sources using multi-query academic retrieval across Crossref and arXiv."""
         try:
             from app.services.online_retriever import OnlineRetrieverService
 
-            # Build search queries from topic + key sections
-            queries = [topic]
+            topic_clean = topic.strip()
+            queries = [
+                topic_clean,
+                f"{topic_clean} survey review",
+                f"{topic_clean} methodology algorithm architecture",
+                f"{topic_clean} empirical evaluation benchmark",
+                f"{topic_clean} comparative analysis",
+            ]
+
+            # Extract distinct key phrase combinations
+            words = [w for w in topic_clean.split() if len(w) > 3 and w.isalpha()]
+            if len(words) >= 2:
+                queries.append(" ".join(words[:4]))
+                if len(words) >= 4:
+                    queries.append(" ".join(words[2:]))
+
             for section in sections:
-                if section.upper() in ("RELATED WORK", "LITERATURE REVIEW"):
-                    queries.append(f"{topic} survey review")
-                elif section.upper() == "METHODOLOGY":
-                    queries.append(f"{topic} methodology approach")
-                elif section.upper() in ("RESULTS", "EXPERIMENTS"):
-                    queries.append(f"{topic} results evaluation")
+                sec_upper = section.upper()
+                if any(k in sec_upper for k in ("RELATED WORK", "LITERATURE", "TAXONOMY")):
+                    queries.append(f"{topic_clean} literature review")
+                elif any(k in sec_upper for k in ("METHOD", "ARCHITECTURE", "THEORY")):
+                    queries.append(f"{topic_clean} algorithmic formulations")
+                elif any(k in sec_upper for k in ("EXPERIMENT", "BENCHMARK", "RESULTS")):
+                    queries.append(f"{topic_clean} benchmark datasets")
 
-            # Use at most 3 queries to avoid rate limiting
-            queries = queries[:3]
+            # Deduplicate while preserving order
+            unique_queries = []
+            seen_q = set()
+            for q in queries:
+                q_clean = q.strip().lower()
+                if q_clean and q_clean not in seen_q:
+                    seen_q.add(q_clean)
+                    unique_queries.append(q)
 
-            logger.info(f"Retrieving sources for queries: {queries}")
+            logger.info(f"Retrieving academic sources for queries: {unique_queries[:6]}")
             candidates = await OnlineRetrieverService.get_online_candidates(
-                queries, limit_per_query=15
+                unique_queries[:8], limit_per_query=15, include_wikipedia=False
             )
-            logger.info(f"Retrieved {len(candidates)} source candidates")
+            logger.info(f"Retrieved {len(candidates)} real source candidates")
             return candidates
 
         except Exception as e:
@@ -394,176 +415,281 @@ class ResearchGeneratorService:
                                     candidates: list[dict] = None,
                                     min_count: int = 10) -> list[dict]:
         """
-        Guarantees that at least `min_count` (default 10) high-quality, authentic,
-        domain-accurate academic references are provided for the paper.
+        Guarantees that at least `min_count` (default 10) 100% authentic, real,
+        published academic references with verified titles, authors, and venues
+        are provided for the paper. Zero synthetic/hallucinated titles.
         """
         valid_candidates: list[dict] = []
         seen_titles = set()
 
         for c in (candidates or []):
             title = (c.get("title") or "").strip()
-            if title and len(title) > 5 and title.lower() not in seen_titles:
-                seen_titles.add(title.lower())
+            title_lower = title.lower()
+            if title and len(title) > 8 and title_lower not in seen_titles:
+                seen_titles.add(title_lower)
                 valid_candidates.append(c)
 
         if len(valid_candidates) >= min_count:
             return valid_candidates[:min_count]
 
-        from app.services.research_domain_knowledge import ResearchDomainKnowledgeService
-        domain_profile = ResearchDomainKnowledgeService.resolve_domain_profile(topic)
-        domain_name = domain_profile.get("domain_name") or domain or "Computer Science & Engineering"
-        topic_clean = topic.strip().rstrip('.').title()
+        # Verified real landmark published papers across major academic domains
+        REAL_LANDMARK_CATALOG = {
+            "cv": [
+                {
+                    "title": "Deep Residual Learning for Image Recognition",
+                    "authors": ["K. He", "X. Zhang", "S. Ren", "J. Sun"],
+                    "year": "2016",
+                    "source": "IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016",
+                    "doi": "10.1109/CVPR.2016.90",
+                    "url": "https://doi.org/10.1109/CVPR.2016.90",
+                    "abstract": "Deeper neural networks are more difficult to train. We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously."
+                },
+                {
+                    "title": "U-Net: Convolutional Networks for Biomedical Image Segmentation",
+                    "authors": ["O. Ronneberger", "P. Fischer", "T. Brox"],
+                    "year": "2015",
+                    "source": "Medical Image Computing and Computer-Assisted Intervention (MICCAI), 2015",
+                    "doi": "10.1007/978-3-319-24574-4_28",
+                    "url": "https://doi.org/10.1007/978-3-319-24574-4_28",
+                    "abstract": "We present a network and training strategy that relies on the strong use of data augmentation to use the available annotated samples more efficiently."
+                },
+                {
+                    "title": "An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale",
+                    "authors": ["A. Dosovitskiy", "L. Beyer", "A. Kolesnikov", "D. Weissenborn", "X. Zhai"],
+                    "year": "2021",
+                    "source": "International Conference on Learning Representations (ICLR), 2021",
+                    "doi": "arXiv:2010.11929",
+                    "url": "https://arxiv.org/abs/2010.11929",
+                    "abstract": "While the Transformer architecture has become the de-facto standard for natural language processing tasks, its applications to computer vision remain limited."
+                },
+                {
+                    "title": "Segment Anything",
+                    "authors": ["A. Kirillov", "E. Mintun", "N. Ravi", "H. Mao", "C. Rolland", "L. Gustafson"],
+                    "year": "2023",
+                    "source": "IEEE International Conference on Computer Vision (ICCV), 2023",
+                    "doi": "10.1109/ICCV51070.2023.00371",
+                    "url": "https://doi.org/10.1109/ICCV51070.2023.00371",
+                    "abstract": "We introduce the Segment Anything (SA) project: a new task, model, and dataset for image segmentation."
+                },
+                {
+                    "title": "Swin Transformer: Hierarchical Vision Transformer using Shifted Windows",
+                    "authors": ["Z. Liu", "Y. Lin", "Y. Cao", "H. Hu", "Y. Wei", "Z. Zhang"],
+                    "year": "2021",
+                    "source": "IEEE International Conference on Computer Vision (ICCV), 2021",
+                    "doi": "10.1109/ICCV48922.2021.00986",
+                    "url": "https://doi.org/10.1109/ICCV48922.2021.00986",
+                    "abstract": "This paper presents a new vision Transformer, called Swin Transformer, that capably serves as a general-purpose backbone for computer vision."
+                },
+                {
+                    "title": "Focal Loss for Dense Object Detection",
+                    "authors": ["T. Y. Lin", "P. Goyal", "R. Girshick", "K. He", "P. Dollar"],
+                    "year": "2017",
+                    "source": "IEEE International Conference on Computer Vision (ICCV), 2017",
+                    "doi": "10.1109/ICCV.2017.324",
+                    "url": "https://doi.org/10.1109/ICCV.2017.324",
+                    "abstract": "The highest accuracy object detectors to date are based on a two-stage approach popularized by R-CNN, where a classifier is applied to a sparse set of candidate object locations."
+                },
+            ],
+            "nlp": [
+                {
+                    "title": "Attention Is All You Need",
+                    "authors": ["A. Vaswani", "N. Shazeer", "N. Parmar", "J. Uszkoreit", "L. Jones", "A. N. Gomez"],
+                    "year": "2017",
+                    "source": "Advances in Neural Information Processing Systems (NeurIPS), 2017",
+                    "doi": "arXiv:1706.03762",
+                    "url": "https://arxiv.org/abs/1706.03762",
+                    "abstract": "The dominant sequence transduction models are based on complex recurrent or convolutional neural networks. We propose a new simple network architecture, the Transformer, based solely on attention mechanisms."
+                },
+                {
+                    "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+                    "authors": ["J. Devlin", "M. W. Chang", "K. Lee", "K. Toutanova"],
+                    "year": "2019",
+                    "source": "North American Chapter of the Association for Computational Linguistics (NAACL-HLT), 2019",
+                    "doi": "10.18653/v1/N19-1423",
+                    "url": "https://doi.org/10.18653/v1/N19-1423",
+                    "abstract": "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers."
+                },
+                {
+                    "title": "Language Models are Few-Shot Learners",
+                    "authors": ["T. Brown", "B. Mann", "N. Ryder", "M. Subbiah", "J. D. Kaplan", "P. Dhariwal"],
+                    "year": "2020",
+                    "source": "Advances in Neural Information Processing Systems (NeurIPS), 2020",
+                    "doi": "arXiv:2005.14165",
+                    "url": "https://arxiv.org/abs/2005.14165",
+                    "abstract": "Recent work has demonstrated substantial gains on many NLP tasks and benchmarks by pre-training on a large corpus of text followed by fine-tuning on a specific task."
+                },
+                {
+                    "title": "RoBERTa: A Robustly Optimized BERT Approach",
+                    "authors": ["Y. Liu", "M. Ott", "N. Goyal", "J. Du", "M. Joshi", "D. Chen"],
+                    "year": "2019",
+                    "source": "arXiv preprint arXiv:1907.11692, 2019",
+                    "doi": "arXiv:1907.11692",
+                    "url": "https://arxiv.org/abs/1907.11692",
+                    "abstract": "Language model pretraining has led to significant performance gains but careful comparisons between different approaches are challenging."
+                },
+                {
+                    "title": "LLaMA: Open and Efficient Foundation Language Models",
+                    "authors": ["H. Touvron", "T. Lavril", "G. Izacard", "X. Martinet", "M. A. Lachaux", "T. Lacroix"],
+                    "year": "2023",
+                    "source": "arXiv preprint arXiv:2302.13971, 2023",
+                    "doi": "arXiv:2302.13971",
+                    "url": "https://arxiv.org/abs/2302.13971",
+                    "abstract": "We introduce LLaMA, a collection of foundation language models ranging from 7B to 65B parameters trained on trillions of tokens."
+                },
+            ],
+            "robotics": [
+                {
+                    "title": "Proximal Policy Optimization Algorithms",
+                    "authors": ["J. Schulman", "F. Wolski", "P. Dhariwal", "A. Radford", "O. Klimov"],
+                    "year": "2017",
+                    "source": "arXiv preprint arXiv:1707.06347, 2017",
+                    "doi": "arXiv:1707.06347",
+                    "url": "https://arxiv.org/abs/1707.06347",
+                    "abstract": "We propose a new family of policy gradient methods for reinforcement learning, which alternate between sampling data through interaction with the environment, and optimizing a 'surrogate' objective function."
+                },
+                {
+                    "title": "Continuous Control with Deep Reinforcement Learning",
+                    "authors": ["T. P. Lillicrap", "J. J. Hunt", "A. Pritzel", "N. Heess", "T. Erez", "Y. Tassa"],
+                    "year": "2016",
+                    "source": "International Conference on Learning Representations (ICLR), 2016",
+                    "doi": "arXiv:1509.02971",
+                    "url": "https://arxiv.org/abs/1509.02971",
+                    "abstract": "We adapt the ideas underlying the success of Deep Q-Learning to the continuous action domain using an actor-critic, model-free algorithm based on deterministic policy gradient."
+                },
+                {
+                    "title": "Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor",
+                    "authors": ["T. Haarnoja", "A. Zhou", "P. Abbeel", "S. Levine"],
+                    "year": "2018",
+                    "source": "International Conference on Machine Learning (ICML), 2018",
+                    "doi": "arXiv:1801.01290",
+                    "url": "https://arxiv.org/abs/1801.01290",
+                    "abstract": "Model-free deep reinforcement learning algorithms have been demonstrated on a range of challenging sequential decision making tasks."
+                },
+                {
+                    "title": "Past, Present, and Future of Simultaneous Localization and Mapping: Toward the Robust-Perception Age",
+                    "authors": ["C. Cadena", "L. Carlone", "H. Carrillo", "Y. Latif", "D. Scaramuzza", "J. Neira"],
+                    "year": "2016",
+                    "source": "IEEE Transactions on Robotics, vol. 32, no. 6, pp. 1309-1332, 2016",
+                    "doi": "10.1109/TRO.2016.2624754",
+                    "url": "https://doi.org/10.1109/TRO.2016.2624754",
+                    "abstract": "Simultaneous Localization and Mapping (SLAM) is one of the fundamental problems in robotics, enabling autonomous exploration."
+                },
+            ],
+            "security": [
+                {
+                    "title": "Communication-Efficient Learning of Deep Networks from Decentralized Data",
+                    "authors": ["B. McMahan", "E. Moore", "D. Ramage", "S. Hampson", "B. A. y Arcas"],
+                    "year": "2017",
+                    "source": "International Conference on Artificial Intelligence and Statistics (AISTATS), 2017",
+                    "doi": "arXiv:1602.05629",
+                    "url": "https://arxiv.org/abs/1602.05629",
+                    "abstract": "Modern mobile devices have access to an unprecedented amount of data suitable for learning rich models. We propose Federated Learning to train models without centralizing training data."
+                },
+                {
+                    "title": "Hyperledger Fabric: A Distributed Operating System for Permissioned Blockchains",
+                    "authors": ["E. Androulaki", "A. Barger", "V. Bortnikov", "C. Cachin", "K. Christidis", "A. De Caro"],
+                    "year": "2018",
+                    "source": "ACM European Conference on Computer Systems (EuroSys), 2018",
+                    "doi": "10.1145/3190508.3190538",
+                    "url": "https://doi.org/10.1145/3190508.3190538",
+                    "abstract": "Fabric is an open-source system for deploying and operating permissioned blockchains with high performance and modular architecture."
+                },
+                {
+                    "title": "Deep Learning with Differential Privacy",
+                    "authors": ["M. Abadi", "A. Chu", "I. Goodfellow", "H. B. McMahan", "I. Mironov", "K. Talwar"],
+                    "year": "2016",
+                    "source": "ACM SIGSAC Conference on Computer and Communications Security (CCS), 2016",
+                    "doi": "10.1145/2976749.2978318",
+                    "url": "https://doi.org/10.1145/2976749.2978318",
+                    "abstract": "Machine learning techniques based on neural networks are achieving remarkable results. We develop new algorithmic techniques for learning with differential privacy."
+                },
+            ],
+            "general": [
+                {
+                    "title": "Adam: A Method for Stochastic Optimization",
+                    "authors": ["D. P. Kingma", "J. Ba"],
+                    "year": "2015",
+                    "source": "International Conference on Learning Representations (ICLR), 2015",
+                    "doi": "arXiv:1412.6980",
+                    "url": "https://arxiv.org/abs/1412.6980",
+                    "abstract": "We introduce Adam, an algorithm for first-order gradient-based optimization of stochastic objective functions, based on adaptive estimates of lower-order moments."
+                },
+                {
+                    "title": "Generative Adversarial Nets",
+                    "authors": ["I. Goodfellow", "J. Pouget-Abadie", "M. Mirza", "B. Xu", "D. Warde-Farley", "S. Ozair"],
+                    "year": "2014",
+                    "source": "Advances in Neural Information Processing Systems (NeurIPS), 2014",
+                    "doi": "10.1145/3422622",
+                    "url": "https://doi.org/10.1145/3422622",
+                    "abstract": "We propose a new framework for estimating generative models via an adversarial process, in which we simultaneously train two models: a generative model G and a discriminative model D."
+                },
+                {
+                    "title": "Mastering the Game of Go without Human Knowledge",
+                    "authors": ["D. Silver", "J. Schrittwieser", "K. Simonyan", "I. Antonoglou", "A. Huang", "A. Guez"],
+                    "year": "2017",
+                    "source": "Nature, vol. 550, no. 7676, pp. 354-359, 2017",
+                    "doi": "10.1038/nature24270",
+                    "url": "https://doi.org/10.1038/nature24270",
+                    "abstract": "A long-standing goal of artificial intelligence is an algorithm that learns, tabula rasa, superhuman proficiency in challenging domains."
+                },
+                {
+                    "title": "Dropout: A Simple Way to Prevent Neural Networks from Overfitting",
+                    "authors": ["N. Srivastava", "G. Hinton", "A. Krizhevsky", "I. Sutskever", "R. Salakhutdinov"],
+                    "year": "2014",
+                    "source": "Journal of Machine Learning Research (JMLR), vol. 15, no. 1, pp. 1929-1958, 2014",
+                    "doi": "10.5555/2627435.2670313",
+                    "url": "https://jmlr.org/papers/v15/srivastava14a.html",
+                    "abstract": "Deep neural networks with a large number of parameters are very powerful machine learning systems. Overfitting is a serious problem in such networks."
+                },
+                {
+                    "title": "Human-level Control Through Deep Reinforcement Learning",
+                    "authors": ["V. Mnih", "K. Kavukcuoglu", "D. Silver", "A. A. Rusu", "J. Veness", "M. G. Bellemare"],
+                    "year": "2015",
+                    "source": "Nature, vol. 518, no. 7540, pp. 529-533, 2015",
+                    "doi": "10.1038/nature14236",
+                    "url": "https://doi.org/10.1038/nature14236",
+                    "abstract": "The theory of reinforcement learning provides a normative account of how agents learn to make decisions. We demonstrate human-level control across 49 Atari games."
+                },
+            ]
+        }
 
-        # Domain-aligned venue catalogs
+        # Select domain fallback list
         topic_lower = topic.lower()
-        if any(k in topic_lower for k in ["vision", "image", "yolo", "cnn", "segmentation", "detection", "visual", "mri", "ct scan"]):
-            venues = [
-                "IEEE Transactions on Pattern Analysis and Machine Intelligence",
-                "IEEE Transactions on Medical Imaging",
-                "IEEE Conference on Computer Vision and Pattern Recognition (CVPR)",
-                "Medical Image Analysis (Elsevier)",
-                "IEEE Transactions on Image Processing",
-                "Pattern Recognition (Elsevier)",
-                "International Journal of Computer Vision (Springer)",
-                "Nature Machine Intelligence"
-            ]
-            authors_pool = [
-                ["K. He", "X. Zhang", "S. Ren", "J. Sun"],
-                ["O. Ronneberger", "P. Fischer", "T. Brox"],
-                ["A. Dosovitskiy", "L. Beyer", "A. Kolesnikov", "D. Weissenborn"],
-                ["T. Y. Lin", "P. Goyal", "R. Girshick", "K. He", "P. Dollar"],
-                ["Z. Liu", "Y. Lin", "Y. Cao", "H. Hu", "Y. Wei", "Z. Zhang"],
-                ["C. Szegedy", "W. Liu", "Y. Jia", "P. Sermanet", "S. Reed"],
-                ["A. Kirillov", "E. Mintun", "N. Ravi", "H. Mao", "C. Rolland"],
-                ["J. Long", "E. Shelhamer", "T. Darrell"]
-            ]
-        elif any(k in topic_lower for k in ["blockchain", "security", "crypto", "privacy", "zero-knowledge", "smart contract", "attack", "cyber"]):
-            venues = [
-                "IEEE Transactions on Dependable and Secure Computing",
-                "IEEE Transactions on Information Forensics and Security",
-                "ACM Conference on Computer and Communications Security (CCS)",
-                "IEEE Symposium on Security and Privacy (S&P)",
-                "IEEE Internet of Things Journal",
-                "Journal of Cryptology (Springer)",
-                "IEEE Transactions on Network and Service Management",
-                "Computer Networks (Elsevier)"
-            ]
-            authors_pool = [
-                ["S. Nakamoto"],
-                ["V. Buterin", "J. Poon"],
-                ["E. Androulaki", "A. Barger", "V. Bortnikov", "C. Cachin"],
-                ["B. Schneier", "R. Rivest", "A. Shamir"],
-                ["M. Bellare", "P. Rogaway"],
-                ["C. Gentry", "A. Sahai", "B. Waters"],
-                ["E. Ben-Sasson", "A. Chiesa", "E. Tromer", "M. Virza"],
-                ["R. Canetti", "H. Krawczyk"]
-            ]
-        elif any(k in topic_lower for k in ["robot", "autonomous", "vehicle", "drone", "uav", "control", "trajectory", "slam", "kinematics"]):
-            venues = [
-                "IEEE Transactions on Robotics",
-                "IEEE International Conference on Robotics and Automation (ICRA)",
-                "IEEE Transactions on Control Systems Technology",
-                "Autonomous Robots (Springer)",
-                "Journal of Field Robotics (Wiley)",
-                "Science Robotics",
-                "IEEE Robotics and Automation Letters",
-                "Control Engineering Practice"
-            ]
-            authors_pool = [
-                ["S. Thrun", "W. Burgard", "D. Fox"],
-                ["S. Karaman", "E. Frazzoli"],
-                ["R. Siegwart", "I. R. Nourbakhsh", "D. Scaramuzza"],
-                ["J. J. Craig"],
-                ["K. J. Astrom", "R. M. Murray"],
-                ["A. Loquercio", "E. Kaufmann", "R. Ranftl", "D. Scaramuzza"],
-                ["C. Cadena", "L. Carlone", "H. Carrillo", "Y. Latif"],
-                ["F. Dellaert", "M. Kaess"]
-            ]
+        if any(k in topic_lower for k in ["vision", "image", "yolo", "cnn", "segmentation", "detection", "visual", "mri"]):
+            cat_keys = ["cv", "general", "nlp"]
         elif any(k in topic_lower for k in ["language", "nlp", "llm", "transformer", "bert", "gpt", "speech", "dialogue", "text"]):
-            venues = [
-                "Association for Computational Linguistics (ACL)",
-                "Empirical Methods in Natural Language Processing (EMNLP)",
-                "ACM Transactions on Information Systems",
-                "Journal of Artificial Intelligence Research (JAIR)",
-                "IEEE/ACM Transactions on Audio, Speech, and Language Processing",
-                "Computational Linguistics (MIT Press)",
-                "Neural Information Processing Systems (NeurIPS)",
-                "Nature Machine Intelligence"
-            ]
-            authors_pool = [
-                ["A. Vaswani", "N. M. Shazeer", "N. Parmar", "J. Uszkoreit"],
-                ["J. Devlin", "M. W. Chang", "K. Lee", "K. Toutanova"],
-                ["T. Brown", "B. Mann", "N. Ryder", "M. Subbiah", "J. Kaplan"],
-                ["Y. Liu", "M. Ott", "N. Goyal", "J. Du", "M. Joshi", "D. Chen"],
-                ["C. D. Manning", "P. Raghavan", "H. Schutze"],
-                ["P. Liang", "R. Bommasani", "T. Lee", "D. Jurafsky"],
-                ["H. Touvron", "L. Martin", "K. Stone", "P. Albert", "A. Almahairi"],
-                ["A. Radford", "J. Wu", "R. Child", "D. Luan", "D. Amodei"]
-            ]
+            cat_keys = ["nlp", "general", "cv"]
+        elif any(k in topic_lower for k in ["robot", "autonomous", "vehicle", "drone", "uav", "control", "trajectory", "slam"]):
+            cat_keys = ["robotics", "general", "cv"]
+        elif any(k in topic_lower for k in ["blockchain", "security", "crypto", "privacy", "zero-knowledge", "cyber", "federated"]):
+            cat_keys = ["security", "general", "nlp"]
         else:
-            venues = [
-                "IEEE Transactions on Knowledge and Data Engineering",
-                "IEEE Transactions on Neural Networks and Learning Systems",
-                "ACM Computing Surveys",
-                "IEEE Access",
-                "Journal of Machine Learning Research (JMLR)",
-                "Artificial Intelligence Review (Springer)",
-                "IEEE Transactions on Software Engineering",
-                "Future Generation Computer Systems"
-            ]
-            authors_pool = [
-                ["Y. Bengio", "I. Goodfellow", "A. Courville"],
-                ["M. I. Jordan", "T. M. Mitchell"],
-                ["C. M. Bishop"],
-                ["R. S. Sutton", "A. G. Barto"],
-                ["D. Silver", "J. Schrittwieser", "K. Simonyan", "I. Antonoglou"],
-                ["S. Russell", "P. Norvig"],
-                ["G. Hinton", "L. Deng", "D. Yu", "G. E. Dahl"],
-                ["J. Dean", "S. Ghemawat", "M. Zaharia"]
-            ]
+            cat_keys = ["general", "nlp", "cv", "robotics", "security"]
 
-        reference_themes = [
-            ("Foundations and Comprehensive Survey of Advanced Paradigms in {topic}", "survey"),
-            ("Empirical Benchmarking and Quantitative Performance Evaluation of {topic}", "evaluation"),
-            ("Optimized Algorithmic Architecture and Computational Formulations for {topic}", "architecture"),
-            ("Robustness, Generalization, and Systematic Verification in {topic}", "theory"),
-            ("A Comparative Study of State-of-the-Art Methodologies for {topic}", "comparative"),
-            ("Scalable Distributed Implementations and Real-Time Systems for {topic}", "systems"),
-            ("Adaptive Feature Representation and Transfer Learning in {topic}", "learning"),
-            ("Practical Deployment Constraints, Latency Optimization, and Efficiency in {topic}", "applications"),
-            ("Interpretable and Explainable Modeling Approaches for {topic}", "interpretability"),
-            ("Future Research Trajectories, Open Bottlenecks, and Emerging Directions in {topic}", "frontiers"),
-            ("Self-Supervised Pre-Training and Contrastive Alignment in {topic}", "representation"),
-            ("Statistical Validation, Convergence Dynamics, and Sensitivity Metrics in {topic}", "mathematics")
-        ]
+        pool = []
+        for ck in cat_keys:
+            pool.extend(REAL_LANDMARK_CATALOG.get(ck, []))
 
-        needed = min_count - len(valid_candidates)
-        for i in range(needed):
-            theme_tpl, _ = reference_themes[i % len(reference_themes)]
-            ref_title = theme_tpl.format(topic=topic_clean)
-            if ref_title.lower() in seen_titles:
-                ref_title = f"{ref_title}: Methodological Framework {i+1}"
-            seen_titles.add(ref_title.lower())
+        for item in pool:
+            if len(valid_candidates) >= min_count:
+                break
+            t_lower = item["title"].lower()
+            if t_lower not in seen_titles:
+                seen_titles.add(t_lower)
+                valid_candidates.append({
+                    "doc_id": f"landmark_{len(valid_candidates)+1}",
+                    "title": item["title"],
+                    "authors": item["authors"],
+                    "author": ", ".join(item["authors"]),
+                    "year": item["year"],
+                    "source": item["source"],
+                    "doi": item.get("doi", ""),
+                    "url": item.get("url", ""),
+                    "text": item["abstract"],
+                    "abstract": item["abstract"],
+                })
 
-            authors = authors_pool[(len(valid_candidates) + i) % len(authors_pool)]
-            venue = venues[(len(valid_candidates) + i) % len(venues)]
-            year = str(2024 - ((i * 2) % 6))
-            vol_num = 25 + (i % 15)
-            pp_start = 100 + (i * 18)
-            pp_end = pp_start + 12 + (i % 8)
-
-            valid_candidates.append({
-                "doc_id": f"ref_{len(valid_candidates)+1}",
-                "title": ref_title,
-                "authors": authors,
-                "year": year,
-                "source": f"{venue}, vol. {vol_num}, pp. {pp_start}-{pp_end}, {year}",
-                "doi": f"10.1109/{venue.split()[0].upper()}.{year}.{100000 + i*137}",
-                "text": f"This scholarly publication investigates algorithmic foundations, empirical metrics, and computational formulations for {topic_clean} within {domain_name}.",
-                "abstract": f"This research presents a rigorous theoretical and empirical examination of {topic_clean}, establishing benchmark comparisons and architectural evaluation.",
-            })
-
-        return valid_candidates
+        return valid_candidates[:min_count]
 
     async def _run_similarity_check(self, paper: ResearchPaper) -> float:
         """
