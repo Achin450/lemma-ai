@@ -3,7 +3,6 @@ import uuid
 from celery.result import AsyncResult
 # pyrefly: ignore [missing-import]
 import os
-from sqlalchemy import create_engine
 from fastapi import FastAPI, UploadFile, File, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
@@ -46,15 +45,19 @@ from app.routers.payment import router as payment_router
 from app.routers.organisations import router as organisations_router
 from app.routers.enterprise_payment import router as enterprise_payment_router
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL:
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-else:
-   DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/lemma"
-
-engine = create_engine(DATABASE_URL)
+# Database engine (safely initialized with psycopg2 driver if available)
+engine = None
+try:
+    from sqlalchemy import create_engine
+    _raw_db_url = os.getenv("DATABASE_URL") or "postgresql://postgres:postgres@localhost:5432/lemma"
+    if _raw_db_url.startswith("postgres://"):
+        _raw_db_url = _raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif _raw_db_url.startswith("postgresql://") and not _raw_db_url.startswith("postgresql+"):
+        _raw_db_url = _raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    engine = create_engine(_raw_db_url)
+except Exception as _engine_err:
+    import logging
+    logging.getLogger("main").debug(f"SQLAlchemy engine deferred: {_engine_err}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
