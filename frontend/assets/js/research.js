@@ -855,7 +855,8 @@
             if (absBlock) {
                 if (absBlock.style.display === 'none') absBlock.style.display = 'block';
                 const cleanAbs = paper.abstract.replace(/^abstract\s*[\:\—\-]+\s*/i, '').trim();
-                absBlock.innerHTML = '<span class="ieee-run-in">Abstract—</span>' + escHtml(cleanAbs);
+                absBlock.innerHTML = '<span class="ieee-run-in">Abstract—</span>' + formatContent(cleanAbs);
+                hydratePendingKaTeX();
             }
         }
 
@@ -1365,7 +1366,7 @@
         }
 
         html += `<div class="paper-abstract-preview" id="section-abstract">
-            <span class="ieee-run-in">Abstract—</span><span class="abstract-content-editable" id="paper-editable-abstract">${escHtml(displayAbstract)}</span>
+            <span class="ieee-run-in">Abstract—</span><span class="abstract-content-editable" id="paper-editable-abstract">${formatContent(displayAbstract)}</span>
         </div>`;
 
         // Keywords / Index Terms (Left column immediately after Abstract)
@@ -1719,7 +1720,7 @@
             const keywordsEl = document.getElementById('paper-editable-keywords');
 
             const newTitle = titleEl ? titleEl.innerText.trim() : state.currentPaper.title;
-            const newAbstract = abstractEl ? abstractEl.innerText.trim() : state.currentPaper.abstract;
+            const newAbstract = abstractEl ? (abstractEl.children.length ? extractCleanMarkdownContent(abstractEl) : abstractEl.innerText.trim()) : state.currentPaper.abstract;
             const newKeywords = keywordsEl 
                 ? keywordsEl.innerText.split(',').map(k => k.trim()).filter(Boolean)
                 : state.currentPaper.keywords;
@@ -2154,6 +2155,7 @@
         });
 
         attachNoveltyHighlightEvents(report);
+        hydratePendingKaTeX();
     }
 
     let popoverHoverTimeout = null;
@@ -4329,8 +4331,12 @@
         // 4. Attach any trailing (1) placed outside $$...$$ to inside
         normalized = normalized.replace(/\$\$([\s\S]*?)\$\$\s*\((\d+[a-zA-Z]?)\)/g, '$$ $1 \\quad ($2) $$');
         
-        // 5. Ensure $$...$$ always have double newlines before and after
-        normalized = normalized.replace(/(^|\n)\s*(\$\$[^\$]+\$\$)\s*(\n|$)/g, '\n\n$2\n\n');
+        // 5. Isolate ANY $$...$$ anywhere in text with double newlines
+        normalized = normalized.replace(/([^\n])\s*(\$\$[^\$]+?\$\$)/g, '$1\n\n$2');
+        normalized = normalized.replace(/(\$\$[^\$]+?\$\$)\s*([^\n])/g, '$1\n\n$2');
+        
+        // 6. Clean excessive newlines
+        normalized = normalized.replace(/\n{3,}/g, '\n\n');
 
         const rawBlocks = normalized.split(/\n\n+/);
         const processedBlocks = [];
@@ -4364,8 +4370,7 @@
             // 3. Block Equation: starts with $$ or \[ or has $$...$$ as the standalone block
             const isBlockEquation = (/^\$\$[\s\S]+\$\$$/.test(block)) || 
                                     (/^\\\[[\s\S]+\\\]$/.test(block)) ||
-                                    (block.startsWith('$$') && block.endsWith('$$')) ||
-                                    (block.includes('$$') && block.split('\n').length <= 4 && !block.includes('. ') && (block.includes('=') || block.includes('\\')));
+                                    (block.startsWith('$$') && block.endsWith('$$'));
 
             if (isBlockEquation) {
                 let eqClean = block.replace(/^\$\$|\$\$$/g, '').replace(/^\\\[|\\\]$/g, '').trim();
@@ -4390,19 +4395,30 @@
 
             // 4. Academic Paragraph with inline math and citations
             const mathTokens = [];
-            let pText = block.replace(/\$([^\$\n]+)\$/g, (match, p1) => {
+            
+            // Check for any inline $$...$$ that might have remained in block
+            let pText = block.replace(/\$\$([^\$]+?)\$\$/g, (match, p1) => {
                 const idx = mathTokens.length;
-                mathTokens.push({ raw: p1.trim(), full: match });
+                mathTokens.push({ raw: p1.trim(), full: match, isDisplay: true });
+                return '___LEMMA_MATH_' + idx + '___';
+            });
+            
+            // Inline $...$ (with negative lookaround so single $ is matched cleanly)
+            pText = pText.replace(/(?<!\$)\$(?!\$)([^\$\n]+?)(?<!\$)\$(?!\$)/g, (match, p1) => {
+                const idx = mathTokens.length;
+                mathTokens.push({ raw: p1.trim(), full: match, isDisplay: false });
                 return '___LEMMA_MATH_' + idx + '___';
             });
 
-            pText = pText.replace(/\\\((.*?)\\\)/g, (match, p1) => {
+            // Inline \(...\)
+            pText = pText.replace(/\\\(([\s\S]*?)\\\)/g, (match, p1) => {
                 const idx = mathTokens.length;
-                mathTokens.push({ raw: p1.trim(), full: match });
+                mathTokens.push({ raw: p1.trim(), full: match, isDisplay: false });
                 return '___LEMMA_MATH_' + idx + '___';
             });
 
             let escapedP = escHtml(pText);
+            
             // Convert inline citations [N], [N, M], [N]-[M] to styled citation markers
             escapedP = escapedP.replace(/\[([\d\s,\-]+)\]/g, (match, p1) => {
                 const trimmed = p1.trim();
@@ -4418,12 +4434,12 @@
                 return match;
             });
 
-            // Restore inline math with KaTeX
+            // Restore inline and display math with KaTeX
             escapedP = escapedP.replace(/___LEMMA_MATH_(\d+)___/g, (match, idx) => {
                 const item = mathTokens[parseInt(idx, 10)];
                 if (!item) return match;
                 const clean = cleanLatexForKaTeX(item.raw);
-                const mathHtml = renderLatexFormula(clean, false);
+                const mathHtml = renderLatexFormula(clean, item.isDisplay || false);
                 return `<span class="latex-inline" data-raw-inline="${escHtml(item.full)}">${mathHtml}</span>`;
             });
 
