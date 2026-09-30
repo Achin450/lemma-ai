@@ -95,12 +95,15 @@ async def generate_research_paper(
 
     paper_id = str(uuid.uuid4())
 
+    format_style_str = payload.format_style.value if hasattr(payload.format_style, 'value') else str(payload.format_style or "ieee")
+
     from app.schemas.research import ResearchPaper, PaperStatus, PaperType
     init_paper = ResearchPaper(
         paper_id=paper_id,
         title=f"Research Paper on {validation.refined_topic or payload.topic}",
         status=PaperStatus.processing,
-        paper_type=PaperType.generated
+        paper_type=PaperType.generated,
+        format_style=format_style_str,
     )
     PaperStore.save(init_paper)
 
@@ -116,11 +119,12 @@ async def generate_research_paper(
                     "length": payload.length.value,
                     "num_references": payload.num_references,
                     "ieee_format": payload.ieee_format,
+                    "format_style": format_style_str,
                 },
                 task_id=paper_id,
             )
             dispatched = True
-            logger.info(f"Queued paper generation to Celery for topic='{payload.topic}', paper_id={paper_id}")
+            logger.info(f"Queued paper generation to Celery for topic='{payload.topic}', format='{format_style_str}', paper_id={paper_id}")
         except Exception as e:
             logger.warning(f"Could not dispatch to Celery: {e}. Falling back to FastAPI BackgroundTasks.")
 
@@ -134,18 +138,20 @@ async def generate_research_paper(
                     domain=payload.domain,
                     length=payload.length.value,
                     num_references=payload.num_references,
-                    ieee_format=payload.ieee_format
+                    ieee_format=payload.ieee_format,
+                    format_style=format_style_str,
                 )
             except Exception as e:
                 logger.error(f"Background generation task error: {e}", exc_info=True)
 
         background_tasks.add_task(_bg_generate)
-        logger.info(f"Queued paper generation to FastAPI BackgroundTasks for topic='{payload.topic}', paper_id={paper_id}")
+        logger.info(f"Queued paper generation to FastAPI BackgroundTasks for topic='{payload.topic}', format='{format_style_str}', paper_id={paper_id}")
 
     return {
         "job_id": paper_id,
         "paper_id": paper_id,
         "status": "pending",
+        "format_style": format_style_str,
         "message": f"Research paper generation started for topic: '{payload.topic}'",
         "poll_url": f"/api/v1/research/status/{paper_id}",
     }
@@ -157,9 +163,9 @@ async def generate_research_paper(
 @router.post(
     "/restructure",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Restructure an uploaded paper to IEEE format",
+    summary="Restructure an uploaded paper to specified academic format",
     description=(
-        "Uploads a PDF, DOCX, or TXT file and restructures its content into IEEE format. "
+        "Uploads a PDF, DOCX, or TXT file and restructures its content into the target academic publisher format. "
         "Returns a job_id to poll for completion."
     ),
 )
@@ -167,6 +173,7 @@ async def restructure_paper(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     preserve_citations: bool = Form(True),
+    target_format: str = Form("ieee"),
     current_user: dict = Depends(get_current_user),
 ):
     if not file.filename:
@@ -210,11 +217,11 @@ async def restructure_paper(
             from app.tasks.research_tasks import restructure_paper_task
             restructure_paper_task.apply_async(
                 args=[paper_id, str(temp_filepath), file.filename],
-                kwargs={"preserve_citations": preserve_citations},
+                kwargs={"preserve_citations": preserve_citations, "target_format": target_format},
                 task_id=paper_id,
             )
             dispatched = True
-            logger.info(f"Queued restructuring to Celery for file='{file.filename}', paper_id={paper_id}")
+            logger.info(f"Queued restructuring to Celery for file='{file.filename}', format='{target_format}', paper_id={paper_id}")
         except Exception as e:
             logger.warning(f"Could not dispatch restructure to Celery: {e}. Falling back to BackgroundTasks.")
 
@@ -226,19 +233,21 @@ async def restructure_paper(
                     paper_id=paper_id,
                     file_path=str(temp_filepath),
                     original_filename=file.filename,
-                    preserve_citations=preserve_citations
+                    preserve_citations=preserve_citations,
+                    target_format=target_format
                 )
             except Exception as e:
                 logger.error(f"Background restructure task error: {e}", exc_info=True)
 
         background_tasks.add_task(_bg_restructure)
-        logger.info(f"Queued restructure to FastAPI BackgroundTasks for file='{file.filename}', paper_id={paper_id}")
+        logger.info(f"Queued restructure to FastAPI BackgroundTasks for file='{file.filename}', format='{target_format}', paper_id={paper_id}")
 
     return {
         "job_id": paper_id,
         "paper_id": paper_id,
         "status": "pending",
-        "message": f"Restructuring started for '{file.filename}'",
+        "format_style": target_format,
+        "message": f"Restructuring started for '{file.filename}' to {target_format.upper()}",
         "poll_url": f"/api/v1/research/status/{paper_id}",
     }
 

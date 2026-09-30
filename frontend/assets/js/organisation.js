@@ -48,18 +48,17 @@
     // ORGANISATION DASHBOARD INITIALIZATION
     // ==========================================
     async function initOrganisationDashboard() {
-        const navOrg = document.getElementById("nav-org-dashboard");
+        const navOrg = document.getElementById("nav-org-dashboard") || document.getElementById("nav-grants-org");
         if (navOrg) {
             navOrg.addEventListener("click", (e) => {
                 e.preventDefault();
-                document.querySelectorAll(".sidebar-nav li").forEach(el => el.classList.remove("active"));
+                document.querySelectorAll(".sidebar-nav li, .nav-item").forEach(el => el.classList.remove("active"));
                 navOrg.classList.add("active");
                 if (typeof window.showView === 'function') {
-                    window.showView("org-dashboard-view");
-                } else {
-                    document.querySelectorAll(".workspace-view").forEach(v => v.classList.add("hidden"));
-                    const target = document.getElementById("org-dashboard-view");
-                    if (target) target.classList.remove("hidden");
+                    window.showView("grants-org-view");
+                }
+                if (typeof window.switchGrantsOrgTab === 'function') {
+                    window.switchGrantsOrgTab("portal");
                 }
                 loadOrgData();
             });

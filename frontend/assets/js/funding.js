@@ -276,18 +276,17 @@
     }
 
     function initFundingHub() {
-        const navFunding = document.getElementById("nav-funding");
+        const navFunding = document.getElementById("nav-funding") || document.getElementById("nav-grants-org");
         if (navFunding) {
             navFunding.addEventListener("click", (e) => {
                 e.preventDefault();
-                document.querySelectorAll(".sidebar-nav li").forEach(el => el.classList.remove("active"));
+                document.querySelectorAll(".sidebar-nav li, .nav-item").forEach(el => el.classList.remove("active"));
                 navFunding.classList.add("active");
                 if (typeof window.showView === 'function') {
-                    window.showView("funding-view");
-                } else {
-                    document.querySelectorAll(".workspace-view").forEach(v => v.classList.add("hidden"));
-                    const target = document.getElementById("funding-view");
-                    if (target) target.classList.remove("hidden");
+                    window.showView("grants-org-view");
+                }
+                if (typeof window.switchGrantsOrgTab === 'function') {
+                    window.switchGrantsOrgTab("directory");
                 }
                 loadFundingDirectory();
             });

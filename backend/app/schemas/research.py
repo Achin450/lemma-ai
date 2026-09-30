@@ -27,6 +27,27 @@ class PaperLength(str, Enum):
     long = "long"         # ~9000 words
 
 
+class AcademicFormat(str, Enum):
+    ieee = "ieee"
+    springer = "springer"
+    elsevier = "elsevier"
+    acm = "acm"
+    wiley = "wiley"
+    taylor_francis = "taylor_francis"
+    sage = "sage"
+    mdpi = "mdpi"
+    frontiers = "frontiers"
+    nature = "nature"
+    apa = "apa"
+    vancouver = "vancouver"
+    mla = "mla"
+    chicago = "chicago"
+    ama = "ama"
+    acs = "acs"
+    aip = "aip"
+    aps = "aps"
+
+
 # ---------------------------------------------------------------------------
 # Source / Citation models
 # ---------------------------------------------------------------------------
@@ -44,7 +65,7 @@ class SourceRecord(BaseModel):
 
 class Citation(BaseModel):
     """An in-text citation mapped to a SourceRecord."""
-    number: int                    # IEEE citation number [N]
+    number: int                    # Citation sequence number [N]
     source: SourceRecord
     pages: Optional[str] = None   # page range if available
 
@@ -97,6 +118,85 @@ class Citation(BaseModel):
         ref_body = re.sub(r'\.\s*\.', '.', ref_body)
         return ref_body.strip()
 
+    def formatted_reference_string(self, format_style: str = "ieee") -> str:
+        """Format this citation according to the specified academic publisher style."""
+        fmt = (format_style or "ieee").lower()
+        if fmt in ("ieee", "elsevier", "wiley", "mdpi", "frontiers", "acs", "aip", "aps"):
+            return self.ieee_reference_string()
+
+        authors = self.source.authors
+        year = self.source.year or "n.d."
+        title = self.source.title
+        venue = self.source.source or ""
+        doi_part = f" https://doi.org/{self.source.doi}" if self.source.doi else ""
+        url_part = f" [Online]. Available: {self.source.url}" if (self.source.url and not self.source.doi) else ""
+
+        if fmt in ("apa", "chicago"):
+            # APA 7th / Chicago Author-Date: Author, A. A. (Year). Title. Venue. DOI
+            if not authors:
+                author_str = "Unknown Author"
+            elif len(authors) == 1:
+                author_str = authors[0]
+            elif len(authors) == 2:
+                author_str = f"{authors[0]} & {authors[1]}"
+            else:
+                author_str = f"{authors[0]} et al."
+            return f"{author_str} ({year}). {title}. {venue}.{doi_part or url_part}"
+
+        elif fmt == "mla":
+            # MLA 9th: Author. "Title." Venue, Year.
+            if not authors:
+                author_str = "Unknown Author."
+            elif len(authors) == 1:
+                author_str = f"{authors[0]}."
+            elif len(authors) == 2:
+                author_str = f"{authors[0]}, and {authors[1]}."
+            else:
+                author_str = f"{authors[0]}, et al."
+            return f"{author_str} \"{title}.\" {venue}, {year}.{doi_part or url_part}"
+
+        elif fmt in ("vancouver", "ama"):
+            # Vancouver / AMA: 1. Author. Title. Venue. Year.
+            if not authors:
+                author_str = "Author(s) unknown"
+            elif len(authors) <= 3:
+                author_str = ", ".join(authors)
+            else:
+                author_str = f"{authors[0]}, {authors[1]}, {authors[2]} et al."
+            return f"{self.number}. {author_str}. {title}. {venue}. {year}.{doi_part}"
+
+        elif fmt == "springer":
+            # Springer LNCS: 1. Author: Title. Venue (Year)
+            if not authors:
+                author_str = "Author unknown"
+            elif len(authors) <= 3:
+                author_str = ", ".join(authors)
+            else:
+                author_str = f"{authors[0]} et al."
+            return f"[{self.number}] {author_str}: {title}. {venue} ({year}).{doi_part}"
+
+        elif fmt == "nature":
+            # Nature: 1. Author. Title. Venue (Year).
+            if not authors:
+                author_str = "Author unknown"
+            elif len(authors) <= 2:
+                author_str = " & ".join(authors)
+            else:
+                author_str = f"{authors[0]} et al."
+            return f"{self.number}. {author_str}. {title}. {venue} ({year}).{doi_part}"
+
+        elif fmt == "acm":
+            # ACM: [1] Author. Year. Title. Venue.
+            if not authors:
+                author_str = "Author unknown"
+            elif len(authors) <= 2:
+                author_str = " and ".join(authors)
+            else:
+                author_str = f"{authors[0]} et al."
+            return f"[{self.number}] {author_str}. {year}. {title}. In {venue}.{doi_part}"
+
+        return self.ieee_reference_string()
+
 
 # ---------------------------------------------------------------------------
 # Paper section models
@@ -136,6 +236,7 @@ class ResearchPaper(BaseModel):
     citations: List[Citation] = Field(default_factory=list)
     sources: List[SourceRecord] = Field(default_factory=list)   # Retrieved sources
     similarity_score: Optional[float] = None   # Overall paper similarity score
+    format_style: str = "ieee"                 # Target academic publisher format
     paper_type: PaperType = PaperType.generated
     status: PaperStatus = PaperStatus.pending
     progress_step: Optional[str] = "Initializing..."
@@ -157,10 +258,10 @@ class ResearchPaper(BaseModel):
         return "\n\n".join(p for p in parts if p.strip())
 
     def get_references_text(self) -> str:
-        """Returns formatted IEEE reference list."""
+        """Returns formatted reference list matching the paper's format style."""
         if not self.citations:
             return ""
-        refs = [c.ieee_reference_string() for c in self.citations]
+        refs = [c.formatted_reference_string(self.format_style) for c in self.citations]
         return "\n".join(refs)
 
 
@@ -174,7 +275,8 @@ class GenerateRequest(BaseModel):
     domain: Optional[str] = Field(None, description="Research domain/area (optional)")
     length: PaperLength = Field(PaperLength.long, description="Target paper length")
     num_references: int = Field(30, ge=1, le=50, description="Target number of references")
-    ieee_format: bool = Field(True, description="Apply IEEE formatting (default: True)")
+    format_style: AcademicFormat = Field(AcademicFormat.ieee, description="Target publisher / academic format")
+    ieee_format: bool = Field(True, description="Apply IEEE formatting (legacy backward compatibility)")
 
     @field_validator('num_references', mode='before')
     @classmethod
@@ -189,6 +291,7 @@ class GenerateRequest(BaseModel):
 class RestructureRequest(BaseModel):
     """Request body for POST /api/v1/research/restructure (used with form data)"""
     preserve_citations: bool = Field(True, description="Preserve existing citations")
+    target_format: AcademicFormat = Field(AcademicFormat.ieee, description="Target publisher / academic format")
 
 
 class SimilarityCheckRequest(BaseModel):
@@ -241,6 +344,7 @@ class PaperSummaryResponse(BaseModel):
     topic: Optional[str] = None
     paper_type: PaperType
     similarity_score: Optional[float] = None
+    format_style: Optional[str] = "ieee"
     section_count: int
     reference_count: int
     status: PaperStatus

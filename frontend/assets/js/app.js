@@ -1020,7 +1020,76 @@ document.addEventListener("DOMContentLoaded", () => {
     window.API_BASE = API_BASE_URL;
     window.LEMMA_API_BASE = API_BASE_URL;
 
+    window.switchGrantsOrgTab = function(tabName) {
+        const btnDir = document.getElementById("tab-btn-grants-dir");
+        const btnOrg = document.getElementById("tab-btn-grants-org");
+        const paneFunding = document.getElementById("funding-view");
+        const paneOrg = document.getElementById("org-dashboard-view");
+        const quickBtn = document.getElementById("btn-quick-toggle-portal");
+
+        if (tabName === "portal") {
+            if (btnDir) {
+                btnDir.classList.remove("active");
+                btnDir.style.background = "transparent";
+                btnDir.style.color = "var(--text-secondary)";
+            }
+            if (btnOrg) {
+                btnOrg.classList.add("active");
+                btnOrg.style.background = "linear-gradient(135deg, #10b981, #059669)";
+                btnOrg.style.color = "#fff";
+            }
+            if (paneFunding) {
+                paneFunding.classList.add("hidden");
+                paneFunding.style.display = "none";
+            }
+            if (paneOrg) {
+                paneOrg.classList.remove("hidden");
+                paneOrg.style.display = "block";
+            }
+            if (quickBtn) {
+                quickBtn.innerHTML = '<i class="fa-solid fa-coins"></i> View Public Grants';
+                quickBtn.onclick = () => window.switchGrantsOrgTab("directory");
+            }
+            if (window.loadOrgData) window.loadOrgData();
+        } else {
+            if (btnOrg) {
+                btnOrg.classList.remove("active");
+                btnOrg.style.background = "transparent";
+                btnOrg.style.color = "var(--text-secondary)";
+            }
+            if (btnDir) {
+                btnDir.classList.add("active");
+                btnDir.style.background = "#10b981";
+                btnDir.style.color = "#fff";
+            }
+            if (paneFunding) {
+                paneFunding.classList.remove("hidden");
+                paneFunding.style.display = "block";
+            }
+            if (paneOrg) {
+                paneOrg.classList.add("hidden");
+                paneOrg.style.display = "none";
+            }
+            if (quickBtn) {
+                quickBtn.innerHTML = '<i class="fa-solid fa-building-columns"></i> Institutional Dean Access';
+                quickBtn.onclick = () => window.switchGrantsOrgTab("portal");
+            }
+            if (window.loadFundingDirectory) window.loadFundingDirectory();
+        }
+    };
+
     function showView(viewId) {
+        if (viewId === "funding-view") {
+            showView("grants-org-view");
+            if (window.switchGrantsOrgTab) window.switchGrantsOrgTab("directory");
+            return;
+        }
+        if (viewId === "org-dashboard-view") {
+            showView("grants-org-view");
+            if (window.switchGrantsOrgTab) window.switchGrantsOrgTab("portal");
+            return;
+        }
+
         // Hide all workspace views and legacy containers
         document.querySelectorAll(".workspace-view").forEach(v => {
             v.classList.add("hidden");
@@ -1075,6 +1144,7 @@ document.addEventListener("DOMContentLoaded", () => {
             'novelty-view': 'nav-novelty',
             'funding-view': 'nav-funding',
             'org-dashboard-view': 'nav-org-overview',
+            'grants-org-view': 'nav-grants-org',
             'billing-view': 'nav-billing',
         };
         const activeNavId = navMap[viewId];
@@ -1149,12 +1219,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (window.loadMyPapers) window.loadMyPapers();
             } else if (tabId === "nav-novelty") {
                 showView("novelty-view");
-            } else if (tabId === "nav-org-dashboard") {
-                showView("org-dashboard-view");
-                if (window.loadOrgData) window.loadOrgData();
-            } else if (tabId === "nav-funding") {
-                showView("funding-view");
+            } else if (tabId === "nav-grants-org" || tabId === "nav-funding" || tabId === "nav-org-dashboard") {
+                showView("grants-org-view");
+                if (tabId === "nav-org-dashboard") {
+                    if (window.switchGrantsOrgTab) window.switchGrantsOrgTab("portal");
+                } else {
+                    if (window.switchGrantsOrgTab) window.switchGrantsOrgTab("directory");
+                }
                 if (window.loadFundingDirectory) window.loadFundingDirectory();
+                if (window.loadOrgData) window.loadOrgData();
             } else if (tabId === "nav-billing" || tabId === "nav-settings") {
                 showView("billing-view");
                 if (window.LemmaPaymentApp) {

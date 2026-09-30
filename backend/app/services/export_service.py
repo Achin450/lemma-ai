@@ -1,7 +1,8 @@
 """
 Export Service — generates PDF and DOCX exports of ResearchPaper objects.
-PDF uses WeasyPrint (existing dependency).
-DOCX uses python-docx (existing dependency).
+Supports 18 academic publisher formatting styles (IEEE, Springer, Elsevier, ACM,
+Wiley, Taylor & Francis, SAGE, MDPI, Frontiers, Nature, APA, Vancouver, MLA,
+Chicago, AMA, ACS, AIP, APS).
 """
 from __future__ import annotations
 
@@ -18,14 +19,15 @@ logger = logging.getLogger(__name__)
 class ExportService:
     """
     Generates exportable files from ResearchPaper objects.
-    Supports PDF and DOCX formats with IEEE-compliant formatting.
+    Supports PDF and DOCX formats with 18 publisher-compliant formatting styles.
     """
 
     @classmethod
     def export_pdf(cls, paper: ResearchPaper) -> bytes:
         """
-        Generate an IEEE-formatted PDF from a ResearchPaper.
+        Generate a publisher-formatted PDF from a ResearchPaper.
         Uses ReportLab for reliable, pure-Python PDF compilation across all operating systems.
+        Falls back to WeasyPrint if available.
         Returns PDF bytes.
         """
         try:
@@ -44,27 +46,28 @@ class ExportService:
 
     @classmethod
     def _export_pdf_reportlab(cls, paper: ResearchPaper) -> bytes:
-        """Pure-Python IEEE 2-Column PDF generation using ReportLab."""
+        """Pure-Python academic PDF generation using ReportLab supporting 1-col and 2-col publisher layouts."""
         import re
         import html
         from reportlab.lib.pagesizes import letter
         from reportlab.platypus import (
-            BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, HRFlowable, FrameBreak, NextPageTemplate, Table, TableStyle
+            BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, FrameBreak, NextPageTemplate, Table, TableStyle
         )
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
         from reportlab.lib import colors
 
+        cfg = IEEEFormatterService.get_config(paper.format_style)
+        is_two_col = (cfg.get("columns", 2) == 2)
+
         buffer = io.BytesIO()
         
-        # Dimensions for standard IEEE letter
+        # Dimensions for standard academic letter
         page_w, page_h = letter
-        margin = 40
+        margin = 36 if is_two_col else 45
         gutter = 16
-        col_w = (page_w - 2 * margin - gutter) / 2
         content_w = page_w - 2 * margin
-        header_h = 150
-        first_col_h = page_h - 2 * margin - header_h
+        header_h = 135
         full_col_h = page_h - 2 * margin
 
         doc = BaseDocTemplate(
@@ -76,29 +79,38 @@ class ExportService:
             bottomMargin=margin
         )
 
-        # Page 1: Header frame (full width) + 2 column frames below
-        f_header = Frame(margin, page_h - margin - header_h, content_w, header_h, id='header', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
-        f_col1_p1 = Frame(margin, margin, col_w, first_col_h, id='c1_p1', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
-        f_col2_p1 = Frame(margin + col_w + gutter, margin, col_w, first_col_h, id='c2_p1', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+        if is_two_col:
+            col_w = (page_w - 2 * margin - gutter) / 2
+            first_col_h = page_h - 2 * margin - header_h
 
-        # Page 2+: 2 full-height column frames
-        f_col1_p2 = Frame(margin, margin, col_w, full_col_h, id='c1_p2', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
-        f_col2_p2 = Frame(margin + col_w + gutter, margin, col_w, full_col_h, id='c2_p2', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+            # Page 1: Header frame (full width) + 2 column frames below
+            f_header = Frame(margin, page_h - margin - header_h, content_w, header_h, id='header', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+            f_col1_p1 = Frame(margin, margin, col_w, first_col_h, id='c1_p1', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+            f_col2_p1 = Frame(margin + col_w + gutter, margin, col_w, first_col_h, id='c2_p1', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
 
-        p1_template = PageTemplate(id='FirstPage', frames=[f_header, f_col1_p1, f_col2_p1])
-        later_template = PageTemplate(id='LaterPages', frames=[f_col1_p2, f_col2_p2])
+            # Page 2+: 2 full-height column frames
+            f_col1_p2 = Frame(margin, margin, col_w, full_col_h, id='c1_p2', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+            f_col2_p2 = Frame(margin + col_w + gutter, margin, col_w, full_col_h, id='c2_p2', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
 
-        doc.addPageTemplates([p1_template, later_template])
+            p1_template = PageTemplate(id='FirstPage', frames=[f_header, f_col1_p1, f_col2_p1])
+            later_template = PageTemplate(id='LaterPages', frames=[f_col1_p2, f_col2_p2])
+            doc.addPageTemplates([p1_template, later_template])
+        else:
+            # 1-Column Layout (Springer, APA, MLA, Chicago, Vancouver, AMA, Wiley, Taylor & Francis, SAGE)
+            col_w = content_w
+            f_single = Frame(margin, margin, content_w, full_col_h, id='single_frame', topPadding=0, bottomPadding=0, leftPadding=0, rightPadding=0)
+            single_template = PageTemplate(id='SinglePage', frames=[f_single])
+            doc.addPageTemplates([single_template])
 
         styles = getSampleStyleSheet()
 
         meta_style = ParagraphStyle(
             'Meta', parent=styles['Normal'], fontName='Times-Italic',
-            fontSize=7.5, leading=9, alignment=TA_CENTER, textColor=colors.HexColor('#64748B'), spaceAfter=6
+            fontSize=7.5, leading=9.5, alignment=TA_CENTER, textColor=colors.HexColor('#64748B'), spaceAfter=8
         )
         title_style = ParagraphStyle(
             'PaperTitle', parent=styles['Normal'], fontName='Times-Bold',
-            fontSize=15, leading=18, alignment=TA_CENTER, spaceAfter=8
+            fontSize=15 if is_two_col else 16, leading=18, alignment=TA_CENTER, spaceAfter=8
         )
         author_style = ParagraphStyle(
             'Author', parent=styles['Normal'], fontName='Times-Roman',
@@ -106,23 +118,23 @@ class ExportService:
         )
         abstract_style = ParagraphStyle(
             'Abstract', parent=styles['Normal'], fontName='Times-Roman',
-            fontSize=8.5, leading=11.5, alignment=TA_JUSTIFY, spaceAfter=4
+            fontSize=8.5, leading=11.5, alignment=TA_JUSTIFY, spaceAfter=5
         )
         keywords_style = ParagraphStyle(
             'Keywords', parent=styles['Normal'], fontName='Times-Roman',
-            fontSize=8.5, leading=11.5, alignment=TA_JUSTIFY, spaceAfter=6
+            fontSize=8.5, leading=11.5, alignment=TA_JUSTIFY, spaceAfter=8
         )
         heading_style = ParagraphStyle(
             'Heading', parent=styles['Normal'], fontName='Times-Bold',
-            fontSize=9.5, leading=12, alignment=TA_CENTER, spaceBefore=10, spaceAfter=4
+            fontSize=9.5 if is_two_col else 10.5, leading=13, alignment=TA_CENTER if is_two_col else TA_LEFT, spaceBefore=10, spaceAfter=4
         )
         subheading_style = ParagraphStyle(
             'SubHeading', parent=styles['Normal'], fontName='Times-BoldItalic',
-            fontSize=8.5, leading=11, alignment=TA_LEFT, spaceBefore=6, spaceAfter=3
+            fontSize=8.5 if is_two_col else 9.5, leading=11.5, alignment=TA_LEFT, spaceBefore=6, spaceAfter=3
         )
         body_style = ParagraphStyle(
             'Body', parent=styles['Normal'], fontName='Times-Roman',
-            fontSize=8.5, leading=11.5, alignment=TA_JUSTIFY, firstLineIndent=12, spaceAfter=4
+            fontSize=8.5 if is_two_col else 9.5, leading=11.5 if is_two_col else 13, alignment=TA_JUSTIFY, firstLineIndent=14, spaceAfter=4
         )
         eq_style = ParagraphStyle(
             'Eq', parent=styles['Normal'], fontName='Times-Italic',
@@ -130,26 +142,25 @@ class ExportService:
         )
         ref_style = ParagraphStyle(
             'Ref', parent=styles['Normal'], fontName='Times-Roman',
-            fontSize=7.5, leading=10, alignment=TA_LEFT, leftIndent=12, firstLineIndent=-12, spaceAfter=3
+            fontSize=7.5 if is_two_col else 8.5, leading=10 if is_two_col else 11.5, alignment=TA_LEFT, leftIndent=14, firstLineIndent=-14, spaceAfter=3
         )
 
         story = []
 
         # Header metadata
-        ref_count = len(paper.citations) if paper.citations else len(paper.sources)
-        sim_pct = int(round((paper.similarity_score or 0.0) * 100))
-        story.append(Paragraph('IEEE TRANSACTIONS ON COMPUTATIONAL INTELLIGENCE &amp; RESEARCH • SUBMISSION MANUSCRIPT', meta_style))
+        meta_banner = cfg.get("meta_header", "PEER-REVIEWED ACADEMIC MANUSCRIPT")
+        story.append(Paragraph(html.escape(meta_banner), meta_style))
 
         # Title
         story.append(Paragraph(html.escape(paper.title or 'Research Paper'), title_style))
 
-        # Authors: 3-column table
+        # Authors
         authors = paper.authors or ["1st Given Name Surname", "2nd Given Name Surname", "3rd Given Name Surname"]
         author_cols = []
         for i, a in enumerate(authors[:3]):
             author_text = (
                 f"<b>{html.escape(a)}</b><br/>"
-                f"dept. of computer science &amp; engineering<br/>"
+                f"Dept. of Computer Science &amp; Eng.<br/>"
                 f"Lemma AI Research Laboratory<br/>"
                 f"New York, USA<br/>"
                 f"author{i+1}@lemma.ai"
@@ -167,11 +178,14 @@ class ExportService:
         ]))
         story.append(author_table)
 
-        # Switch to 2-column body
-        story.append(NextPageTemplate('LaterPages'))
-        story.append(FrameBreak())
+        if is_two_col:
+            # Switch to 2-column body
+            story.append(NextPageTemplate('LaterPages'))
+            story.append(FrameBreak())
+        else:
+            story.append(Spacer(1, 14))
 
-        # Abstract & Keywords (in 1st column)
+        # Abstract & Keywords
         abs_text = (paper.abstract or '').strip()
         if not abs_text:
             abs_text = (
@@ -180,14 +194,16 @@ class ExportService:
                 f"that addresses algorithmic bottlenecks and operational constraints across standardized evaluation environments."
             )
         abs_text = re.sub(r'^(?:abstract\s*[\:\—\-]+|\*\*(?:abstract)\*\*\s*[\:\—\-]*)\s*', '', abs_text, flags=re.IGNORECASE).strip()
-        story.append(Paragraph(f'<b><i>Abstract—</i></b> {html.escape(abs_text)}', abstract_style))
+        abs_label = cfg.get("abstract_label", "Abstract—")
+        story.append(Paragraph(f'<b><i>{html.escape(abs_label)}</i></b> {html.escape(abs_text)}', abstract_style))
 
         kw_list = paper.keywords if (paper.keywords and isinstance(paper.keywords, list)) else []
         if not kw_list:
             topic_words = [w.capitalize() for w in (paper.topic or 'Research Investigation').split() if len(w) > 3][:5]
-            kw_list = topic_words + ['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']
+            kw_list = topic_words + ['Scientific Evaluation', 'Deep Benchmarks', 'Algorithmic Optimization']
         kw_str = ', '.join(kw_list)
-        story.append(Paragraph(f'<b><i>Index Terms—</i></b> {html.escape(kw_str)}', keywords_style))
+        kw_label = cfg.get("keywords_label", "Keywords:")
+        story.append(Paragraph(f'<b><i>{html.escape(kw_label)}</i></b> {html.escape(kw_str)}', keywords_style))
 
         # Table Caption and Cell Styles
         table_caption_style = ParagraphStyle(
@@ -228,7 +244,8 @@ class ExportService:
                 style_to_use = table_cell_bold if r_idx == 0 else table_cell_style
                 grid_data.append([Paragraph(html.escape(c), style_to_use) for c in row])
 
-            col_width = col_w / max(1, len(raw_rows[0]))
+            table_width = col_w if is_two_col else (content_w * 0.9)
+            col_width = table_width / max(1, len(raw_rows[0]))
             t = Table(grid_data, colWidths=[col_width] * len(raw_rows[0]))
             t.setStyle(TableStyle([
                 ('LINEABOVE', (0, 0), (-1, 0), 1.2, colors.black),
@@ -245,7 +262,8 @@ class ExportService:
 
         # Sections
         for section in paper.sections:
-            story.append(Paragraph(f'{html.escape(section.number)}. {html.escape(section.title.upper())}', heading_style))
+            heading_text = f"{section.number}. {section.title}" if section.number else section.title
+            story.append(Paragraph(html.escape(heading_text), heading_style))
             if section.content:
                 for para in section.content.split('\n\n'):
                     para_clean = para.strip()
@@ -262,8 +280,10 @@ class ExportService:
                     else:
                         clean_para = re.sub(r'\[(\d+)\]', r'[\1]', para_clean)
                         story.append(Paragraph(html.escape(clean_para), body_style))
+
             for sub in section.subsections:
-                story.append(Paragraph(f'<i>{html.escape(sub.label)}. {html.escape(sub.title)}</i>', subheading_style))
+                sub_text = f"{sub.label}. {sub.title}" if sub.label else sub.title
+                story.append(Paragraph(f'<i>{html.escape(sub_text)}</i>', subheading_style))
                 if sub.content:
                     for para in sub.content.split('\n\n'):
                         para_clean = para.strip()
@@ -277,9 +297,10 @@ class ExportService:
 
         # References
         if paper.citations:
-            story.append(Paragraph('REFERENCES', heading_style))
+            ref_heading = cfg.get("references_heading", "REFERENCES")
+            story.append(Paragraph(html.escape(ref_heading), heading_style))
             for citation in sorted(paper.citations, key=lambda c: c.number):
-                ref_str = citation.ieee_reference_string()
+                ref_str = citation.formatted_reference_string(paper.format_style)
                 story.append(Paragraph(html.escape(ref_str), ref_style))
 
         doc.build(story)
@@ -288,7 +309,8 @@ class ExportService:
     @classmethod
     def export_docx(cls, paper: ResearchPaper) -> bytes:
         """
-        Generate an IEEE-formatted DOCX from a ResearchPaper.
+        Generate a publisher-formatted DOCX from a ResearchPaper.
+        Supports 1-column vs 2-column layout and specific publisher conventions.
         Returns DOCX bytes.
         """
         try:
@@ -299,6 +321,9 @@ class ExportService:
             from docx.oxml.ns import qn
             from docx.oxml import OxmlElement
             import re
+
+            cfg = IEEEFormatterService.get_config(paper.format_style)
+            is_two_col = (cfg.get("columns", 2) == 2)
 
             doc = Document()
 
@@ -311,12 +336,21 @@ class ExportService:
             section.top_margin = Inches(0.75)
             section.bottom_margin = Inches(0.75)
 
+            # --- Journal Meta Header Banner ---
+            meta_para = doc.add_paragraph()
+            meta_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            meta_run = meta_para.add_run(cfg.get("meta_header", "PEER-REVIEWED ACADEMIC MANUSCRIPT"))
+            meta_run.font.size = Pt(8)
+            meta_run.font.italic = True
+            meta_run.font.name = "Times New Roman"
+            meta_run.font.color.rgb = RGBColor(100, 116, 139)
+
             # --- Title ---
             title_para = doc.add_paragraph()
             title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             title_run = title_para.add_run(paper.title or "Research Paper")
             title_run.bold = True
-            title_run.font.size = Pt(18)
+            title_run.font.size = Pt(17)
             title_run.font.name = "Times New Roman"
 
             # --- Authors Table (3 Columns) ---
@@ -332,28 +366,33 @@ class ExportService:
                 r1.bold = True
                 r1.font.size = Pt(9.5)
                 r1.font.name = "Times New Roman"
-                r2 = cell_p.add_run("dept. of computer science & eng.\nLemma AI Research Lab\nNew York, USA\nauthor@lemma.ai")
+                r2 = cell_p.add_run("Dept. of Computer Science & Eng.\nLemma AI Research Lab\nNew York, USA\nauthor@lemma.ai")
                 r2.font.size = Pt(8.5)
                 r2.font.name = "Times New Roman"
 
-            # --- 2-Column Continuous Section for Paper Body ---
-            body_sec = doc.add_section(WD_SECTION.CONTINUOUS)
-            body_sec.top_margin = Inches(0.75)
-            body_sec.bottom_margin = Inches(0.75)
-            body_sec.left_margin = Inches(0.65)
-            body_sec.right_margin = Inches(0.65)
-            sectPr = body_sec._sectPr
-            cols = sectPr.xpath('./w:cols')
-            if cols:
-                cols[0].set(qn('w:num'), '2')
-                cols[0].set(qn('w:space'), '720')
+            # --- Body Section ---
+            if is_two_col:
+                # 2-Column Continuous Section
+                body_sec = doc.add_section(WD_SECTION.CONTINUOUS)
+                body_sec.top_margin = Inches(0.75)
+                body_sec.bottom_margin = Inches(0.75)
+                body_sec.left_margin = Inches(0.65)
+                body_sec.right_margin = Inches(0.65)
+                sectPr = body_sec._sectPr
+                cols = sectPr.xpath('./w:cols')
+                if cols:
+                    cols[0].set(qn('w:num'), '2')
+                    cols[0].set(qn('w:space'), '720')
+                else:
+                    new_cols = OxmlElement('w:cols')
+                    new_cols.set(qn('w:num'), '2')
+                    new_cols.set(qn('w:space'), '720')
+                    sectPr.append(new_cols)
             else:
-                new_cols = OxmlElement('w:cols')
-                new_cols.set(qn('w:num'), '2')
-                new_cols.set(qn('w:space'), '720')
-                sectPr.append(new_cols)
+                # 1-Column standard spacing
+                doc.add_paragraph()  # subtle spacer
 
-            # --- Abstract (in 1st column) ---
+            # --- Abstract ---
             abs_text = (paper.abstract or '').strip()
             if not abs_text:
                 abs_text = (
@@ -364,43 +403,41 @@ class ExportService:
             abs_text = re.sub(r'^(?:abstract\s*[\:\—\-]+|\*\*(?:abstract)\*\*\s*[\:\—\-]*)\s*', '', abs_text, flags=re.IGNORECASE).strip()
             abstract_para = doc.add_paragraph()
             abstract_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            abstract_run_label = abstract_para.add_run("Abstract— ")
+            abstract_run_label = abstract_para.add_run(f"{cfg.get('abstract_label', 'Abstract—')} ")
             abstract_run_label.bold = True
             abstract_run_label.italic = True
-            abstract_run_label.font.size = Pt(9)
+            abstract_run_label.font.size = Pt(9.5 if not is_two_col else 9)
             abstract_run_label.font.name = "Times New Roman"
             abstract_run = abstract_para.add_run(abs_text)
-            abstract_run.font.size = Pt(9)
+            abstract_run.font.size = Pt(9.5 if not is_two_col else 9)
             abstract_run.font.name = "Times New Roman"
 
-            # --- Keywords (in 1st column) ---
+            # --- Keywords ---
             kw_list = paper.keywords if (paper.keywords and isinstance(paper.keywords, list)) else []
             if not kw_list:
                 topic_words = [w.capitalize() for w in (paper.topic or 'Research Investigation').split() if len(w) > 3][:5]
-                kw_list = topic_words + ['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']
+                kw_list = topic_words + ['Scientific Evaluation', 'Empirical Benchmarks', 'Algorithmic Optimization']
             kw_para = doc.add_paragraph()
             kw_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-            kw_label = kw_para.add_run("Index Terms— ")
+            kw_label = kw_para.add_run(f"{cfg.get('keywords_label', 'Keywords:')} ")
             kw_label.bold = True
             kw_label.italic = True
-            kw_label.font.size = Pt(9)
+            kw_label.font.size = Pt(9.5 if not is_two_col else 9)
             kw_label.font.name = "Times New Roman"
             kw_run = kw_para.add_run(", ".join(kw_list))
-            kw_run.font.size = Pt(9)
+            kw_run.font.size = Pt(9.5 if not is_two_col else 9)
             kw_run.font.name = "Times New Roman"
 
             # --- Sections ---
             for section in paper.sections:
-                # Section heading (Roman numeral, centered, bold)
                 heading_para = doc.add_paragraph()
-                heading_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                heading_para.alignment = WD_ALIGN_PARAGRAPH.CENTER if is_two_col else WD_ALIGN_PARAGRAPH.LEFT
                 heading_para.paragraph_format.space_before = Pt(12)
                 heading_para.paragraph_format.space_after = Pt(4)
-                heading_run = heading_para.add_run(
-                    f"{section.number}. {section.title.upper()}"
-                )
+                h_text = f"{section.number}. {section.title}" if section.number else section.title
+                heading_run = heading_para.add_run(h_text)
                 heading_run.bold = True
-                heading_run.font.size = Pt(10)
+                heading_run.font.size = Pt(10.5 if not is_two_col else 10)
                 heading_run.font.name = "Times New Roman"
 
                 def _add_docx_table(markdown_block: str):
@@ -471,17 +508,16 @@ class ExportService:
                             content_para.paragraph_format.first_line_indent = Pt(14)
                             content_para.paragraph_format.space_after = Pt(4)
                             content_run = content_para.add_run(para_clean)
-                            content_run.font.size = Pt(9.5)
+                            content_run.font.size = Pt(10 if not is_two_col else 9.5)
                             content_run.font.name = "Times New Roman"
 
-                # Subsections (Italic, letter)
+                # Subsections
                 for sub in section.subsections:
                     sub_heading_para = doc.add_paragraph()
                     sub_heading_para.paragraph_format.space_before = Pt(8)
                     sub_heading_para.paragraph_format.space_after = Pt(2)
-                    sub_heading_run = sub_heading_para.add_run(
-                        f"{sub.label}. {sub.title}"
-                    )
+                    sub_text = f"{sub.label}. {sub.title}" if sub.label else sub.title
+                    sub_heading_run = sub_heading_para.add_run(sub_text)
                     sub_heading_run.bold = True
                     sub_heading_run.italic = True
                     sub_heading_run.font.size = Pt(9.5)
@@ -499,16 +535,16 @@ class ExportService:
                                 sub_content_para.paragraph_format.first_line_indent = Pt(14)
                                 sub_content_para.paragraph_format.space_after = Pt(4)
                                 sub_content_run = sub_content_para.add_run(para_clean)
-                                sub_content_run.font.size = Pt(9.5)
+                                sub_content_run.font.size = Pt(10 if not is_two_col else 9.5)
                                 sub_content_run.font.name = "Times New Roman"
 
             # --- References ---
             if paper.citations:
                 ref_heading = doc.add_paragraph()
-                ref_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                ref_heading.alignment = WD_ALIGN_PARAGRAPH.CENTER if is_two_col else WD_ALIGN_PARAGRAPH.LEFT
                 ref_heading.paragraph_format.space_before = Pt(14)
                 ref_heading.paragraph_format.space_after = Pt(4)
-                ref_heading_run = ref_heading.add_run("REFERENCES")
+                ref_heading_run = ref_heading.add_run(cfg.get("references_heading", "REFERENCES"))
                 ref_heading_run.bold = True
                 ref_heading_run.font.size = Pt(10)
                 ref_heading_run.font.name = "Times New Roman"
@@ -518,7 +554,7 @@ class ExportService:
                     ref_para.paragraph_format.first_line_indent = Pt(-14)
                     ref_para.paragraph_format.left_indent = Pt(14)
                     ref_para.paragraph_format.space_after = Pt(3)
-                    ref_run = ref_para.add_run(citation.ieee_reference_string())
+                    ref_run = ref_para.add_run(citation.formatted_reference_string(paper.format_style))
                     ref_run.font.size = Pt(8.5)
                     ref_run.font.name = "Times New Roman"
 

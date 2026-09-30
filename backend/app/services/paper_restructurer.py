@@ -89,7 +89,8 @@ class PaperRestructurerService:
 
     async def restructure(self, text: str, filename: str = "document",
                           paper_id: str = None,
-                          preserve_citations: bool = True) -> ResearchPaper:
+                          preserve_citations: bool = True,
+                          target_format: str = "ieee") -> ResearchPaper:
         """
         Main restructuring pipeline.
 
@@ -98,9 +99,10 @@ class PaperRestructurerService:
             filename: Original filename (used for title inference)
             paper_id: Optional ID to assign to the paper
             preserve_citations: Whether to preserve existing citations
+            target_format: Academic publisher format (e.g., ieee, springer, acm, etc.)
 
         Returns:
-            ResearchPaper with IEEE structure
+            ResearchPaper formatted to target publisher format
         """
         if not paper_id:
             paper_id = str(uuid.uuid4())
@@ -109,6 +111,7 @@ class PaperRestructurerService:
             paper_id=paper_id,
             status=PaperStatus.processing,
             paper_type=PaperType.restructured,
+            format_style=target_format or "ieee",
             progress_step="Extracting document structure...",
             progress_pct=5,
         )
@@ -211,6 +214,10 @@ class PaperRestructurerService:
             self._report_progress("Running similarity analysis...", 88)
             similarity_score = await self._run_similarity_check(paper)
             paper.similarity_score = similarity_score
+
+            # Format paper according to target publisher guidelines
+            from app.services.ieee_formatter import IEEEFormatterService
+            IEEEFormatterService.format_paper(paper, format_style=paper.format_style)
 
             # === Done ===
             self._report_progress("Restructuring complete!", 100)

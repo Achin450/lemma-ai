@@ -33,14 +33,14 @@ def _run_async(coro):
 @celery_app.task(bind=True, name="app.tasks.research_tasks.generate_paper_task")
 def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
                          length: str = "medium", num_references: int = 10,
-                         ieee_format: bool = True) -> dict:
+                         ieee_format: bool = True, format_style: str = "ieee") -> dict:
 
     """
     Background Celery task for full research paper generation.
     Updates paper status via PaperStore at each stage.
     Returns the paper_id on completion.
     """
-    logger.info(f"Starting paper generation task for paper_id={paper_id}, topic='{topic}'")
+    logger.info(f"Starting paper generation task for paper_id={paper_id}, topic='{topic}', format='{format_style}'")
 
     # Progress reporter that updates the task state AND paper store
     def report_progress(step: str, pct: int):
@@ -73,22 +73,29 @@ def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
             domain=domain,
             status=PaperStatus.processing,
             paper_type=PaperType.generated,
+            format_style=format_style or "ieee",
             title=f"Generating: {topic}",
         )
         PaperStore.save(initial_paper)
 
         # Build request object
-        from app.schemas.research import PaperLength
+        from app.schemas.research import PaperLength, AcademicFormat
         try:
             paper_length = PaperLength(length)
         except ValueError:
             paper_length = PaperLength.medium
+
+        try:
+            target_academic_format = AcademicFormat(format_style)
+        except ValueError:
+            target_academic_format = AcademicFormat.ieee
 
         request = GenerateRequest(
             topic=topic,
             domain=domain,
             length=paper_length,
             num_references=num_references,
+            format_style=target_academic_format,
             ieee_format=ieee_format,
         )
 
@@ -98,22 +105,23 @@ def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
 
         paper = _run_async(generator.generate(request, paper_id=paper_id))
 
-        # Apply IEEE formatting if requested
-        if ieee_format and paper.status == PaperStatus.completed:
+        # Apply Publisher formatting
+        if paper.status == PaperStatus.completed:
             from app.services.ieee_formatter import IEEEFormatterService
-            IEEEFormatterService.format_paper(paper)
+            IEEEFormatterService.format_paper(paper, format_style=format_style or "ieee")
 
         # Save final paper
         PaperStore.save(paper)
 
         logger.info(f"Paper generation completed for paper_id={paper_id}, "
-                    f"status={paper.status}, sections={len(paper.sections)}, "
-                    f"citations={len(paper.citations)}")
+                    f"format={paper.format_style}, status={paper.status}, "
+                    f"sections={len(paper.sections)}, citations={len(paper.citations)}")
 
         return {
             "paper_id": paper_id,
             "status": paper.status.value,
             "title": paper.title,
+            "format_style": paper.format_style,
             "sections": len(paper.sections),
             "citations": len(paper.citations),
             "similarity_score": paper.similarity_score,
@@ -145,12 +153,12 @@ def generate_paper_task(self, paper_id: str, topic: str, domain: str = None,
 
 @celery_app.task(bind=True, name="app.tasks.research_tasks.restructure_paper_task")
 def restructure_paper_task(self, paper_id: str, file_path: str, original_filename: str,
-                            preserve_citations: bool = True) -> dict:
+                            preserve_citations: bool = True, target_format: str = "ieee") -> dict:
     """
     Background Celery task for paper restructuring.
-    Reads the uploaded file, extracts text, and restructures to IEEE format.
+    Reads the uploaded file, extracts text, and restructures to target format.
     """
-    logger.info(f"Starting restructure task for paper_id={paper_id}, file={original_filename}")
+    logger.info(f"Starting restructure task for paper_id={paper_id}, file={original_filename}, format={target_format}")
 
     def report_progress(step: str, pct: int):
         try:
@@ -189,6 +197,7 @@ def restructure_paper_task(self, paper_id: str, file_path: str, original_filenam
             paper_id=paper_id,
             status=PaperStatus.processing,
             paper_type=PaperType.restructured,
+            format_style=target_format or "ieee",
             title=f"Restructuring: {original_filename}",
         )
         PaperStore.save(initial_paper)
@@ -204,20 +213,21 @@ def restructure_paper_task(self, paper_id: str, file_path: str, original_filenam
             preserve_citations=preserve_citations,
         ))
 
-        # Apply IEEE formatting
+        # Apply Publisher formatting
         from app.services.ieee_formatter import IEEEFormatterService
-        IEEEFormatterService.format_paper(paper)
+        IEEEFormatterService.format_paper(paper, format_style=target_format or "ieee")
 
         # Save final paper
         PaperStore.save(paper)
 
         logger.info(f"Restructuring completed for paper_id={paper_id}, "
-                    f"status={paper.status}, sections={len(paper.sections)}")
+                    f"format={paper.format_style}, status={paper.status}, sections={len(paper.sections)}")
 
         return {
             "paper_id": paper_id,
             "status": paper.status.value,
             "title": paper.title,
+            "format_style": paper.format_style,
             "sections": len(paper.sections),
             "citations": len(paper.citations),
             "similarity_score": paper.similarity_score,

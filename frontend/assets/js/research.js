@@ -283,7 +283,9 @@
             'simresults-view': 'nav-simcheck',
             'mypapers-view': 'nav-mypapers',
             'novelty-view': 'nav-novelty',
-            'funding-view': 'nav-funding',
+            'grants-org-view': 'nav-grants-org',
+            'funding-view': 'nav-grants-org',
+            'org-dashboard-view': 'nav-grants-org',
         };
         const navId = viewNavMap[viewId];
         if (navId) {
@@ -408,6 +410,8 @@
                     formData.append('file', state.restructureFile);
                     formData.append('preserve_citations',
                         String(document.getElementById('restructure-preserve-citations')?.checked ?? true));
+                    const targetFormat = document.getElementById('restructure-target-format')?.value || 'ieee';
+                    formData.append('target_format', targetFormat);
 
                     const res = await fetch(`${apiBase()}/api/v1/research/restructure`, {
                         method: 'POST',
@@ -1315,19 +1319,43 @@
         populateCustomizerSections(paper);
     }
 
+    const CLIENT_FORMAT_CONFIGS = {
+        ieee: { name: 'IEEE', columns: 2, titleCase: 'upper', meta: 'IEEE TRANSACTIONS ON COMPUTATIONAL INTELLIGENCE & DATA RESEARCH • OFFICIAL CONFERENCE TEMPLATE', absLabel: 'Abstract—', kwLabel: 'Index Terms—', refHeader: 'REFERENCES' },
+        springer: { name: 'Springer Nature', columns: 1, titleCase: 'title', meta: 'SPRINGER NATURE • COMMUNICATIONS IN COMPUTER AND INFORMATION SCIENCE', absLabel: 'Abstract.', kwLabel: 'Keywords:', refHeader: 'References' },
+        elsevier: { name: 'Elsevier', columns: 2, titleCase: 'title', meta: 'ELSEVIER SCIENCEDIRECT • PROCEDIA COMPUTER SCIENCE & ARTIFICIAL INTELLIGENCE', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        acm: { name: 'ACM', columns: 2, titleCase: 'upper', meta: 'ACM TRANSACTIONS / SIGCONF • ACM INTERNATIONAL CONFERENCE PROCEEDINGS SERIES', absLabel: 'ABSTRACT', kwLabel: 'CCS CONCEPTS • KEYWORDS', refHeader: 'REFERENCES' },
+        wiley: { name: 'Wiley', columns: 1, titleCase: 'title', meta: 'WILEY ONLINE LIBRARY • PEER REVIEWED JOURNAL MANUSCRIPT', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        taylor_francis: { name: 'Taylor & Francis', columns: 1, titleCase: 'title', meta: 'TAYLOR & FRANCIS GROUP • SCHOLARLY RESEARCH MANUSCRIPT', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        sage: { name: 'SAGE', columns: 1, titleCase: 'title', meta: 'SAGE PUBLICATIONS • PEER-REVIEWED RESEARCH JOURNAL', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        mdpi: { name: 'MDPI', columns: 2, titleCase: 'title', meta: 'MDPI OPEN ACCESS JOURNALS • PEER-REVIEWED SCIENTIFIC ARTICLE', absLabel: 'Abstract:', kwLabel: 'Keywords:', refHeader: 'References' },
+        frontiers: { name: 'Frontiers', columns: 2, titleCase: 'title', meta: 'FRONTIERS RESEARCH FOUNDATION • SCIENTIFIC MANUSCRIPT', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        nature: { name: 'Nature Portfolio', columns: 2, titleCase: 'title', meta: 'NATURE RESEARCH • SCIENTIFIC REPORTS & PROTOCOLS', absLabel: 'Summary', kwLabel: 'Keywords:', refHeader: 'References' },
+        apa: { name: 'APA 7th', columns: 1, titleCase: 'title', meta: 'AMERICAN PSYCHOLOGICAL ASSOCIATION (APA 7TH ED.) • SCHOLARLY MANUSCRIPT', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        vancouver: { name: 'Vancouver', columns: 1, titleCase: 'title', meta: 'INTERNATIONAL COMMITTEE OF MEDICAL JOURNAL EDITORS (ICMJE) • VANCOUVER STYLE', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        mla: { name: 'MLA 9th', columns: 1, titleCase: 'title', meta: 'MODERN LANGUAGE ASSOCIATION (MLA 9TH ED.) • RESEARCH ESSAY', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'Works Cited' },
+        chicago: { name: 'Chicago 17th', columns: 1, titleCase: 'title', meta: 'THE CHICAGO MANUAL OF STYLE (17TH ED.) • SCHOLARLY PUBLICATION', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'Bibliography' },
+        ama: { name: 'AMA', columns: 1, titleCase: 'title', meta: 'AMERICAN MEDICAL ASSOCIATION (AMA MANUAL OF STYLE) • CLINICAL MANUSCRIPT', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        acs: { name: 'ACS', columns: 2, titleCase: 'title', meta: 'AMERICAN CHEMICAL SOCIETY (ACS PUBLICATIONS) • RESEARCH ARTICLE', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'References' },
+        aip: { name: 'AIP', columns: 2, titleCase: 'upper', meta: 'AMERICAN INSTITUTE OF PHYSICS (AIP PUBLISHING) • PEER-REVIEWED PAPER', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'REFERENCES' },
+        aps: { name: 'APS', columns: 2, titleCase: 'upper', meta: 'PHYSICAL REVIEW JOURNALS • AMERICAN PHYSICAL SOCIETY (APS)', absLabel: 'Abstract', kwLabel: 'Keywords:', refHeader: 'REFERENCES' },
+    };
+
     function renderPaperContent(paper) {
         const wrapper = document.getElementById('paper-preview-wrapper');
         if (!wrapper) return;
 
+        const fmtKey = (paper.format_style || 'ieee').toLowerCase();
+        const fmtCfg = CLIENT_FORMAT_CONFIGS[fmtKey] || CLIENT_FORMAT_CONFIGS['ieee'];
+
         let html = `<div class="paper-preview-inner">`;
 
-        // Journal Meta Header Banner
-        html += `<div class="paper-journal-meta">IEEE TRANSACTIONS ON COMPUTATIONAL INTELLIGENCE &amp; DATA RESEARCH • OFFICIAL CONFERENCE TEMPLATE</div>`;
+        // Journal / Publisher Meta Header Banner
+        html += `<div class="paper-journal-meta">${escHtml(fmtCfg.meta)}</div>`;
 
         // Title (Full Width)
         html += `<h1 class="paper-title-preview" id="paper-editable-title">${escHtml(paper.title || 'Research Paper Title')}</h1>`;
 
-        // Author Affiliations (3-Column Grid matching IEEE Template)
+        // Author Affiliations (3-Column Grid)
         const authors = (paper.authors && paper.authors.length) ? paper.authors : [
             '1st Given Name Surname',
             '2nd Given Name Surname',
@@ -1355,10 +1383,11 @@
         }
         html += `</div>`;
 
-        // 2-Column Body Container
-        html += `<div class="paper-two-column-body">`;
+        // Body Container: 2-column or 1-column layout
+        const bodyColClass = (fmtCfg.columns === 2) ? 'paper-two-column-body' : 'paper-one-column-body';
+        html += `<div class="${bodyColClass}">`;
 
-        // Abstract (Left column start of IEEE 2-column body)
+        // Abstract
         let displayAbstract = (paper.abstract || '').trim();
         if (!displayAbstract) {
             const paperTopic = paper.topic || (paper.title ? paper.title.replace(/^A Comprehensive Investigation on /i, '') : 'the investigated domain');
@@ -1366,19 +1395,19 @@
         }
 
         html += `<div class="paper-abstract-preview" id="section-abstract">
-            <span class="ieee-run-in">Abstract—</span><span class="abstract-content-editable" id="paper-editable-abstract">${formatContent(displayAbstract)}</span>
+            <span class="ieee-run-in">${escHtml(fmtCfg.absLabel)} </span><span class="abstract-content-editable" id="paper-editable-abstract">${formatContent(displayAbstract)}</span>
         </div>`;
 
-        // Keywords / Index Terms (Left column immediately after Abstract)
+        // Keywords
         let kwArr = paper.keywords;
         if (!kwArr || (Array.isArray(kwArr) && kwArr.length === 0) || (typeof kwArr === 'string' && !kwArr.trim())) {
             const topicWords = (paper.topic || '').split(/\s+/).filter(w => w.length > 2).slice(0, 5);
-            kwArr = topicWords.length ? topicWords.map(w => w.charAt(0).toUpperCase() + w.slice(1)).concat(['IEEE Standards', 'Deep Benchmarks', 'Empirical Evaluation']) : ['Theoretical Foundation', 'Empirical Benchmarks', 'Algorithmic Optimization', 'IEEE Standards'];
+            kwArr = topicWords.length ? topicWords.map(w => w.charAt(0).toUpperCase() + w.slice(1)).concat(['Scientific Benchmarks', 'Deep Evaluation', 'Empirical Analysis']) : ['Theoretical Foundation', 'Empirical Benchmarks', 'Algorithmic Optimization', 'Scientific Standards'];
         }
         const kwStr = Array.isArray(kwArr) ? kwArr.join(', ') : String(kwArr);
 
         html += `<div class="paper-keywords-preview">
-            <span class="ieee-run-in">Index Terms—</span><span class="keywords-content-editable" id="paper-editable-keywords">${escHtml(kwStr)}</span>
+            <span class="ieee-run-in">${escHtml(fmtCfg.kwLabel)} </span><span class="keywords-content-editable" id="paper-editable-keywords">${escHtml(kwStr)}</span>
         </div>`;
 
         // Sections (2-Column flow)
@@ -1444,19 +1473,24 @@
                 ? `<span class="section-sim-indicator" style="color: ${scoreColor(sec.similarity_score)}; font-size: 0.75rem; font-weight: normal; margin-left: 8px;">(${Math.round(sec.similarity_score * 100)}% match)</span>`
                 : '';
 
-            html += `<div class="paper-section-preview" id="section-${sec.number}" data-sec-idx="${idx}">
+            const secPrefix = sec.number ? `${sec.number}. ` : '';
+            const secTitleDisplay = (fmtCfg.titleCase === 'upper') ? (sec.title || '').toUpperCase() : (sec.title || '');
+
+            html += `<div class="paper-section-preview" id="section-${sec.number || idx}" data-sec-idx="${idx}">
                 <h2 class="paper-section-heading-preview">
-                    <span class="sec-num-label">${escHtml(sec.number)}. </span>
-                    <span class="sec-title-editable">${escHtml((sec.title || '').toUpperCase())}</span>
+                    <span class="sec-num-label">${escHtml(secPrefix)}</span>
+                    <span class="sec-title-editable">${escHtml(secTitleDisplay)}</span>
                     ${simLabel}
                 </h2>
                 <div class="paper-section-content-preview sec-content-editable">${formatContent(sec.content || '')}</div>`;
 
             (sec.subsections || []).forEach((sub, subIdx) => {
+                const subPrefix = sub.label ? `${sub.label}. ` : '';
+                const subTitleDisplay = (fmtCfg.titleCase === 'upper') ? (sub.title || '').toUpperCase() : (sub.title || '');
                 html += `<div class="paper-subsection-wrapper" data-sub-idx="${subIdx}">
                     <h3 class="paper-subsection-heading-preview">
-                        <span class="sub-num-label"><i>${escHtml(sub.label)}. </i></span>
-                        <span class="sub-title-editable"><i>${escHtml(sub.title || '')}</i></span>
+                        <span class="sub-num-label"><i>${escHtml(subPrefix)}</i></span>
+                        <span class="sub-title-editable"><i>${escHtml(subTitleDisplay)}</i></span>
                     </h3>
                     <div class="paper-section-content-preview sub-content-editable">${formatContent(sub.content || '')}</div>
                 </div>`;
@@ -1508,10 +1542,10 @@
 
         if (finalCitations && finalCitations.length) {
             html += `<div class="paper-section-preview" id="section-references">
-                <h2 class="paper-section-heading-preview">REFERENCES</h2>
+                <h2 class="paper-section-heading-preview">${escHtml(fmtCfg.refHeader)}</h2>
                 <div class="paper-references-list">`;
             finalCitations.forEach((cit, citIdx) => {
-                const refStr = buildRefString(cit);
+                const refStr = buildRefString(cit, fmtKey);
                 html += `<p class="paper-ref-preview ref-item-editable" data-ref-idx="${citIdx}" id="ref-${cit.number}">${escHtml(refStr)}</p>`;
             });
             html += `</div></div>`;
@@ -2702,7 +2736,7 @@
     // ---------------------------------------------------------------------------
     // Core Workflow Launchers (Callable from anywhere)
     // ---------------------------------------------------------------------------
-    async function startGenerateFromTopic(topic, domain = null, length = 'long', numRefs = 30, ieeeFormat = true) {
+    async function startGenerateFromTopic(topic, domain = null, length = 'long', numRefs = 30, ieeeFormat = true, formatStyle = null) {
         if (!topic || topic.trim().length < 3) {
             showToast('Please enter a valid research topic (at least 3 characters).', 'error');
             return;
@@ -2725,8 +2759,10 @@
             return;
         }
 
+        const selectedFormat = formatStyle || document.getElementById('home-gen-format')?.value || 'ieee';
+
         try {
-            showProgressView(`Generating: "${topic.trim()}"`, 'Analyzing research topic and finding academic sources...');
+            showProgressView(`Generating: "${topic.trim()}"`, `Analyzing topic and synthesizing research according to ${selectedFormat.toUpperCase()} standards...`);
 
             const res = await fetch(`${apiBase()}/api/v1/research/generate`, {
                 method: 'POST',
@@ -2736,7 +2772,8 @@
                     domain: domain,
                     length: length,
                     num_references: numRefs,
-                    ieee_format: ieeeFormat,
+                    format_style: selectedFormat,
+                    ieee_format: (selectedFormat === 'ieee'),
                 }),
             });
 
@@ -2765,18 +2802,24 @@
         }
     }
 
-    async function startRestructureFromFile(file, preserveCitations = true) {
+    async function startRestructureFromFile(file, preserveCitations = true, targetFormat = null) {
         if (!file) {
             showToast('Please select a file to restructure.', 'error');
             return;
         }
 
+        const chosenFormat = targetFormat ||
+            document.getElementById('restructure-target-format')?.value ||
+            document.getElementById('home-gen-format')?.value ||
+            'ieee';
+
         try {
-            showProgressView(`Restructuring: "${file.name}"`, 'Extracting sections and mapping to IEEE structure...');
+            showProgressView(`Restructuring: "${file.name}"`, `Extracting sections and reorganizing into ${chosenFormat.toUpperCase()} structure...`);
 
             const formData = new FormData();
             formData.append('file', file);
             formData.append('preserve_citations', preserveCitations ? 'true' : 'false');
+            formData.append('target_format', chosenFormat);
 
             const res = await fetch(`${apiBase()}/api/v1/research/restructure`, {
                 method: 'POST',
@@ -3263,8 +3306,9 @@
                     const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
                     const length = document.getElementById('home-gen-length')?.value || 'long';
                     const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
-                    const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
-                    startGenerateFromTopic(chosen, domain, length, numRefs, ieeeFormat);
+                    const formatStyle = document.getElementById('home-gen-format')?.value || 'ieee';
+                    const ieeeFormat = (formatStyle === 'ieee');
+                    startGenerateFromTopic(chosen, domain, length, numRefs, ieeeFormat, formatStyle);
                 });
             });
         }
@@ -3428,9 +3472,10 @@
             const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
             const length = document.getElementById('home-gen-length')?.value || 'long';
             const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
-            const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
+            const formatStyle = document.getElementById('home-gen-format')?.value || 'ieee';
+            const ieeeFormat = (formatStyle === 'ieee');
 
-            startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);
+            startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat, formatStyle);
         }
 
         if (promptInput) {
@@ -3515,9 +3560,10 @@
                 const domain = document.getElementById('home-gen-domain')?.value?.trim() || null;
                 const length = document.getElementById('home-gen-length')?.value || 'long';
                 const numRefs = parseInt(document.getElementById('home-gen-refs')?.value || '30');
-                const ieeeFormat = document.getElementById('home-gen-ieee')?.checked ?? true;
+                const formatStyle = document.getElementById('home-gen-format')?.value || 'ieee';
+                const ieeeFormat = (formatStyle === 'ieee');
 
-                startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat);
+                startGenerateFromTopic(topic, domain, length, numRefs, ieeeFormat, formatStyle);
             });
         });
     }
@@ -4501,20 +4547,36 @@
         return blocks.join('\n\n');
     }
 
-    function buildRefString(cit) {
+    function buildRefString(cit, formatStyle = 'ieee') {
         if (!cit) return '';
         if (cit.custom_text) return cit.custom_text;
         if (!cit.source) return cit.text || '';
         const src = cit.source;
         const authors = (src.authors || []);
-        let authorStr = 'Author(s) unknown';
-        if (authors.length === 1) authorStr = authors[0];
-        else if (authors.length > 1) authorStr = authors[0] + ' et al.';
-
         const year = src.year || 'n.d.';
         const title = src.title || '';
         const venue = src.source || '';
         const url = src.url ? ` [Online]. Available: ${src.url}` : '';
+        const fmt = (formatStyle || 'ieee').toLowerCase();
+
+        let authorStr = 'Author(s) unknown';
+        if (authors.length === 1) authorStr = authors[0];
+        else if (authors.length === 2) authorStr = `${authors[0]} & ${authors[1]}`;
+        else if (authors.length > 2) authorStr = authors[0] + ' et al.';
+
+        if (fmt === 'apa' || fmt === 'chicago') {
+            return `${authorStr} (${year}). ${title}. ${venue}.${url}`;
+        } else if (fmt === 'mla') {
+            return `${authorStr} "${title}." ${venue}, ${year}.${url}`;
+        } else if (fmt === 'vancouver' || fmt === 'ama') {
+            return `${cit.number}. ${authorStr}. ${title}. ${venue}. ${year}.`;
+        } else if (fmt === 'springer') {
+            return `[${cit.number}] ${authorStr}: ${title}. ${venue} (${year}).`;
+        } else if (fmt === 'nature') {
+            return `${cit.number}. ${authorStr}. ${title}. ${venue} (${year}).`;
+        } else if (fmt === 'acm') {
+            return `[${cit.number}] ${authorStr}. ${year}. ${title}. In ${venue}.`;
+        }
 
         return `[${cit.number}] ${authorStr}, "${title}," ${venue}, ${year}.${url}`;
     }

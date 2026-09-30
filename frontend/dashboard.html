@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- KaTeX for Scientific Equations -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=62">
+    <link rel="stylesheet" href="assets/css/style.css?v=63">
     <link rel="stylesheet" href="assets/css/mobile.css?v=60">
 </head>
 
@@ -117,7 +117,7 @@
                                     <polyline points="7 23 3 19 7 15"></polyline>
                                     <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                                 </svg>
-                                <span>Restructure to IEEE</span>
+                                <span>Restructure Paper</span>
                             </a>
                         </li>
                         <li class="nav-item" id="nav-simcheck">
@@ -521,11 +521,37 @@
                                         <option value="30" selected>30 references (Survey level)</option>
                                     </select>
                                 </div>
-                                <div class="form-group" style="display: flex; align-items: flex-end; margin-bottom: 0; padding-bottom: 8px;">
-                                    <label class="checkbox-label" style="font-size: 0.85rem;">
-                                        <input type="checkbox" id="home-gen-ieee" checked>
-                                        <span>Apply Official IEEE formatting</span>
-                                    </label>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="home-gen-format" style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; display: block;">Publisher &amp; Format</label>
+                                    <select id="home-gen-format" class="research-select" style="padding: 0.55rem 0.85rem; font-size: 0.88rem;">
+                                        <optgroup label="Major Engineering &amp; Computer Science">
+                                            <option value="ieee" selected>IEEE Conference / Transactions (Default)</option>
+                                            <option value="acm">ACM Standard (SIGCONF / CCS Concepts)</option>
+                                        </optgroup>
+                                        <optgroup label="Top Multidisciplinary Publishers">
+                                            <option value="springer">Springer Nature (LNCS / SN Computer Science)</option>
+                                            <option value="elsevier">Elsevier (ScienceDirect / Procedia)</option>
+                                            <option value="nature">Nature Portfolio (Scientific Reports)</option>
+                                            <option value="wiley">Wiley Online Library Journals</option>
+                                            <option value="taylor_francis">Taylor &amp; Francis Scholarly Journals</option>
+                                            <option value="sage">SAGE Publishing Journals</option>
+                                            <option value="mdpi">MDPI Open Access Research</option>
+                                            <option value="frontiers">Frontiers Research Topics</option>
+                                        </optgroup>
+                                        <optgroup label="Universal Academic Style Guides">
+                                            <option value="apa">APA 7th Edition (Author-Date / Social Sciences)</option>
+                                            <option value="mla">MLA 9th Edition (Humanities &amp; Literature)</option>
+                                            <option value="chicago">Chicago 17th Edition (Author-Date / Notes)</option>
+                                            <option value="vancouver">Vancouver Style (Biomedical &amp; Clinical)</option>
+                                            <option value="ama">AMA (American Medical Association)</option>
+                                        </optgroup>
+                                        <optgroup label="Physical Sciences &amp; Chemistry">
+                                            <option value="acs">ACS (American Chemical Society)</option>
+                                            <option value="aip">AIP (American Institute of Physics)</option>
+                                            <option value="aps">APS (Physical Review Journals)</option>
+                                        </optgroup>
+                                    </select>
+                                    <input type="checkbox" id="home-gen-ieee" checked style="display: none;">
                                 </div>
                             </div>
                         </div>
@@ -1330,8 +1356,8 @@
         <div class="workspace-view hidden" id="restructure-view" style="padding: 28px; overflow-y: auto;">
             <div class="research-view-header">
                 <div>
-                    <h2 class="research-view-title">Restructure to IEEE Format</h2>
-                    <p class="research-view-subtitle">Upload your existing research paper (PDF, DOCX, or TXT) and Lemma AI will detect and reorganize its sections into proper IEEE format while preserving your content.</p>
+                    <h2 class="research-view-title">Restructure &amp; Format Paper</h2>
+                    <p class="research-view-subtitle">Upload your existing research paper (PDF, DOCX, or TXT) and Lemma AI will detect, organize, and format its sections into your chosen academic publisher standard while preserving all your research findings.</p>
                 </div>
             </div>
 
@@ -1357,6 +1383,38 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="restructure-target-format" style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Target Publisher &amp; Academic Format</label>
+                    <select id="restructure-target-format" class="research-select" style="padding: 0.65rem 0.95rem; font-size: 0.9rem; width: 100%;">
+                        <optgroup label="Major Engineering &amp; Computer Science">
+                            <option value="ieee" selected>IEEE Conference / Transactions (Default)</option>
+                            <option value="acm">ACM Standard (SIGCONF / CCS Concepts)</option>
+                        </optgroup>
+                        <optgroup label="Top Multidisciplinary Publishers">
+                            <option value="springer">Springer Nature (LNCS / SN Computer Science)</option>
+                            <option value="elsevier">Elsevier (ScienceDirect / Procedia)</option>
+                            <option value="nature">Nature Portfolio (Scientific Reports)</option>
+                            <option value="wiley">Wiley Online Library Journals</option>
+                            <option value="taylor_francis">Taylor &amp; Francis Scholarly Journals</option>
+                            <option value="sage">SAGE Publishing Journals</option>
+                            <option value="mdpi">MDPI Open Access Research</option>
+                            <option value="frontiers">Frontiers Research Topics</option>
+                        </optgroup>
+                        <optgroup label="Universal Academic Style Guides">
+                            <option value="apa">APA 7th Edition (Author-Date / Social Sciences)</option>
+                            <option value="mla">MLA 9th Edition (Humanities &amp; Literature)</option>
+                            <option value="chicago">Chicago 17th Edition (Author-Date / Notes)</option>
+                            <option value="vancouver">Vancouver Style (Biomedical &amp; Clinical)</option>
+                            <option value="ama">AMA (American Medical Association)</option>
+                        </optgroup>
+                        <optgroup label="Physical Sciences &amp; Chemistry">
+                            <option value="acs">ACS (American Chemical Society)</option>
+                            <option value="aip">AIP (American Institute of Physics)</option>
+                            <option value="aps">APS (Physical Review Journals)</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="restructure-preserve-citations" checked>
                         <span>Preserve existing citations and references</span>
@@ -1371,7 +1429,7 @@
                             <polyline points="7 23 3 19 7 15"></polyline>
                             <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                         </svg>
-                        Restructure to IEEE
+                        Restructure &amp; Format Paper
                     </button>
                 </div>
             </div>
@@ -2026,9 +2084,32 @@ Minimum 50 characters required. For best results, paste the full document text."
         </div>
 
         <!-- ============================================================ -->
-        <!-- PUBLISHING GRANTS & BOUNTIES DIRECTORY (>= 10K)              -->
+        <!-- UNIFIED: PUBLISHING GRANTS & ORGANISATION ENTERPRISE PORTAL  -->
         <!-- ============================================================ -->
-        <div class="workspace-view hidden" id="funding-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+        <div class="workspace-view hidden" id="grants-org-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+            <!-- Top Unified Portal Navigation Switcher -->
+            <div class="grants-org-top-nav" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 5px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <button type="button" id="tab-btn-grants-dir" class="btn-tab grants-org-tab-btn active" onclick="window.switchGrantsOrgTab('directory')" style="padding: 9px 20px; font-size: 0.88rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; background: #10b981; color: #fff; transition: all 0.2s ease;">
+                        <i class="fa-solid fa-coins"></i>
+                        <span>Publishing Grants Directory</span>
+                        <span style="font-size: 0.65rem; background: rgba(0, 0, 0, 0.25); color: #fff; border-radius: 6px; padding: 1px 6px; font-weight: 800;">10K+</span>
+                    </button>
+                    <button type="button" id="tab-btn-grants-org" class="btn-tab grants-org-tab-btn" onclick="window.switchGrantsOrgTab('portal')" style="padding: 9px 20px; font-size: 0.88rem; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--text-secondary); transition: all 0.2s ease;">
+                        <i class="fa-solid fa-building-columns" style="color: #818cf8;"></i>
+                        <span>Organisation Portal</span>
+                        <span style="font-size: 0.65rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 1px 6px; font-weight: 800;">ENTERPRISE</span>
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button type="button" id="btn-quick-toggle-portal" onclick="window.switchGrantsOrgTab('portal')" class="btn btn-outline" style="font-size: 0.82rem; padding: 7px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; border-color: rgba(99,102,241,0.3); color: #818cf8;">
+                        <i class="fa-solid fa-building-columns"></i> Institutional Dean Access
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB PANE 1: Publishing Grants Directory -->
+            <div id="funding-view">
             <!-- Header Section -->
             <div class="funding-header-section" style="margin-bottom: 2rem;">
                 <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; padding: 4px 14px; margin-bottom: 0.75rem;">
@@ -2206,7 +2287,7 @@ Minimum 50 characters required. For best results, paste the full document text."
         </div>
         
 
-<div class="workspace-view hidden" id="org-dashboard-view" style="width: 100%; max-width: 1320px; margin: 0 auto; padding: 1.5rem 1rem 5rem; box-sizing: border-box;">
+<div id="org-dashboard-view" class="hidden">
             
             <!-- State 1: When user is not logged in as organisation admin -->
             <div id="org-not-logged-in-state" class="hidden" style="text-align: center; padding: 4rem 1.5rem; background: var(--bg-secondary); border-radius: 18px; border: 1px dashed var(--border-color); max-width: 650px; margin: 2rem auto;">
@@ -2570,7 +2651,8 @@ Minimum 50 characters required. For best results, paste the full document text."
                     </div>
                 </div>
             </div>
-        </div>
+        </div><!-- end #org-dashboard-view -->
+    </div><!-- end #grants-org-view -->
 
 </main>
 
@@ -3307,15 +3389,15 @@ Minimum 50 characters required. For best results, paste the full document text."
 
     <!-- KaTeX for Scientific Equations -->
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script src="assets/js/config.js?v=60"></script>
-    <script src="assets/js/app.js?v=65"></script>
-    <script src="assets/js/research.js?v=65"></script>
-    <script src="assets/js/novelty.js?v=65"></script>
-    <script src="assets/js/funding.js?v=65"></script>
-    <script src="assets/js/billing.js?v=65"></script>
-    <script src="assets/js/organisation.js?v=65"></script>
-    <script src="assets/js/mobile-ui.js?v=60"></script>
-    <script src="assets/js/ads-config.js?v=60"></script>
+    <script src="assets/js/config.js?v=66"></script>
+    <script src="assets/js/app.js?v=66"></script>
+    <script src="assets/js/research.js?v=66"></script>
+    <script src="assets/js/novelty.js?v=66"></script>
+    <script src="assets/js/funding.js?v=66"></script>
+    <script src="assets/js/billing.js?v=66"></script>
+    <script src="assets/js/organisation.js?v=66"></script>
+    <script src="assets/js/mobile-ui.js?v=66"></script>
+    <script src="assets/js/ads-config.js?v=66"></script>
 
     <!-- Inline Bulletproof Modal Controller -->
     <script>

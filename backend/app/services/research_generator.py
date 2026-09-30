@@ -97,10 +97,13 @@ class ResearchGeneratorService:
         if not paper_id:
             paper_id = str(uuid.uuid4())
 
+        format_style_str = request.format_style.value if hasattr(request.format_style, 'value') else str(request.format_style or "ieee")
+
         paper = ResearchPaper(
             paper_id=paper_id,
             topic=request.topic,
             domain=request.domain,
+            format_style=format_style_str,
             status=PaperStatus.processing,
             paper_type=PaperType.generated,
             progress_step="Analyzing research topic...",
