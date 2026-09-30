@@ -1,10 +1,57 @@
 import httpx
 import logging
+import re
+import json
 from fastapi import HTTPException, status
 from app.config import settings
 from app.services.research_domain_knowledge import ResearchDomainKnowledgeService
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_equations(text: str) -> str:
+    """
+    Standardize all mathematical equations in research paper content so that:
+    1. Code fence blocks like ```latex ... ``` or ```math ... ``` around equations are unwrapped.
+    2. \\begin{equation}...\\end{equation}, \\begin{align}...\\end{align} are converted to $$...$$
+    3. \\[...\\] are converted to $$...$$
+    4. Inline/block equation numbers like (1), (2), \\tag{1} are cleaned and formatted as standard \\quad (N) inside $$...$$.
+    5. Display equations ($$...$$) always have blank lines (\\n\\n) before and after them.
+    """
+    if not text:
+        return ""
+    
+    # 1. Unwrap markdown codeblocks containing equations or latex
+    text = re.sub(r'```(?:latex|math|tex)?\s*([\s\S]*?)\s*```', r'\1', text)
+    
+    # 2. Convert \\begin{equation}...\\end{equation}, \\begin{align}...\\end{align}, \\begin{gather}...\\end{gather}
+    def replace_env(m):
+        env_body = m.group(1).strip()
+        tag_m = re.search(r'\\tag\{([^\}]+)\}', env_body)
+        tag_str = f" \\quad ({tag_m.group(1)})" if tag_m else ""
+        env_body = re.sub(r'\\tag\{[^\}]+\}', '', env_body).strip()
+        return f"\n\n$$ {env_body}{tag_str} $$\n\n"
+        
+    text = re.sub(r'\\begin\{(?:equation|align|gather|multline)\*?\}([\s\S]*?)\\end\{(?:equation|align|gather|multline)\*?\}', replace_env, text)
+    
+    # 3. Convert \\[ ... \\] to $$ ... $$
+    text = re.sub(r'\\\[([\s\S]*?)\\\]', r'\n\n$$ \1 $$\n\n', text)
+    
+    # 4. Convert display math $$...$$ and attach trailing (N) if placed outside $$...$$ e.g. $$...$$ (1)
+    text = re.sub(r'\$\$([\s\S]*?)\$\$\s*\((\d+)\)', r'$$ \1 \\quad (\2) $$', text)
+    
+    # 5. Ensure $$...$$ always have double newlines before and after
+    def fix_display_math(m):
+        eq_content = m.group(1).strip()
+        return f"\n\n$$ {eq_content} $$\n\n"
+        
+    text = re.sub(r'(?<!\$)\$\$([^\$]+)\$\$(?!\$)', fix_display_math, text)
+    
+    # 6. Clean excessive newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text.strip()
+
 
 class LLMService:
     """Service to interact with the local Ollama LLM for text rewriting and integrity coaching."""
@@ -927,10 +974,15 @@ Example output:
         )
         try:
             model = await cls._resolve_model()
-            return await cls._call_ollama(prompt, model, temp=0.6, repeat_penalty=1.15)
+            res = await cls._call_ollama(prompt, model, temp=0.6, repeat_penalty=1.15)
+            if res and res.strip():
+                return normalize_equations(res.strip())
+            return normalize_equations(section_content)
         except Exception as e:
             logger.warning(f"Ollama improvement failed: {e}. Returning original content.")
-            return section_content
+            return normalize_equations(section_content)
+
+
 
     @classmethod
     async def customize_section_matter(
@@ -951,7 +1003,8 @@ Example output:
                 "Maintain formal, publication-ready academic vocabulary and structure suitable for IEEE Transactions / Springer Nature."
             ),
             "mathematical": (
-                "Incorporate rigorous mathematical formulations, equation definitions (using LaTeX or standard notation), theorems, and formal analytical proofs."
+                "Incorporate rigorous mathematical formulations, equation definitions, theorems, and formal analytical proofs. "
+                "Format every display equation on its own standalone line wrapped in $$ and separated by blank lines with equation numbers like $$ <equation> \\quad (1) $$. Do NOT use raw LaTeX codeblocks or unformatted raw tags."
             ),
             "methodology_deep": (
                 "Elaborate in detail on algorithmic workflows, architectural pipeline, pseudocode descriptions, parameter settings, and computational complexity."
@@ -988,8 +1041,9 @@ Example output:
             f"1. Directly fulfill every detail specified in the user's custom instruction.\n"
             f"2. Maintain strict scholarly rigor, coherent narrative flow, and high academic standard.\n"
             f"3. Preserve all existing bracketed IEEE citation tags (e.g. [1], [2], [3]) where appropriate, or weave them naturally into the updated content.\n"
-            f"4. Do NOT output meta-commentary, explanations, headings, or markdown prefixes like 'Here is the rewritten section:'.\n"
-            f"5. Output ONLY the finalized rewritten section body text."
+            f"4. For mathematical formulas, format every equation cleanly as a standalone block using standard display format: $$ <formula> \\quad (1) $$, preceded and followed by blank lines. Never output ```latex code fences or unrendered LaTeX environments.\n"
+            f"5. Do NOT output meta-commentary, explanations, headings, or markdown prefixes like 'Here is the rewritten section:'.\n"
+            f"6. Output ONLY the finalized rewritten section body text."
         )
 
         try:
@@ -997,17 +1051,17 @@ Example output:
             result = await cls._call_ollama(prompt, model, temp=0.65, repeat_penalty=1.12)
             if result and len(result.strip()) > 30:
                 cleaned = result.strip()
-                # Remove common LLM prefixes if any
+                # Remove common LLM markdown codeblock wrappers if any
                 if cleaned.startswith("```") and cleaned.endswith("```"):
                     lines = cleaned.split("\n")
                     if len(lines) > 2:
                         cleaned = "\n".join(lines[1:-1]).strip()
-                return cleaned
+                return normalize_equations(cleaned)
         except Exception as e:
             logger.warning(f"LLM custom section rewrite failed: {e}. Falling back to rule-based transformation.")
 
         # Fallback intelligent contextual adaptation if offline/no LLM
-        return cls._fallback_custom_section_matter(section_content, custom_instruction, style)
+        return normalize_equations(cls._fallback_custom_section_matter(section_content, custom_instruction, style))
 
     @classmethod
     def _fallback_custom_section_matter(cls, content: str, instruction: str, style: str) -> str:
@@ -1020,8 +1074,10 @@ Example output:
         if "math" in instruction_lower or "equation" in instruction_lower or style == "mathematical":
             math_block = (
                 "\n\nFormally, let the state-action trajectory be parameterized by $\\mathcal{T} = \\{ (s_t, a_t, r_t) \\}_{t=1}^T$, "
-                "where the objective function $\\mathcal{J}(\\theta)$ maximizes the expected cumulative reward $\\mathbb{E}_{\\tau \\sim \\pi_\\theta} [\\sum_{t=0}^T \\gamma^t r(s_t, a_t)]$. "
-                "The optimization update follows gradient ascent along $\\nabla_\\theta \\mathcal{J}(\\theta) = \\mathbb{E}_{\\tau} [\\nabla_\\theta \\log \\pi_\\theta(a_t|s_t) Q^{\\pi}(s_t, a_t)]$, "
+                "where the objective function $\\mathcal{J}(\\theta)$ maximizes the expected cumulative reward:\n\n"
+                "$$ \\mathcal{J}(\\theta) = \\mathbb{E}_{\\tau \\sim \\pi_\\theta} \\left[ \\sum_{t=0}^T \\gamma^t r(s_t, a_t) \\right] \\quad (1) $$\n\n"
+                "The optimization update follows gradient ascent along the policy gradient:\n\n"
+                "$$ \\nabla_\\theta \\mathcal{J}(\\theta) = \\mathbb{E}_{\\tau} \\left[ \\nabla_\\theta \\log \\pi_\\theta(a_t|s_t) Q^{\\pi}(s_t, a_t) \\right] \\quad (2) $$\n\n"
                 "guaranteeing monotonic convergence under standard Lipschitz continuity assumptions."
             )
             return prefix + content + math_block

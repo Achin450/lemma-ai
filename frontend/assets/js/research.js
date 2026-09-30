@@ -4309,9 +4309,28 @@
     function formatContent(text) {
         if (!text) return '';
 
-        // Normalize block equations: ensure standalone $$...$$ or \[...\] are on their own blocks
+        // Normalize block equations: ensure standalone $$...$$, \[...\], and environments are on their own blocks
         let normalized = text.replace(/\r\n/g, '\n');
-        normalized = normalized.replace(/(^|\n)\s*(\$\$[^\$]+\$\$|\\\[[^\]]+\\\])\s*(\n|$)/g, '\n\n$2\n\n');
+        
+        // 1. Unwrap markdown codeblocks containing equations or latex
+        normalized = normalized.replace(/```(?:latex|math|tex)?\s*([\s\S]*?)\s*```/gi, '$1');
+        
+        // 2. Convert \begin{equation}...\end{equation}, \begin{align}...\end{align}, etc.
+        normalized = normalized.replace(/\\begin\{(?:equation|align|gather|multline)\*?\}([\s\S]*?)\\end\{(?:equation|align|gather|multline)\*?\}/g, (m, p1) => {
+            const tagMatch = p1.match(/\\tag\{([^\}]+)\}/);
+            const tagStr = tagMatch ? ` \\quad (${tagMatch[1]})` : '';
+            const body = p1.replace(/\\tag\{[^\}]+\}/g, '').trim();
+            return `\n\n$$ ${body}${tagStr} $$\n\n`;
+        });
+        
+        // 3. Convert \[ ... \] to $$ ... $$
+        normalized = normalized.replace(/\\\[([\s\S]*?)\\\]/g, '\n\n$$ $1 $$\n\n');
+        
+        // 4. Attach any trailing (1) placed outside $$...$$ to inside
+        normalized = normalized.replace(/\$\$([\s\S]*?)\$\$\s*\((\d+[a-zA-Z]?)\)/g, '$$ $1 \\quad ($2) $$');
+        
+        // 5. Ensure $$...$$ always have double newlines before and after
+        normalized = normalized.replace(/(^|\n)\s*(\$\$[^\$]+\$\$)\s*(\n|$)/g, '\n\n$2\n\n');
 
         const rawBlocks = normalized.split(/\n\n+/);
         const processedBlocks = [];
@@ -4343,23 +4362,28 @@
             }
 
             // 3. Block Equation: starts with $$ or \[ or has $$...$$ as the standalone block
-            const isBlockEquation = (/^\$\$[^\$]+\$\$$/s.test(block)) || 
-                                    (/^\\\[.*\\\]$/s.test(block)) ||
+            const isBlockEquation = (/^\$\$[\s\S]+\$\$$/.test(block)) || 
+                                    (/^\\\[[\s\S]+\\\]$/.test(block)) ||
                                     (block.startsWith('$$') && block.endsWith('$$')) ||
-                                    (block.includes('$$') && block.split('\n').length <= 3 && !block.includes('. ') && (block.includes('=') || block.includes('\\')));
+                                    (block.includes('$$') && block.split('\n').length <= 4 && !block.includes('. ') && (block.includes('=') || block.includes('\\')));
 
             if (isBlockEquation) {
                 let eqClean = block.replace(/^\$\$|\$\$$/g, '').replace(/^\\\[|\\\]$/g, '').trim();
                 let eqNum = '';
-                const numMatch = eqClean.match(/(?:\\(?:quad|qquad|enspace|hspace\{[^\}]+\})\s*)?\((\d+[a-zA-Z]?)\)\s*$/);
-                if (numMatch) {
-                    eqNum = `(${numMatch[1]})`;
-                    eqClean = eqClean.slice(0, numMatch.index).trim();
+                
+                // Match \quad (1), \qquad (1), \tag{1}, (1) at end of equation
+                const tagMatch = eqClean.match(/(?:\\(?:quad|qquad|enspace|hspace\{[^\}]+\})\s*)?(?:\\tag\{([^\}]+)\}|\(([^\)]+)\))\s*$/);
+                if (tagMatch) {
+                    eqNum = tagMatch[1] || tagMatch[2];
+                    eqClean = eqClean.slice(0, tagMatch.index).trim();
                 }
+                // Strip any remaining \tag{...}
+                eqClean = eqClean.replace(/\\tag\{[^\}]+\}/g, '').trim();
+                
                 const cleanLatex = cleanLatexForKaTeX(eqClean);
                 const mathHtml = renderLatexFormula(cleanLatex, true);
-                const numHtml = eqNum ? `<span class="eq-num">${escHtml(eqNum)}</span>` : '';
-                const rawEquationStr = `$$ ${cleanLatex} ${eqNum} $$`.trim();
+                const numHtml = eqNum ? `<span class="eq-num">(${escHtml(eqNum)})</span>` : '';
+                const rawEquationStr = `$$ ${cleanLatex}${eqNum ? ' \\quad (' + eqNum + ')' : ''} $$`.trim();
                 processedBlocks.push(`<div class="paper-equation" data-raw-equation="${escHtml(rawEquationStr)}"><div class="eq-body">${mathHtml}</div>${numHtml}</div>`);
                 continue;
             }
