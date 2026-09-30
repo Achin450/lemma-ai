@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+        (function() {
+            let theme = "dark";
+            const hasManualTheme = localStorage.getItem("lemma-theme-manual");
+            if (hasManualTheme) {
+                theme = localStorage.getItem("lemma-theme") || "dark";
+            } else {
+                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                theme = systemPrefersDark ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <title>Privacy Policy — Lemma AI</title>
+    <meta name="description" content="Read the Lemma AI Privacy Policy. Learn about our local-first document processing, academic retrieval via arXiv and Crossref, and data protection practices.">
+    <link rel="canonical" href="https://lemma2.vercel.app/privacy.html">
+
+    <!-- Open Graph & Twitter -->
+    <meta property="og:title" content="Privacy Policy — Lemma AI">
+    <meta property="og:description" content="How Lemma AI protects your research drafts, handles local-first manuscript processing, and queries verified academic APIs.">
+    <meta property="og:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+    <meta property="og:url" content="https://lemma2.vercel.app/privacy.html">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Privacy Policy — Lemma AI">
+    <meta name="twitter:description" content="How Lemma AI protects your research drafts, handles local-first manuscript processing, and queries verified academic APIs.">
+    <meta name="twitter:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=64">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=61">
+</head>
+<body class="landing-body">
+    <div class="fog-overlay fog-1"></div>
+    <div class="fog-overlay fog-2"></div>
+
+    <!-- Header Navigation -->
+    <header class="landing-header">
+        <a href="index.html" class="header-logo" style="text-decoration: none;">
+            <svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-purple); flex-shrink: 0; margin-right: 0.5rem;" aria-hidden="true">
+                <path d="M7 3v11c0 2.2 1.8 4 4 4h6"></path>
+                <circle cx="15" cy="9" r="4"></circle>
+                <line x1="18" y1="12" x2="21" y2="15"></line>
+                <path d="M13.5 9l1 1 1.5-1.5"></path>
+            </svg>
+            <span class="logo-text">Lemma</span>
+        </a>
+        <nav class="header-nav">
+            <a href="index.html#features">Features</a>
+            <a href="index.html#technology">Technology</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+        <div class="header-cta" style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="login.html" class="btn btn-outline nav-auth-btn">
+                <i class="fa-solid fa-user" aria-hidden="true"></i> Log In
+            </a>
+            <a href="dashboard.html" class="btn btn-secondary nav-cta-btn">
+                Launch Workspace <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main style="max-width: 920px; margin: 3rem auto 6rem; padding: 0 1.5rem; position: relative; z-index: 2;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 2.5rem 2rem; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+            
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 1rem;">
+                <i class="fa-solid fa-shield-halved" style="color: #10b981; font-size: 0.85rem;" aria-hidden="true"></i>
+                <span style="font-size: 0.82rem; font-weight: 600; color: #10b981;">Legal &amp; Privacy Governance</span>
+            </div>
+
+            <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Privacy Policy</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Last Updated: September 30, 2026</p>
+
+            <div style="background: rgba(255,255,255,0.02); border-left: 3px solid #10b981; padding: 1rem 1.25rem; margin-bottom: 2rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
+                <strong>Entity Disclosure Notice:</strong> This platform is operated by <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[LEGAL ENTITY NAME]</span>, registered under the laws of <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[REGISTERED JURISDICTION]</span>. Formal data protection communications should be addressed to <a href="mailto:support@lemma.ai" style="color: #10b981;">support@lemma.ai</a> or <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[DATA PROTECTION CONTACT EMAIL]</span>.
+            </div>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">1. Introduction &amp; Architectural Privacy</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.75rem;">
+                    Lemma AI is designed with a strict academic privacy focus. We recognize that research drafts, theses, unpublished discoveries, and proprietary datasets require rigorous protection. This policy explains what information is collected, how document processing is executed, and how we interact with third-party academic search APIs.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">2. Information We Collect</h2>
+                <ul style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; padding-left: 1.5rem; margin-bottom: 0.75rem;">
+                    <li><strong>Account Credentials:</strong> Full name, institutional or personal email address, encrypted password hash (via bcrypt), and academic role (student, researcher, or institutional admin).</li>
+                    <li><strong>Research Inputs:</strong> Research topics, domain specifications, paper formatting preferences (e.g. IEEE, Springer, ACM, APA), and user-submitted text prompts.</li>
+                    <li><strong>Uploaded Documents:</strong> PDF, DOCX, and text files submitted for manuscript restructuring or similarity checking.</li>
+                    <li><strong>Technical Telemetry:</strong> Anonymized browser information, session timestamps, and device viewport specifications necessary for responsive interface rendering.</li>
+                </ul>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">3. Verified Processing Pipeline &amp; Technologies</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.75rem;">
+                    In accordance with our commitment to transparency, the following technologies and processing methods are verified as actively implemented in Lemma AI:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; padding-left: 1.5rem; margin-bottom: 0.75rem;">
+                    <li><strong>Text &amp; Document Extraction:</strong> Files submitted for restructuring are parsed using <code>pypdf</code>, <code>python-docx</code>, and Optical Character Recognition (OCR via <code>pytesseract</code>/<code>pdf2image</code>) solely to extract textual content for layout conversion.</li>
+                    <li><strong>Local NLP &amp; Embeddings:</strong> Text segmentation and semantic matching are conducted locally using <code>spaCy</code> and <code>Sentence-Transformers</code> (MiniLM bi-encoder models).</li>
+                    <li><strong>Database &amp; Vector Indexing:</strong> User account data, generated papers, and document reference indices are maintained in a PostgreSQL database (optionally utilizing the <code>pgvector</code> extension or embedded in-memory BM25 index). No external cloud file storage buckets (e.g. AWS S3 or Google Cloud Storage) are currently used.</li>
+                    <li><strong>External Academic Query APIs:</strong> To verify citations and discover scholarly prior art, high-level non-confidential search terms derived from topics are queried against publicly accessible academic repositories: the <strong>arXiv API</strong>, <strong>Crossref Metadata API</strong>, <strong>Semantic Scholar API</strong>, and <strong>Wikipedia API</strong>. Full confidential manuscripts are never transmitted to these public index APIs.</li>
+                    <li><strong>Inference Providers:</strong> Paper synthesis is executed via configured language model endpoints, which may include Groq Cloud (Llama 3.3), OpenAI API (when server keys are configured), or a local Ollama instance.</li>
+                </ul>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">4. Cookies &amp; Local Storage</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.75rem;">
+                    Lemma AI utilizes browser <code>localStorage</code> for strictly essential functionality:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; padding-left: 1.5rem; margin-bottom: 0.75rem;">
+                    <li><code>lemma_token</code> / <code>lemma_auth</code>: Stores your JSON Web Token (JWT) session to keep you securely signed in.</li>
+                    <li><code>lemma-theme</code> / <code>lemma-sidebar-state</code>: Remembers your dark/light display preference and navigation collapse state.</li>
+                    <li><code>lemma_cookie_consent</code>: Stores your explicit cookie preference.</li>
+                </ul>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    Optional analytics telemetry is disabled by default and is only initialized if a valid measurement ID is configured and you grant explicit cookie consent.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">5. Data Retention &amp; User Control</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.75rem;">
+                    Users retain complete ownership over their research manuscripts. You may request the export or deletion of your account profile and stored manuscripts at any time by contacting our governance team at <a href="mailto:support@lemma.ai" style="color: #10b981;">support@lemma.ai</a>.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">6. AI Output &amp; Academic Integrity Disclaimer</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.75rem;">
+                    Lemma AI provides automated assistance for drafting, structuring, and literature cross-referencing. AI-generated formulations and bibliographic citations must be independently reviewed and verified by the author. Lemma AI does not guarantee academic acceptance or error-free outputs, and authors remain personally responsible for complying with the academic integrity guidelines of their educational institution or publisher.
+                </p>
+            </section>
+
+            <section>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">7. Contact Us</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    If you have questions regarding this Privacy Policy or data processing practices, please contact us at <a href="mailto:contact@lemma.ai" style="color: #10b981;">contact@lemma.ai</a> or visit our <a href="contact.html" style="color: #10b981;">Contact Page</a>.
+                </p>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-left">
+            <p>&copy; 2026 Lemma AI. Local-First Academic Ingestion &amp; Synthesis.</p>
+        </div>
+        <div class="footer-right">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="contact.html">Contact &amp; Support</a>
+        </div>
+    </footer>
+
+    <!-- Configuration, Cookie Consent & Analytics -->
+    <script src="assets/js/config.js?v=67"></script>
+    <script src="assets/js/cookie-consent.js?v=1"></script>
+    <script src="assets/js/analytics.js?v=1"></script>
+</body>
+</html>

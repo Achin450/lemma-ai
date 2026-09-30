@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+        (function() {
+            let theme = "dark";
+            const hasManualTheme = localStorage.getItem("lemma-theme-manual");
+            if (hasManualTheme) {
+                theme = localStorage.getItem("lemma-theme") || "dark";
+            } else {
+                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                theme = systemPrefersDark ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <title>Contact &amp; Support — Lemma AI</title>
+    <meta name="description" content="Get in touch with Lemma AI. Contact our academic support team, institutional partnership coordinators, or billing department.">
+    <link rel="canonical" href="https://lemma2.vercel.app/contact.html">
+
+    <!-- Open Graph & Twitter -->
+    <meta property="og:title" content="Contact &amp; Support — Lemma AI">
+    <meta property="og:description" content="Reach Lemma AI academic research support, institutional grants, and platform administrators.">
+    <meta property="og:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+    <meta property="og:url" content="https://lemma2.vercel.app/contact.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Contact &amp; Support — Lemma AI">
+    <meta name="twitter:description" content="Reach Lemma AI academic research support, institutional grants, and platform administrators.">
+    <meta name="twitter:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=64">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=61">
+</head>
+<body class="landing-body">
+    <div class="fog-overlay fog-1"></div>
+    <div class="fog-overlay fog-2"></div>
+
+    <!-- Header Navigation -->
+    <header class="landing-header">
+        <a href="index.html" class="header-logo" style="text-decoration: none;">
+            <svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-purple); flex-shrink: 0; margin-right: 0.5rem;" aria-hidden="true">
+                <path d="M7 3v11c0 2.2 1.8 4 4 4h6"></path>
+                <circle cx="15" cy="9" r="4"></circle>
+                <line x1="18" y1="12" x2="21" y2="15"></line>
+                <path d="M13.5 9l1 1 1.5-1.5"></path>
+            </svg>
+            <span class="logo-text">Lemma</span>
+        </a>
+        <nav class="header-nav">
+            <a href="index.html#features">Features</a>
+            <a href="index.html#technology">Technology</a>
+            <a href="contact.html" style="color: var(--text-primary); font-weight: 600;">Contact</a>
+        </nav>
+        <div class="header-cta" style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="login.html" class="btn btn-outline nav-auth-btn">
+                <i class="fa-solid fa-user" aria-hidden="true"></i> Log In
+            </a>
+            <a href="dashboard.html" class="btn btn-secondary nav-cta-btn">
+                Launch Workspace <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main style="max-width: 1040px; margin: 3rem auto 6rem; padding: 0 1.5rem; position: relative; z-index: 2;">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 1rem;">
+                <i class="fa-solid fa-envelope" style="color: #10b981; font-size: 0.85rem;" aria-hidden="true"></i>
+                <span style="font-size: 0.82rem; font-weight: 600; color: #10b981;">Academic Support &amp; Governance</span>
+            </div>
+            <h1 style="font-size: 2.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.75rem; font-family: 'Outfit', sans-serif;">Contact Lemma AI</h1>
+            <p style="color: var(--text-secondary); font-size: 1rem; max-width: 600px; margin: 0 auto; line-height: 1.6;">
+                Reach our team for technical assistance, publisher integration inquiries, institutional enterprise licenses, and research collaborations.
+            </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem;">
+            
+            <!-- Direct Department Contacts Card -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 2rem; box-shadow: 0 16px 40px rgba(0,0,0,0.35); display: flex; flex-direction: column; gap: 1.5rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">Verified Contact Channels</h2>
+
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-headset" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">Technical &amp; Academic Support</div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Assistance with formatting, extraction, &amp; citations</div>
+                        <a href="mailto:support@lemma.ai" style="color: #10b981; font-size: 0.88rem; text-decoration: none; font-weight: 600;">support@lemma.ai</a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); color: #818cf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-building-columns" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">Institutional &amp; Dean Access</div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">University campus licenses &amp; enterprise portals</div>
+                        <a href="mailto:contact@lemma.ai" style="color: #818cf8; font-size: 0.88rem; text-decoration: none; font-weight: 600;">contact@lemma.ai</a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-receipt" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">Billing &amp; Grant Administration</div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Invoicing, scholar reimbursements &amp; plans</div>
+                        <a href="mailto:billing@lemma.ai" style="color: #f59e0b; font-size: 0.88rem; text-decoration: none; font-weight: 600;">billing@lemma.ai</a>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px; align-items: flex-start;">
+                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #3b82f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fa-solid fa-bullhorn" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">Sponsorships &amp; Partnerships</div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Academic conference &amp; journal partnerships</div>
+                        <a href="mailto:ads@lemma.ai" style="color: #3b82f6; font-size: 0.88rem; text-decoration: none; font-weight: 600;">ads@lemma.ai</a>
+                    </div>
+                </div>
+
+                <!-- Verified Physical Address / Entity Placeholders -->
+                <div style="margin-top: 0.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+                    <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Headquarters &amp; Registration:</div>
+                    <div>Legal Entity: <span style="font-family: monospace;">[LEGAL ENTITY NAME]</span></div>
+                    <div>Address: <span style="font-family: monospace;">[REGISTERED OFFICE ADDRESS]</span></div>
+                    <div>Phone: <span style="font-family: monospace;">[PHONE NUMBER]</span></div>
+                    <div style="margin-top: 6px; font-style: italic; font-size: 0.78rem;">Physical mailing address and dedicated corporate phone line will be updated upon institutional entity filing.</div>
+                </div>
+            </div>
+
+            <!-- Interactive Inquiry Form Card -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 2rem; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+                <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem;">Send an Inquiry</h2>
+
+                <form id="lemma-contact-form" novalidate style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <label for="contact-name" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Your Name <span style="color: #ef4444;">*</span></label>
+                        <input type="text" id="contact-name" class="research-input" placeholder="e.g. Dr. Jane Doe" required style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                        <div id="contact-name-error" role="alert" style="color: #ef4444; font-size: 0.78rem; margin-top: 4px; display: none;">Please provide your name.</div>
+                    </div>
+
+                    <div>
+                        <label for="contact-email" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Email Address <span style="color: #ef4444;">*</span></label>
+                        <input type="email" id="contact-email" class="research-input" placeholder="e.g. jane.doe@university.edu" required style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                        <div id="contact-email-error" role="alert" style="color: #ef4444; font-size: 0.78rem; margin-top: 4px; display: none;">Please provide a valid email address.</div>
+                    </div>
+
+                    <div>
+                        <label for="contact-topic" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Inquiry Category</label>
+                        <select id="contact-topic" class="research-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);">
+                            <option value="technical">Technical Support &amp; Formatting</option>
+                            <option value="institution">Institutional / Enterprise Partnership</option>
+                            <option value="billing">Billing &amp; Invoicing</option>
+                            <option value="feedback">General Feedback &amp; Research Ideas</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="contact-message" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Message <span style="color: #ef4444;">*</span></label>
+                        <textarea id="contact-message" rows="4" class="research-input" placeholder="Describe your inquiry, institution, or technical question..." required style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); resize: vertical;"></textarea>
+                        <div id="contact-message-error" role="alert" style="color: #ef4444; font-size: 0.78rem; margin-top: 4px; display: none;">Please enter a message (minimum 10 characters).</div>
+                    </div>
+
+                    <div id="contact-form-general-error" role="alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #ef4444; padding: 10px; border-radius: 8px; font-size: 0.85rem; display: none;"></div>
+
+                    <button type="submit" id="btn-submit-contact" class="btn btn-primary" style="padding: 12px 20px; font-size: 0.95rem; font-weight: 600; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 6px;">
+                        <span>Send Message</span>
+                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-left">
+            <p>&copy; 2026 Lemma AI. Local-First Academic Ingestion &amp; Synthesis.</p>
+        </div>
+        <div class="footer-right">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="contact.html">Contact &amp; Support</a>
+        </div>
+    </footer>
+
+    <!-- Configuration, Cookie Consent & Analytics -->
+    <script src="assets/js/config.js?v=67"></script>
+    <script src="assets/js/cookie-consent.js?v=1"></script>
+    <script src="assets/js/analytics.js?v=1"></script>
+
+    <!-- Contact Form Controller -->
+    <script>
+    (function() {
+        const form = document.getElementById('lemma-contact-form');
+        const submitBtn = document.getElementById('btn-submit-contact');
+        const nameInput = document.getElementById('contact-name');
+        const emailInput = document.getElementById('contact-email');
+        const messageInput = document.getElementById('contact-message');
+        const nameError = document.getElementById('contact-name-error');
+        const emailError = document.getElementById('contact-email-error');
+        const messageError = document.getElementById('contact-message-error');
+        const generalError = document.getElementById('contact-form-general-error');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            let valid = true;
+            generalError.style.display = 'none';
+
+            // Validate name
+            if (!nameInput.value.trim()) {
+                nameError.style.display = 'block';
+                nameInput.style.borderColor = '#ef4444';
+                valid = false;
+            } else {
+                nameError.style.display = 'none';
+                nameInput.style.borderColor = 'var(--border-color)';
+            }
+
+            // Validate email
+            const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRe.test(emailInput.value.trim())) {
+                emailError.style.display = 'block';
+                emailInput.style.borderColor = '#ef4444';
+                valid = false;
+            } else {
+                emailError.style.display = 'none';
+                emailInput.style.borderColor = 'var(--border-color)';
+            }
+
+            // Validate message
+            if (messageInput.value.trim().length < 10) {
+                messageError.style.display = 'block';
+                messageInput.style.borderColor = '#ef4444';
+                valid = false;
+            } else {
+                messageError.style.display = 'none';
+                messageInput.style.borderColor = 'var(--border-color)';
+            }
+
+            if (!valid) {
+                return;
+            }
+
+            // Prevent double submission & show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> <span>Sending Inquiry...</span>';
+
+            // Fire analytics hook safely
+            if (window.LemmaAnalytics) {
+                window.LemmaAnalytics.trackFormSubmit('contact_inquiry', true);
+            }
+
+            // Simulate slight asynchronous processing and redirect cleanly to thank-you page
+            setTimeout(function() {
+                sessionStorage.setItem('lemma_last_submission_email', emailInput.value.trim());
+                window.location.href = 'thank-you.html';
+            }, 600);
+        });
+    })();
+    </script>
+</body>
+</html>

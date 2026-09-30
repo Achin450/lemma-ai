@@ -1166,6 +1166,14 @@
                     const progressView = document.getElementById('paper-progress-view');
                     if (progressView) progressView.classList.add('generation-completed');
 
+                    if (window.LemmaAnalytics) {
+                        window.LemmaAnalytics.trackEvent('paper_gen_complete', { paper_id: data.paper_id || jobId });
+                    }
+                    const genBtn = document.getElementById('btn-blank-generate');
+                    if (genBtn) genBtn.disabled = false;
+                    const resBtn = document.getElementById('btn-submit-restructure');
+                    if (resBtn) resBtn.disabled = false;
+
                     // Allow 3.5 seconds for the user to admire the completed paper before switching
                     setTimeout(async () => {
                         await loadAndShowPaper(data.paper_id || jobId);
@@ -1174,6 +1182,10 @@
             } else if (data.status === 'failed') {
                 stopPolling();
                 stopProgressEngine();
+                const genBtn = document.getElementById('btn-blank-generate');
+                if (genBtn) genBtn.disabled = false;
+                const resBtn = document.getElementById('btn-submit-restructure');
+                if (resBtn) resBtn.disabled = false;
                 showToast(`Process failed: ${data.error || 'Unknown error'}`, 'error');
                 showViewGlobal('dashboard-home-view');
             }
@@ -2760,8 +2772,14 @@
         }
 
         const selectedFormat = formatStyle || document.getElementById('home-gen-format')?.value || 'ieee';
+        const genBtn = document.getElementById('btn-blank-generate');
+        if (genBtn) genBtn.disabled = true;
 
         try {
+            if (window.LemmaAnalytics) {
+                window.LemmaAnalytics.trackEvent('paper_gen_start', { format: selectedFormat });
+            }
+
             showProgressView(`Generating: "${topic.trim()}"`, `Analyzing topic and synthesizing research according to ${selectedFormat.toUpperCase()} standards...`);
 
             const res = await fetch(`${apiBase()}/api/v1/research/generate`, {
@@ -2778,6 +2796,7 @@
             });
 
             if (!res.ok) {
+                if (genBtn) genBtn.disabled = false;
                 const errData = await res.json().catch(() => ({}));
                 if (res.status === 422 && errData.detail && typeof errData.detail === 'object') {
                     const d = errData.detail;
@@ -2797,6 +2816,7 @@
             startPolling(data.job_id, 'research');
 
         } catch (e) {
+            if (genBtn) genBtn.disabled = false;
             showToast(`Failed to start generation: ${e.message}`, 'error');
             showViewGlobal('dashboard-home-view');
         }
@@ -2813,7 +2833,14 @@
             document.getElementById('home-gen-format')?.value ||
             'ieee';
 
+        const restructureBtn = document.getElementById('btn-submit-restructure');
+        if (restructureBtn) restructureBtn.disabled = true;
+
         try {
+            if (window.LemmaAnalytics) {
+                window.LemmaAnalytics.trackEvent('paper_restructure_start', { format: chosenFormat });
+            }
+
             showProgressView(`Restructuring: "${file.name}"`, `Extracting sections and reorganizing into ${chosenFormat.toUpperCase()} structure...`);
 
             const formData = new FormData();
@@ -2828,6 +2855,7 @@
             });
 
             if (!res.ok) {
+                if (restructureBtn) restructureBtn.disabled = false;
                 const err = await res.json().catch(() => ({}));
                 throw new Error(err.detail || `Server error: ${res.status}`);
             }
@@ -2839,6 +2867,7 @@
             startPolling(data.job_id, 'research');
 
         } catch (e) {
+            if (restructureBtn) restructureBtn.disabled = false;
             showToast(`Restructuring failed to start: ${e.message}`, 'error');
             showViewGlobal('dashboard-home-view');
         }

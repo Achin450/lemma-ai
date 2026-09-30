@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <script>
+        (function() {
+            let theme = "dark";
+            const hasManualTheme = localStorage.getItem("lemma-theme-manual");
+            if (hasManualTheme) {
+                theme = localStorage.getItem("lemma-theme") || "dark";
+            } else {
+                const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                theme = systemPrefersDark ? "dark" : "light";
+            }
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <title>Terms of Service — Lemma AI</title>
+    <meta name="description" content="Review the Terms of Service for Lemma AI. Understand your rights, user obligations, academic integrity policies, and AI generation disclaimers.">
+    <link rel="canonical" href="https://lemma2.vercel.app/terms.html">
+
+    <!-- Open Graph & Twitter -->
+    <meta property="og:title" content="Terms of Service — Lemma AI">
+    <meta property="og:description" content="Terms and academic guidelines governing the use of Lemma AI paper generation and restructuring tools.">
+    <meta property="og:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+    <meta property="og:url" content="https://lemma2.vercel.app/terms.html">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Terms of Service — Lemma AI">
+    <meta name="twitter:description" content="Terms and academic guidelines governing the use of Lemma AI paper generation and restructuring tools.">
+    <meta name="twitter:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=64">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=61">
+</head>
+<body class="landing-body">
+    <div class="fog-overlay fog-1"></div>
+    <div class="fog-overlay fog-2"></div>
+
+    <!-- Header Navigation -->
+    <header class="landing-header">
+        <a href="index.html" class="header-logo" style="text-decoration: none;">
+            <svg class="brand-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-purple); flex-shrink: 0; margin-right: 0.5rem;" aria-hidden="true">
+                <path d="M7 3v11c0 2.2 1.8 4 4 4h6"></path>
+                <circle cx="15" cy="9" r="4"></circle>
+                <line x1="18" y1="12" x2="21" y2="15"></line>
+                <path d="M13.5 9l1 1 1.5-1.5"></path>
+            </svg>
+            <span class="logo-text">Lemma</span>
+        </a>
+        <nav class="header-nav">
+            <a href="index.html#features">Features</a>
+            <a href="index.html#technology">Technology</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+        <div class="header-cta" style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="login.html" class="btn btn-outline nav-auth-btn">
+                <i class="fa-solid fa-user" aria-hidden="true"></i> Log In
+            </a>
+            <a href="dashboard.html" class="btn btn-secondary nav-cta-btn">
+                Launch Workspace <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main style="max-width: 920px; margin: 3rem auto 6rem; padding: 0 1.5rem; position: relative; z-index: 2;">
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 2.5rem 2rem; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+            
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 1rem;">
+                <i class="fa-solid fa-scale-balanced" style="color: #10b981; font-size: 0.85rem;" aria-hidden="true"></i>
+                <span style="font-size: 0.82rem; font-weight: 600; color: #10b981;">Terms &amp; Conditions</span>
+            </div>
+
+            <h1 style="font-size: 2.4rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Terms of Service</h1>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 2rem;">Last Updated: September 30, 2026</p>
+
+            <div style="background: rgba(255,255,255,0.02); border-left: 3px solid #10b981; padding: 1rem 1.25rem; margin-bottom: 2rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; line-height: 1.6; color: var(--text-secondary);">
+                <strong>Contracting Entity:</strong> These Terms of Service constitute a legally binding agreement between you and <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[LEGAL ENTITY NAME]</span>, located at <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[REGISTERED ADDRESS]</span>. By accessing or using Lemma AI, you acknowledge that you have read, understood, and agree to these terms.
+            </div>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">1. Acceptance &amp; Eligibility</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    You must be of legal age to form a binding contract in your jurisdiction or have parental or institutional authorization. If you are registering an institutional or enterprise account on behalf of a university, research center, or company, you warrant that you hold the authority to bind that entity.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">2. User Accounts &amp; Access Controls</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately at <a href="mailto:support@lemma.ai" style="color: #10b981;">support@lemma.ai</a> of any unauthorized access. Lemma AI enforces server-side role-based authorization to protect student, researcher, and institutional administrative consoles.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">3. AI Output &amp; Academic Citation Disclaimer</h2>
+                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                    <p style="color: var(--text-primary); font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b; margin-right: 6px;"></i> Important Scholarly Notice:
+                    </p>
+                    <ul style="color: var(--text-secondary); line-height: 1.7; font-size: 0.9rem; padding-left: 1.25rem; margin: 0;">
+                        <li><strong>Independent Verification Required:</strong> AI-synthesized manuscripts, literature surveys, mathematical formulations, and bibliographic citations may contain inaccuracies. Researchers are strictly responsible for independently reviewing and validating all generated claims and references.</li>
+                        <li><strong>No Academic Acceptance Guarantee:</strong> Lemma AI does not guarantee acceptance, peer-review passage, publication in any journal or conference proceedings, or complete error-free generation.</li>
+                        <li><strong>Institutional Integrity Compliance:</strong> You remain solely responsible for adhering to your university, academic institution, or target publisher's policies regarding generative AI attribution, collaborative authorship, and academic honesty.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">4. Intellectual Property &amp; User Content</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    You retain full intellectual property ownership of manuscripts, drafts, and research materials you upload or synthesize using Lemma AI. We claim no ownership over your research findings, datasets, or resulting publications. You grant Lemma AI only the limited, temporary license necessary to process, format, and render your document within your private session.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">5. Acceptable Use Policy</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; margin-bottom: 0.5rem;">
+                    You agree not to use Lemma AI to:
+                </p>
+                <ul style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem; padding-left: 1.5rem;">
+                    <li>Fabricate fraudulent empirical data, scientific results, or clinical trials.</li>
+                    <li>Violate the intellectual property, copyright, or privacy rights of any third party.</li>
+                    <li>Attempt to disrupt, reverse-engineer, exploit, or bypass backend authentication mechanisms or rate limits.</li>
+                    <li>Submit malicious files or automate extraction through scraping outside official interfaces.</li>
+                </ul>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">6. Billing, Grants &amp; Subscriptions</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    Certain tiers, publisher grant directories, and enterprise portal features may require payment or institutional sponsorship. Subscription terms, invoicing details, and billing policies are accessible via the Billing &amp; Plans section of your workspace or by contacting <a href="mailto:billing@lemma.ai" style="color: #10b981;">billing@lemma.ai</a>.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">7. Disclaimers &amp; Limitation of Liability</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    Lemma AI is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, either express or implied. To the maximum extent permitted by applicable law, Lemma AI and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the platform.
+                </p>
+            </section>
+
+            <section style="margin-bottom: 2.25rem;">
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">8. Governing Law &amp; Jurisdiction</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    These Terms shall be governed by and construed in accordance with the laws of <span style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-family: monospace;">[GOVERNING LAW JURISDICTION]</span>, without regard to its conflict of law principles.
+                </p>
+            </section>
+
+            <section>
+                <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem;">9. Contact</h2>
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 0.93rem;">
+                    For legal or contractual questions regarding these Terms, contact our legal team at <a href="mailto:contact@lemma.ai" style="color: #10b981;">contact@lemma.ai</a> or <a href="mailto:support@lemma.ai" style="color: #10b981;">support@lemma.ai</a>.
+                </p>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-left">
+            <p>&copy; 2026 Lemma AI. Local-First Academic Ingestion &amp; Synthesis.</p>
+        </div>
+        <div class="footer-right">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="contact.html">Contact &amp; Support</a>
+        </div>
+    </footer>
+
+    <!-- Configuration, Cookie Consent & Analytics -->
+    <script src="assets/js/config.js?v=67"></script>
+    <script src="assets/js/cookie-consent.js?v=1"></script>
+    <script src="assets/js/analytics.js?v=1"></script>
+</body>
+</html>

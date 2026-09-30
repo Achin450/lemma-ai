@@ -21,16 +21,40 @@
     </script>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Lemma - Local-First Plagiarism Analysis & Rewriting Platform</title>
-    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+    <title>Lemma AI — AI Research Paper Generator &amp; Academic Integrity Assistant</title>
+    <meta name="description" content="Synthesize publication-ready IEEE, Springer, and ACM research papers with real citations from arXiv and Crossref. Featuring dual-tier plagiarism checking and local-first privacy.">
+    <link rel="canonical" href="https://lemma2.vercel.app/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lemma2.vercel.app/">
+    <meta property="og:title" content="Lemma AI — AI Research Paper Generator &amp; Academic Integrity Assistant">
+    <meta property="og:description" content="Synthesize publication-ready IEEE, Springer, and ACM research papers with real citations from arXiv and Crossref. Featuring dual-tier plagiarism checking and local-first privacy.">
+    <meta property="og:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+    <meta property="og:site_name" content="Lemma AI">
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://lemma2.vercel.app/">
+    <meta name="twitter:title" content="Lemma AI — AI Research Paper Generator &amp; Academic Integrity Assistant">
+    <meta name="twitter:description" content="Synthesize publication-ready IEEE, Springer, and ACM research papers with real citations from arXiv and Crossref. Featuring dual-tier plagiarism checking and local-first privacy.">
+    <meta name="twitter:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+
+    <!-- Favicon Set & PWA Manifest -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
     <!-- Google Fonts: Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/style.css?v=43">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=64">
+    <link rel="stylesheet" href="assets/css/mobile.css?v=61">
 </head>
 <body class="landing-body">
     <!-- Background Atmospheric Fog Overlays -->
@@ -57,7 +81,8 @@
             <a href="#features">Features</a>
             <a href="#technology">Technology</a>
             <a href="dashboard.html" onclick="sessionStorage.setItem('lemma_active_view', 'billing-view')">Pricing &amp; Plans</a>
-            <a href="https://github.com" target="_blank">Developers</a>
+            <a href="contact.html">Contact</a>
+            <a href="https://github.com/Achin450/lemma-ai" target="_blank" rel="noopener noreferrer">Developers</a>
         </nav>
         <div class="header-cta" style="display: flex; align-items: center; gap: 0.75rem;">
             <button class="theme-toggle" id="theme-toggle-btn" aria-label="Toggle Theme" title="Toggle Theme">
@@ -169,20 +194,62 @@
 
     <footer class="landing-footer">
         <div class="footer-left">
-            <p>&copy; 2026 Lemma Plagiarism Engine. Local Academic Ingestion.</p>
+            <p>&copy; 2026 Lemma AI. Local-First Academic Ingestion &amp; Synthesis.</p>
+            <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.35rem; line-height: 1.5; max-width: 580px;">
+                Scholarly Notice: Lemma AI assists authors in formatting, drafting, and discovering prior art. Generated manuscripts and citations should be independently reviewed and verified by the researcher in accordance with institutional academic integrity standards.
+            </p>
         </div>
         <div class="footer-right">
-            <a href="#features">Privacy Policy</a>
-            <a href="#features">Terms of Service</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="contact.html">Contact &amp; Support</a>
         </div>
     </footer>
+
+    <!-- Sticky Mobile Conversion CTA (Only on marketing landing page) -->
+    <div class="sticky-mobile-cta" id="sticky-mobile-cta" aria-hidden="true">
+        <div class="brand-info">
+            <span class="brand-title">Lemma AI</span>
+            <span class="brand-sub">Academic Research Studio</span>
+        </div>
+        <a href="dashboard.html" class="btn-cta-launch" onclick="if(window.LemmaAnalytics) LemmaAnalytics.trackCta('sticky_mobile_launch', 'dashboard.html');">
+            <span>Launch Workspace</span>
+            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+    </div>
+
+    <!-- Central Configuration, Cookie Consent & Analytics -->
+    <script src="assets/js/config.js?v=67"></script>
+    <script src="assets/js/cookie-consent.js?v=1"></script>
+    <script src="assets/js/analytics.js?v=1"></script>
 
     <!-- Landing page specific animations and particle sphere -->
     <script src="assets/js/landing.js"></script>
     <script>
         function handleLaunchWorkspace() {
+            if (window.LemmaAnalytics) {
+                window.LemmaAnalytics.trackCta('hero_launch', 'dashboard.html');
+            }
             window.location.href = "dashboard.html";
         }
+
+        // Scroll listener for sticky mobile CTA
+        (function() {
+            const stickyCta = document.getElementById('sticky-mobile-cta');
+            if (!stickyCta) return;
+            const hero = document.querySelector('.hero-section');
+            window.addEventListener('scroll', function() {
+                if (!hero) return;
+                const heroBottom = hero.getBoundingClientRect().bottom;
+                if (heroBottom < 60) {
+                    stickyCta.classList.add('visible');
+                    stickyCta.setAttribute('aria-hidden', 'false');
+                } else {
+                    stickyCta.classList.remove('visible');
+                    stickyCta.setAttribute('aria-hidden', 'true');
+                }
+            }, { passive: true });
+        })();
     </script>
     <!-- Configurable Ads Engine -->
     <script src="assets/js/ads-config.js?v=1"></script>

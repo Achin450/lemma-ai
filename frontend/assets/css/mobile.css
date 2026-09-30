@@ -435,6 +435,146 @@ body {
     .pro-pricing-box {
         grid-template-columns: 1fr !important;
     }
+
+    /* Landing Page Above-The-Fold Optimizations (<= 768px) */
+    .landing-body {
+        overflow-x: hidden;
+    }
+
+    .hero-section {
+        min-height: calc(100svh - 68px);
+        padding: 2rem 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-content {
+        max-width: 100%;
+        padding: 0 0.25rem;
+    }
+
+    .hero-title {
+        font-size: 2.1rem !important;
+        line-height: 1.22 !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    .hero-subtitle {
+        font-size: 0.88rem !important;
+        margin-bottom: 1.25rem !important;
+        line-height: 1.5 !important;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto 1.5rem;
+        gap: 8px !important;
+    }
+
+    .hero-actions .btn {
+        width: 100% !important;
+        justify-content: center;
+        padding: 0.7rem 1.2rem !important;
+        font-size: 0.9rem !important;
+    }
+
+    .stats-row {
+        gap: 0.75rem !important;
+        flex-direction: column;
+        max-width: 320px;
+        margin: 0 auto;
+    }
+
+    .stat-item {
+        padding: 0.5rem 0.85rem !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* Very Small Mobile Phones (<= 375px & 320px) */
+@media (max-width: 375px) {
+    .hero-title {
+        font-size: 1.85rem !important;
+    }
+
+    .header-logo .logo-text {
+        font-size: 1.1rem;
+    }
+
+    .landing-header {
+        padding: 0.65rem 0.75rem;
+    }
+}
+
+/* Sticky Mobile CTA (Only active on public marketing pages) */
+.sticky-mobile-cta {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .sticky-mobile-cta {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9980;
+        background: rgba(10, 10, 12, 0.94);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-top: 1px solid var(--border-color, #27272a);
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(100%);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .sticky-mobile-cta.visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .sticky-mobile-cta .brand-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sticky-mobile-cta .brand-title {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: var(--text-primary, #ffffff);
+    }
+
+    .sticky-mobile-cta .brand-sub {
+        font-size: 0.72rem;
+        color: #10b981;
+    }
+
+    .sticky-mobile-cta .btn-cta-launch {
+        background: #10b981;
+        color: #ffffff;
+        font-weight: 600;
+        font-size: 0.84rem;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        cursor: pointer;
+    }
 }
 
 @keyframes fadeIn {

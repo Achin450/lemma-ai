@@ -1,0 +1,17 @@
+# robots.txt for Lemma AI (Crawler Indexing Directives Only)
+# Note: This file controls search-engine indexation and does not replace server-side auth/security.
+User-agent: *
+Allow: /
+Allow: /index.html
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /contact.html
+Allow: /assets/
+
+# Disallow indexing of private workspaces, administrative consoles, auth endpoints, and API proxies
+Disallow: /dashboard.html
+Disallow: /admin.html
+Disallow: /login.html
+Disallow: /api/
+
+Sitemap: https://lemma2.vercel.app/sitemap.xml

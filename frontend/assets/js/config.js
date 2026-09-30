@@ -1,6 +1,12 @@
 /**
- * Lemma Central API Configuration Engine
+ * Lemma Central Platform & Analytics Configuration Engine
  */
+window.LEMMA_CONFIG = window.LEMMA_CONFIG || {
+    PRODUCTION_DOMAIN: 'https://lemma2.vercel.app',
+    // Analytics is disabled by default until user sets a valid measurement ID (e.g. 'G-XXXXXXXXXX')
+    ANALYTICS_ID: ''
+};
+
 const APIConfigManager = {
     DEFAULT_PROD_URL: 'https://lemma-ai-zi5o.onrender.com',
     DEFAULT_DEV_URL: 'http://localhost:8000',

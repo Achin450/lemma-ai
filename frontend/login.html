@@ -2,9 +2,25 @@
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lemma — Sign In</title>
-    <link rel="icon" type="image/svg+xml" href="/assets/images/logo.svg">
+    <title>Sign In &amp; Register — Lemma AI Scholar &amp; Enterprise Portal</title>
+    <meta name="description" content="Sign in or register for Lemma AI. Access student research paper synthesis tools, manuscript formatting, and institutional publishing grants.">
+    <link rel="canonical" href="https://lemma2.vercel.app/login.html">
+    <meta name="robots" content="noindex, follow">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lemma2.vercel.app/login.html">
+    <meta property="og:title" content="Sign In &amp; Register — Lemma AI">
+    <meta property="og:description" content="Access your Lemma AI research workspace, manuscript formatting tools, and institutional publishing grants.">
+    <meta property="og:image" content="https://lemma2.vercel.app/assets/images/og-image.png">
+
+    <!-- Favicon Set -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
+
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -270,7 +286,7 @@
             <button class="tab-btn" onclick="switchOrgTab('register')">Sign Up as Organisation</button>
         </div>
 
-        <div id="msg" class="message"></div>
+        <div id="msg" class="message" role="alert" aria-live="assertive"></div>
 
         <!-- ========================================== -->
         <!-- STUDENT / SCHOLAR FORMS                    -->
@@ -430,8 +446,8 @@
     </div>
 
     <footer>
-        By signing in, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.<br>
-        &copy; 2026 Lemma Academic Integrity Platform
+        By signing in, you agree to our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a>.<br>
+        Need assistance? <a href="contact.html">Contact Support</a> &bull; &copy; 2026 Lemma AI.
     </footer>
 </div>
 
