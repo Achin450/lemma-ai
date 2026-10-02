@@ -117,16 +117,23 @@ class PaperStore:
 
             sec_count = len(paper.sections) if paper.sections else 0
             cit_count = len(paper.citations) if paper.citations else 0
+            user_uuid = None
+            if paper.user_id:
+                try:
+                    user_uuid = str(uuid.UUID(paper.user_id))
+                except Exception:
+                    user_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(paper.user_id)))
 
             with DatabaseService.get_connection() as conn:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         INSERT INTO research_papers (
-                            id, job_id, title, topic, status, paper_type,
+                            id, job_id, user_id, title, topic, status, paper_type,
                             similarity_score, sections_count, citations_count, created_at, updated_at
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
                         ON CONFLICT (job_id) DO UPDATE SET
+                            user_id = COALESCE(research_papers.user_id, EXCLUDED.user_id),
                             title = EXCLUDED.title,
                             topic = EXCLUDED.topic,
                             status = EXCLUDED.status,
@@ -137,6 +144,7 @@ class PaperStore:
                     """, (
                         paper_uuid,
                         paper.paper_id,
+                        user_uuid,
                         (paper.title or "Untitled Paper")[:500],
                         (paper.topic or "")[:500],
                         paper.status.value,
@@ -156,9 +164,10 @@ class PaperStore:
         filename: Optional[str] = None,
         text_preview: Optional[str] = None,
         score: float = 0.0,
+        user_id: Optional[str] = None,
     ) -> None:
         """
-        Persist a standalone similarity check report to disk and PostgreSQL.
+        Persist a standalone similarity check report to disk and PostgreSQL with user ownership.
         """
         # 1. Save to disk
         try:
@@ -166,6 +175,7 @@ class PaperStore:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({
                     "job_id": job_id,
+                    "user_id": user_id,
                     "paper_type": "similarity_check",
                     "title": filename or (f"Similarity: {text_preview[:50]}..." if text_preview else "Plagiarism Check"),
                     "topic": "Plagiarism & Similarity Analysis",
@@ -185,6 +195,13 @@ class PaperStore:
             except (ValueError, AttributeError):
                 rec_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(job_id)))
 
+            user_uuid = None
+            if user_id:
+                try:
+                    user_uuid = str(uuid.UUID(user_id))
+                except Exception:
+                    user_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(user_id)))
+
             title = filename or (f"Similarity: {text_preview[:60]}..." if text_preview else "Plagiarism Check")
             total_sents = report_dict.get("total_sentences", 0)
             matched_sents = report_dict.get("matched_sentences", 0)
@@ -193,11 +210,12 @@ class PaperStore:
                 with conn.cursor() as cursor:
                     cursor.execute("""
                         INSERT INTO research_papers (
-                            id, job_id, title, topic, status, paper_type,
+                            id, job_id, user_id, title, topic, status, paper_type,
                             similarity_score, sections_count, citations_count, report_data, updated_at
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
                         ON CONFLICT (job_id) DO UPDATE SET
+                            user_id = COALESCE(research_papers.user_id, EXCLUDED.user_id),
                             title = EXCLUDED.title,
                             similarity_score = EXCLUDED.similarity_score,
                             sections_count = EXCLUDED.sections_count,
@@ -207,6 +225,7 @@ class PaperStore:
                     """, (
                         rec_uuid,
                         job_id,
+                        user_uuid,
                         title[:500],
                         "Plagiarism & Similarity Analysis",
                         "completed",
@@ -218,6 +237,7 @@ class PaperStore:
                     ))
                 conn.commit()
             logger.info(f"Saved similarity report {job_id} to PostgreSQL research_papers.")
+
         except Exception as e:
             logger.warning(f"DB upsert failed for similarity check {job_id}: {e}")
 
@@ -302,10 +322,27 @@ class PaperStore:
         return _paper_path(paper_id).exists() or _sim_path(paper_id).exists()
 
     @staticmethod
-    def list_papers(user_id: Optional[str] = None, limit: int = 100) -> list[dict]:
+    def check_access(paper_id: str, requesting_user_id: Optional[str], is_admin: bool = False) -> tuple[bool, Optional[ResearchPaper]]:
         """
-        List all research papers and similarity checks.
-        Pulls from PostgreSQL research_papers with disk fallback.
+        Verify that requesting_user_id has permission to access paper_id.
+        Returns (has_access: bool, paper: Optional[ResearchPaper]).
+        """
+        paper = PaperStore.load(paper_id)
+        if not paper:
+            return False, None
+        if is_admin:
+            return True, paper
+        if paper.user_id:
+            if requesting_user_id and str(paper.user_id) == str(requesting_user_id):
+                return True, paper
+            return False, paper
+        return True, paper
+
+    @staticmethod
+    def list_papers(user_id: Optional[str] = None, limit: int = 100, is_admin: bool = False) -> list[dict]:
+        """
+        List research papers and similarity checks isolated to user_id.
+        Admins can view all papers if user_id is not specified.
         """
         # Try DB first
         try:
@@ -313,13 +350,13 @@ class PaperStore:
             import psycopg2.extras
             with DatabaseService.get_connection() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
-                    if user_id and user_id != "00000000-0000-0000-0000-000000000001":
+                    if user_id and not is_admin:
                         cursor.execute("""
                             SELECT id, job_id, user_id, title, topic, status, paper_type,
                                    similarity_score, sections_count, citations_count,
                                    created_at, updated_at
                             FROM research_papers
-                            WHERE user_id = %s OR user_id IS NULL
+                            WHERE user_id = %s
                             ORDER BY COALESCE(updated_at, created_at) DESC
                             LIMIT %s
                         """, (user_id, limit))
@@ -337,7 +374,6 @@ class PaperStore:
                         results = []
                         for r in rows:
                             d = dict(r)
-                            # Convert datetime to ISO string
                             if isinstance(d.get("created_at"), datetime):
                                 d["created_at"] = d["created_at"].isoformat()
                             if isinstance(d.get("updated_at"), datetime):
@@ -359,12 +395,16 @@ class PaperStore:
                     try:
                         with open(json_file, "r", encoding="utf-8") as f:
                             data = json.load(f)
+                            if user_id and not is_admin:
+                                if data.get("user_id") and str(data.get("user_id")) != str(user_id):
+                                    continue
                             is_sim = json_file.name.startswith("sim_") or data.get("paper_type") == "similarity_check"
                             p_type = "similarity_check" if is_sim else data.get("paper_type", "generated")
                             job_key = data.get("job_id") or data.get("paper_id") or json_file.stem.replace("sim_", "")
                             papers.append({
                                 "id": job_key,
                                 "job_id": job_key,
+                                "user_id": data.get("user_id"),
                                 "title": data.get("title", "Untitled Document"),
                                 "topic": data.get("topic", ""),
                                 "status": data.get("status", "completed"),
@@ -380,4 +420,5 @@ class PaperStore:
         except Exception as e:
             logger.warning(f"Failed to list papers from disk: {e}")
             return []
+
 

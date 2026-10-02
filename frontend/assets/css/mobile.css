@@ -510,6 +510,35 @@ body {
     }
 }
 
+@media (max-width: 320px) {
+    .hero-title {
+        font-size: 1.65rem !important;
+    }
+
+    .hero-subtitle {
+        font-size: 0.82rem !important;
+    }
+
+    .hero-actions .btn {
+        font-size: 0.84rem !important;
+        padding: 0.6rem 0.8rem !important;
+    }
+
+    .header-logo .brand-icon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .header-logo .logo-text {
+        font-size: 1rem !important;
+    }
+
+    .nav-auth-btn {
+        padding: 0.45rem 0.65rem !important;
+        font-size: 0.78rem !important;
+    }
+}
+
 /* Sticky Mobile CTA (Only active on public marketing pages) */
 .sticky-mobile-cta {
     display: none;

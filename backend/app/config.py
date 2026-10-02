@@ -73,8 +73,8 @@ class Settings(BaseSettings):
     CELERY_ALWAYS_EAGER: bool = os.getenv("CELERY_ALWAYS_EAGER", "true").lower() in ("true", "1")
     
     # Ollama settings
-    OLLAMA_URL: str = "http://127.0.0.1:11434"
-    OLLAMA_MODEL: str = "lemma-model"
+    OLLAMA_URL: str = os.getenv("OLLAMA_URL", "https://sensor-programme-simply-whale.trycloudflare.com")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.3:70b-instruct-q4_K_M")
 
     # Cloud LLM Settings (Groq / OpenAI / Cloud Providers)
     GROQ_API_KEY: str | None = os.getenv("GROQ_API_KEY", None)
@@ -82,8 +82,13 @@ class Settings(BaseSettings):
     OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL", None)
     CLOUD_LLM_MODEL: str = os.getenv("CLOUD_LLM_MODEL", "llama-3.3-70b-versatile")
     
+    # Environment & Deployment Mode
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development").lower()
+    IS_PRODUCTION: bool = os.getenv("ENVIRONMENT", "development").lower() in ("production", "prod")
+    ENABLE_API_DOCS: bool = os.getenv("ENABLE_API_DOCS", "true").lower() in ("true", "1")
+
     # JWT / Auth Settings
-    JWT_SECRET_KEY: str = "lemma-super-secret-change-in-production-please"
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "lemma-super-secret-change-in-production-please")
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     
@@ -118,6 +123,32 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str | None = os.getenv("STRIPE_SECRET_KEY", None)
     STRIPE_WEBHOOK_SECRET: str | None = os.getenv("STRIPE_WEBHOOK_SECRET", None)
 
+    # Rate Limiting & Abuse Prevention
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_LOGIN_PER_MINUTE", "10"))
+    RATE_LIMIT_REGISTER_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REGISTER_PER_MINUTE", "5"))
+    RATE_LIMIT_AI_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_AI_PER_MINUTE", "15"))
+    RATE_LIMIT_DEFAULT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_DEFAULT_PER_MINUTE", "60"))
+
+    def get_allowed_origins(self) -> list[str]:
+        """Compute the strict whitelist of permitted CORS origins."""
+        origins = {
+            "https://lemma2.vercel.app",
+            "http://localhost:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+        }
+        if self.FRONTEND_URL:
+            origins.add(self.FRONTEND_URL.rstrip("/"))
+        env_origins = os.getenv("ALLOWED_ORIGINS")
+        if env_origins:
+            for o in env_origins.split(","):
+                o_clean = o.strip().rstrip("/")
+                if o_clean:
+                    origins.add(o_clean)
+        return sorted(list(origins))
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -126,6 +157,16 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+
+# Validate production JWT secret safety
+if settings.IS_PRODUCTION and settings.JWT_SECRET_KEY in ("lemma-super-secret-change-in-production-please", ""):
+    import logging
+    _sec_logger = logging.getLogger("security")
+    _sec_logger.critical(
+        "CRITICAL SECURITY ALERT: Using default or empty JWT_SECRET_KEY in production mode! "
+        "Set a strong random JWT_SECRET_KEY in environment variables immediately."
+    )
+
 
 # Ensure uploads and data directories exist
 try:

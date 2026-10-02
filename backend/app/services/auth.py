@@ -73,9 +73,33 @@ def decode_token(token: str) -> dict:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired.")
-    except jwt.InvalidTokenError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token signature.",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+
+def validate_password_strength(plain: str) -> None:
+    """Ensure password meets production security criteria."""
+    if not plain or len(plain) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters long."
+        )
+    has_letter = any(c.isalpha() for c in plain)
+    has_digit_or_symbol = any(c.isdigit() or not c.isalnum() for c in plain)
+    if not (has_letter and has_digit_or_symbol):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one letter and at least one number or symbol."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -117,37 +141,71 @@ def hash_api_key(raw_key: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-DEFAULT_LOCAL_USER = {
-    "sub": "00000000-0000-0000-0000-000000000001",
-    "role": "student",
-    "email": "researcher@lemma.local",
-    "name": "Researcher",
-    "type": "access",
-}
+# Authentication Dependencies
+# ---------------------------------------------------------------------------
 
 def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
 ) -> dict:
-    """FastAPI dependency that validates the JWT or returns local default user if unauthenticated."""
+    """
+    FastAPI dependency that enforces strict JWT authentication.
+    Returns decoded token payload if valid, otherwise raises HTTP 401 Unauthorized.
+    """
     if credentials is None or not credentials.credentials:
-        return DEFAULT_LOCAL_USER
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please provide a valid Bearer token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     try:
         payload = decode_token(credentials.credentials)
         if payload.get("type") != "access":
-            return DEFAULT_LOCAL_USER
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type: access token required.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not payload.get("sub"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Malformed token: missing subject identity.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         return payload
-    except Exception:
-        return DEFAULT_LOCAL_USER
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"Authentication token validation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired authentication token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
+
+def get_optional_current_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+) -> Optional[dict]:
+    """Optional authentication dependency: returns user payload if valid token provided, else None."""
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        payload = decode_token(credentials.credentials)
+        if payload.get("type") == "access" and payload.get("sub"):
+            return payload
+    except Exception:
+        pass
+    return None
 
 
 def require_role(*roles: str):
-    """FastAPI dependency factory — requires caller to have one of the given roles."""
+    """FastAPI dependency factory — requires authenticated caller to have one of the specified roles."""
     def dependency(current_user: dict = Depends(get_current_user)) -> dict:
-        if current_user.get("role") not in roles:
+        user_role = current_user.get("role")
+        if user_role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access requires one of roles: {roles}. Your role: {current_user.get('role')}",
+                detail=f"Access forbidden: required role not met.",
             )
         return current_user
     return dependency
@@ -156,4 +214,5 @@ def require_role(*roles: str):
 # Convenience pre-built role dependencies
 require_admin = require_role("super_admin", "institution_admin")
 require_instructor = require_role("super_admin", "institution_admin", "instructor")
-require_any_user = require_role("super_admin", "institution_admin", "instructor", "student")
+require_any_user = require_role("super_admin", "institution_admin", "instructor", "student", "organisation_admin")
+

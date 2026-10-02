@@ -18,8 +18,8 @@ class FileSizeExceededError(ExtractionError):
 
 class DocumentExtractorService:
     @staticmethod
-    def validate_file(filename: str, file_size_bytes: int) -> None:
-        """Validates the file extension and size constraints."""
+    def validate_file(filename: str, file_size_bytes: int, content: bytes | None = None) -> None:
+        """Validates file extension, size constraints, and magic byte signatures."""
         # Validate size
         max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
         if file_size_bytes > max_bytes:
@@ -34,17 +34,29 @@ class DocumentExtractorService:
                 f"File type '.{ext}' is not supported. Allowed formats: {', '.join(settings.ALLOWED_EXTENSIONS)}"
             )
 
+        # File signature / magic-byte verification to prevent executable or disguised uploads
+        if content is not None and len(content) > 0:
+            if ext == "pdf":
+                if not content.startswith(b"%PDF"):
+                    raise UnsupportedFileTypeError("Invalid PDF file: Missing %PDF header signature.")
+            elif ext == "docx":
+                if not content.startswith(b"PK\x03\x04"):
+                    raise UnsupportedFileTypeError("Invalid DOCX file: Missing PK zip container signature.")
+            elif ext == "txt":
+                if b"\x00" in content[:4096]:
+                    raise UnsupportedFileTypeError("Invalid TXT file: Binary content or null bytes detected.")
+
     @classmethod
     def extract_text(cls, filename: str, content: bytes) -> str:
         """
         Extracts raw text from document content bytes based on file extension.
-        Supports: PDF, DOCX, and TXT.
+        Supports: PDF, DOCX, and TXT with magic-byte validation.
         """
         # Gracefully handle swapped arguments if caller passed (content, filename)
         if isinstance(filename, (bytes, bytearray)) and isinstance(content, str):
             filename, content = content, filename
 
-        cls.validate_file(filename, len(content))
+        cls.validate_file(filename, len(content), content=content)
         ext = Path(filename).suffix.lower().lstrip(".")
 
         try:

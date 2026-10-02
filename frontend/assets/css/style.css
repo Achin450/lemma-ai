@@ -9,7 +9,7 @@ html[data-theme="dark"] {
 
     --text-primary: #ffffff;
     --text-secondary: #a0a0ab;
-    --text-muted: #52525b;
+    --text-muted: #71717a;
 
     --accent-blue: #3b82f6;
     --accent-purple: #10b981;
@@ -60,7 +60,7 @@ html[data-theme="light"] {
     /* Warm Charcoal text for comfortable reading */
     --text-secondary: #505663;
     /* Muted Slate for subtext */
-    --text-muted: #8F949F;
+    --text-muted: #64748b;
     /* Desaturated Slate for labels */
 
     --accent-blue: #2563eb;

@@ -202,7 +202,7 @@ const LemmaAdsEngine = {
                 <button class="btn btn-primary pro-upgrade-btn" onclick="LemmaAdsEngine.closeProModal(); if (window.LemmaPaymentApp) { LemmaPaymentApp.openCheckout('pro_monthly'); } else { window.location.href='/dashboard.html'; }">
                     Upgrade to Lemma Pro Now
                 </button>
-                <p class="pro-modal-footer">Cancel anytime. 7-day academic money-back guarantee.</p>
+                <p class="pro-modal-footer">Cancel anytime from your account settings.</p>
             </div>
         `;
 

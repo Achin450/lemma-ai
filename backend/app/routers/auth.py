@@ -13,7 +13,7 @@ from fastapi.responses import RedirectResponse
 from app.config import settings
 from app.services.database import DatabaseService
 from app.services.auth import (
-    hash_password, verify_password,
+    hash_password, verify_password, validate_password_strength,
     create_access_token, create_refresh_token, decode_token,
     is_edu_email, generate_institution_code,
     get_current_user,
@@ -80,6 +80,7 @@ async def register(payload: UserRegister, background_tasks: BackgroundTasks):
     - Otherwise, an `institution_code` is required.
     """
     email = payload.email.lower().strip()
+    validate_password_strength(payload.password)
 
     # Check duplicate
     existing = _get_user_by_email(email)
@@ -105,8 +106,8 @@ async def register(payload: UserRegister, background_tasks: BackgroundTasks):
                 institution_id = str(inst["id"])
             # else: no institution — solo/demo account
 
-            # Auto-assign super_admin role if admin email is used
-            assigned_role = "super_admin" if (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")) else "student"
+            # Assign super_admin role ONLY for explicitly authorized system admin accounts
+            assigned_role = "super_admin" if email in ("admin@lemma.ai", "superadmin@lemma.ai") else "student"
 
             user_id = str(uuid.uuid4())
             pw_hash = hash_password(payload.password)
@@ -132,8 +133,8 @@ async def login(payload: UserLogin):
     email = payload.email.lower().strip()
     row = _get_user_by_email(email)
 
-    # Auto-provision super_admin account for admin@lemma.ai on first login if not exists
-    if not row and (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")):
+    # Auto-provision super_admin account ONLY for specific admin@lemma.ai address on initial run
+    if not row and email in ("admin@lemma.ai", "superadmin@lemma.ai"):
         admin_id = str(uuid.uuid4())
         pw_hash = hash_password(payload.password)
         try:
@@ -149,8 +150,8 @@ async def login(payload: UserLogin):
         except Exception as ex:
             logger.warning(f"Auto-provision admin failed: {ex}")
 
-    # Ensure admin emails always have super_admin role
-    if row and (email in ("admin@lemma.ai", "superadmin@lemma.ai") or email.startswith("admin@")) and row.get("role") != "super_admin":
+    # Ensure system admin accounts retain super_admin role
+    if row and email in ("admin@lemma.ai", "superadmin@lemma.ai") and row.get("role") != "super_admin":
         try:
             with DatabaseService.get_connection() as conn:
                 with conn.cursor() as cur:
@@ -162,6 +163,7 @@ async def login(payload: UserLogin):
 
     if not row or not verify_password(payload.password, row["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
+
 
     profile = _build_profile(row)
     access_token = create_access_token(
@@ -200,14 +202,15 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
     profile = _build_profile(row)
-    if profile.email.lower() == "admin@lemma.ai" or profile.email.lower().startswith("admin@"):
+    if profile.email.lower() in ("admin@lemma.ai", "superadmin@lemma.ai"):
         profile.role = "super_admin"
     return profile
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(payload: PasswordChangeRequest, current_user: dict = Depends(get_current_user)):
-    """Change the current user''s password."""
+    """Change the current user's password with strength validation."""
+    validate_password_strength(payload.new_password)
     row = _get_user_by_id(current_user["sub"])
     if not row or not verify_password(payload.current_password, row["password_hash"]):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect.")

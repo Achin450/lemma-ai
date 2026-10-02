@@ -25,18 +25,15 @@ router = APIRouter(prefix="/api/v1/admin", tags=["Admin Console"])
 def get_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
     """
     Validates admin permissions.
-    Permits super_admin and institution_admin roles.
+    Permits verified super_admin, institution_admin, and admin roles.
     """
     role = current_user.get("role")
     email = (current_user.get("email") or "").lower()
-    if role in ("super_admin", "institution_admin", "admin") or email == "admin@lemma.ai" or email.startswith("admin@"):
-        return current_user
-    # Allow local default user in development
-    if current_user.get("sub") == "00000000-0000-0000-0000-000000000001":
+    if role in ("super_admin", "institution_admin", "admin") or email in ("admin@lemma.ai", "superadmin@lemma.ai"):
         return current_user
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail=f"Admin privileges required. Your current role: {role}",
+        detail="Admin privileges required.",
     )
 
 

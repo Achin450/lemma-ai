@@ -103,3 +103,28 @@ def create_docx_bytes():
         doc.save(doc_io)
         return doc_io.getvalue()
     return _create
+
+
+@pytest.fixture
+def auth_headers():
+    """Generates standard authenticated student headers."""
+    from app.services.auth import create_access_token
+    token = create_access_token(
+        user_id="11111111-1111-1111-1111-111111111111",
+        email="scholar@lemma.ai",
+        role="student"
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_headers():
+    """Generates verified super_admin headers."""
+    from app.services.auth import create_access_token
+    token = create_access_token(
+        user_id="22222222-2222-2222-2222-222222222222",
+        email="admin@lemma.ai",
+        role="super_admin"
+    )
+    return {"Authorization": f"Bearer {token}"}
+

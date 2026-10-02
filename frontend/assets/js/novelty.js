@@ -156,6 +156,10 @@
             const baseUrl = await getApiBaseUrl();
             let response;
 
+            const token = sessionStorage.getItem('lemma_access_token') || localStorage.getItem('lemma_access_token');
+            const reqHeaders = {};
+            if (token) reqHeaders['Authorization'] = `Bearer ${token}`;
+
             if (selectedNoveltyFile) {
                 const formData = new FormData();
                 formData.append("file", selectedNoveltyFile);
@@ -164,6 +168,7 @@
                 if (domainSelect) formData.append("domain", domainSelect);
                 response = await fetch(`${baseUrl}/api/v1/novelty/analyze`, {
                     method: "POST",
+                    headers: reqHeaders,
                     body: formData
                 });
             } else {
@@ -173,9 +178,11 @@
                 if (domainSelect) formData.append("domain", domainSelect);
                 response = await fetch(`${baseUrl}/api/v1/novelty/analyze`, {
                     method: "POST",
+                    headers: reqHeaders,
                     body: formData
                 });
             }
+
 
             if (!response.ok) {
                 const err = await response.json().catch(() => ({ detail: "Analysis failed" }));

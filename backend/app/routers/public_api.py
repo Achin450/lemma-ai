@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 import logging
 import psycopg2.extras
 from fastapi import APIRouter, Depends, HTTPException, status, Security, UploadFile, File
@@ -49,19 +49,43 @@ async def public_analyze(
     """
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided.")
-        
+
+    import re, os
+    safe_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', os.path.basename(file.filename))
+    file_ext = safe_filename.rsplit(".", 1)[-1].lower()
+    if file_ext not in settings.ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: .{file_ext}. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}"
+        )
+
     job_id = str(uuid.uuid4())
-    temp_filepath = settings.UPLOAD_DIR / f"api_{job_id}_{file.filename}"
-    
-    with open(temp_filepath, "wb") as f:
-        while chunk := await file.read(8192):
-            f.write(chunk)
-            
+    temp_filepath = settings.UPLOAD_DIR / f"api_{job_id}_{safe_filename}"
+    max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+    content_size = 0
+
+    try:
+        with open(temp_filepath, "wb") as f:
+            while chunk := await file.read(8192):
+                content_size += len(chunk)
+                if content_size > max_bytes:
+                    raise HTTPException(status_code=413, detail=f"File exceeds maximum size of {settings.MAX_FILE_SIZE_MB}MB.")
+                f.write(chunk)
+    except HTTPException:
+        if temp_filepath.exists():
+            temp_filepath.unlink(missing_ok=True)
+        raise
+    except Exception as e:
+        if temp_filepath.exists():
+            temp_filepath.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
     # Queue task
     analyze_document_task.apply_async(
-        args=[str(temp_filepath), file.filename],
+        args=[str(temp_filepath), safe_filename],
         task_id=job_id
     )
+
     
     return {
         "job_id": job_id,

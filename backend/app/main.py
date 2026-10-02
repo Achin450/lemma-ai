@@ -3,7 +3,7 @@ import uuid
 from celery.result import AsyncResult
 # pyrefly: ignore [missing-import]
 import os
-from fastapi import FastAPI, UploadFile, File, HTTPException, status, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, status, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -45,6 +45,9 @@ from app.routers.payment import router as payment_router
 from app.routers.organisations import router as organisations_router
 from app.routers.enterprise_payment import router as enterprise_payment_router
 
+from app.services.security_headers import SecurityHeadersMiddleware
+from app.services.rate_limiter import RateLimitMiddleware
+
 # Database engine (safely initialized with psycopg2 driver if available)
 engine = None
 try:
@@ -63,18 +66,44 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     description="Backend API for Lemma AI Research Paper Assistant & Academic Integrity Platform",
     version="3.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if (settings.ENABLE_API_DOCS and not settings.IS_PRODUCTION) else None,
+    redoc_url="/redoc" if (settings.ENABLE_API_DOCS and not settings.IS_PRODUCTION) else None,
+    openapi_url="/openapi.json" if (settings.ENABLE_API_DOCS and not settings.IS_PRODUCTION) else None,
 )
 
-# CORS Middleware config
+# Centralized Production Exception Sanitizer (Hides internal tracebacks & paths)
+@app.exception_handler(Exception)
+async def centralized_production_exception_handler(request: Request, exc: Exception):
+    import logging
+    logger = logging.getLogger("main.security")
+    # Log detailed stack trace internally on server
+    logger.exception(f"Unhandled server exception on {request.method} {request.url.path}: {exc}")
+    
+    if settings.IS_PRODUCTION:
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An internal server error occurred. Please try again later."}
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)}
+    )
+
+# 1. Security Headers Middleware (OWASP Defense-in-depth)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. Rate Limiting Middleware (Brute-force & Abuse Protection)
+app.add_middleware(RateLimitMiddleware)
+
+# 3. CORS Middleware config (Strict Whitelist from environment & trusted domains)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, we would restrict this
+    allow_origins=settings.get_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
+
 
 # ---------------------------------------------------------------------------
 # Include routers
@@ -144,10 +173,20 @@ async def extraction_error_handler(request, exc: ExtractionError):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc: Exception):
+    import logging
+    logger = logging.getLogger("unhandled_exception")
+    logger.exception(f"Unhandled exception on {request.method} {request.url.path}: {exc}")
+
+    if settings.IS_PRODUCTION:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "An internal server error occurred. Please try again later."},
+        )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": f"An unexpected error occurred: {str(exc)}"},
     )
+
 
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
@@ -371,6 +410,10 @@ async def check_elasticsearch_online():
         )
 
 async def check_ollama_online():
+    # If a Cloud LLM provider is configured (e.g. Groq hosting Llama 3.3 or OpenAI), bypass local Ollama check
+    if settings.GROQ_API_KEY or settings.OPENAI_API_KEY:
+        return
+
     from urllib.parse import urlparse
     ollama_host = "127.0.0.1"
     ollama_port = 11434
@@ -384,7 +427,7 @@ async def check_ollama_online():
     if not await check_service_port_open(ollama_host, ollama_port):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Ollama service is offline. Please make sure Ollama is running locally on your system."
+            detail="Ollama service is offline. Please make sure Ollama is running locally on your system, or set GROQ_API_KEY in environment variables for cloud Llama inference."
         )
 
 
@@ -404,8 +447,10 @@ async def upload_document(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No filename provided in upload request."
         )
+    import re, os
+    safe_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', os.path.basename(file.filename))
     content = await file.read()
-    text = DocumentExtractorService.extract_text(file.filename, content)
+    text = DocumentExtractorService.extract_text(safe_filename, content)
     from app.services.segmenter import SentenceSegmenterService
     sentences_data = SentenceSegmenterService.segment(text)
     sentences = [
@@ -417,7 +462,7 @@ async def upload_document(
         for s in sentences_data
     ]
     return DocumentUploadResponse(
-        filename=file.filename,
+        filename=safe_filename,
         text=text,
         char_count=len(text),
         sentence_count=len(sentences),
@@ -445,41 +490,50 @@ async def analyze_document_async(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No filename provided in upload request."
         )
-    file_ext = file.filename.split(".")[-1].lower()
+    import re, os
+    safe_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', os.path.basename(file.filename))
+    file_ext = safe_filename.rsplit(".", 1)[-1].lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Unsupported file type: .{file_ext}. Allowed types: {', '.join(settings.ALLOWED_EXTENSIONS)}"
         )
     job_id = str(uuid.uuid4())
-    temp_filename = f"{job_id}_{file.filename}"
+    temp_filename = f"{job_id}_{safe_filename}"
     temp_filepath = settings.UPLOAD_DIR / temp_filename
     content_size = 0
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
+    first_chunk_checked = False
+
     try:
         with open(temp_filepath, "wb") as f:
             while chunk := await file.read(8192):
                 content_size += len(chunk)
                 if content_size > max_bytes:
                     raise FileSizeExceededError(f"File size exceeds limit of {settings.MAX_FILE_SIZE_MB}MB.")
+                if not first_chunk_checked:
+                    # Validate magic bytes against claimed extension
+                    DocumentExtractorService.validate_file(safe_filename, len(chunk), content=chunk)
+                    first_chunk_checked = True
                 f.write(chunk)
-    except FileSizeExceededError as e:
+    except (FileSizeExceededError, UnsupportedFileTypeError) as e:
         if temp_filepath.exists():
-            temp_filepath.unlink()
+            temp_filepath.unlink(missing_ok=True)
         raise HTTPException(
-            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
         if temp_filepath.exists():
-            temp_filepath.unlink()
+            temp_filepath.unlink(missing_ok=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save temporary file: {str(e)}"
         )
     from app.tasks.analysis import start_analysis_job, JobRegistry
-    start_analysis_job(job_id, str(temp_filepath), file.filename)
+    start_analysis_job(job_id, str(temp_filepath), safe_filename)
     return {"job_id": job_id, "status": "pending", "user_id": current_user.get("sub")}
+
 
 
 @app.get(

@@ -40,7 +40,7 @@ def test_extract_pdf_success(mock_pdf_reader_class):
     mock_reader.pages = [mock_page1, mock_page2]
     mock_pdf_reader_class.return_value = mock_reader
 
-    result = DocumentExtractorService.extract_text("test.pdf", b"mock_pdf_bytes")
+    result = DocumentExtractorService.extract_text("test.pdf", b"%PDF-1.4 mock_pdf_bytes")
     
     assert "Text on page 1." in result
     assert "Text on page 2." in result
@@ -55,7 +55,7 @@ def test_extract_pdf_encrypted_fails(mock_pdf_reader_class):
     mock_pdf_reader_class.return_value = mock_reader
 
     with pytest.raises(ExtractionError, match="Encrypted or password-protected"):
-        DocumentExtractorService.extract_text("test.pdf", b"mock_pdf_bytes")
+        DocumentExtractorService.extract_text("test.pdf", b"%PDF-1.4 mock_pdf_bytes")
 
 def test_file_size_exceeded():
     old_size = settings.MAX_FILE_SIZE_MB

@@ -54,16 +54,18 @@ async def check_similarity(
     file_path = None
     original_filename = None
 
+    import re, os
     # Handle file upload
     if file and file.filename:
-        file_ext = file.filename.rsplit(".", 1)[-1].lower()
+        safe_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', os.path.basename(file.filename))
+        file_ext = safe_filename.rsplit(".", 1)[-1].lower()
         if file_ext not in settings.ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported file type: .{file_ext}. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}"
             )
 
-        temp_filename = f"{job_id}_{file.filename}"
+        temp_filename = f"{job_id}_{safe_filename}"
         temp_filepath = settings.UPLOAD_DIR / temp_filename
         max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
         content_size = 0
@@ -224,6 +226,18 @@ async def get_similarity_report_pdf(
     from celery.result import AsyncResult
     from app.tasks.celery_app import celery_app
     from app.services.pdf_generator import PDFGeneratorService
+    from app.services.paper_store import PaperStore
+
+    # Check ownership
+    report_dict = PaperStore.load_similarity_report(job_id)
+    if report_dict:
+        owner_id = report_dict.get("user_id")
+        is_admin = current_user.get("role") in ("super_admin", "institution_admin", "admin")
+        if owner_id and not is_admin and str(owner_id) != str(current_user.get("sub")):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: you do not have permission to view this report."
+            )
 
     res = AsyncResult(job_id, app=celery_app)
 

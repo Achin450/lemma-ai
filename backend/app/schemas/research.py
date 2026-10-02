@@ -228,6 +228,7 @@ class ResearchPaper(BaseModel):
     Used by: generator, restructurer, formatter, similarity checker, exporter.
     """
     paper_id: Optional[str] = None            # UUID / job_id
+    user_id: Optional[str] = None             # Owner UUID for isolation
     title: str = ""
     authors: List[str] = Field(default_factory=list)    # Author name placeholders
     abstract: str = ""

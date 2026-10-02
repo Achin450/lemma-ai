@@ -154,6 +154,12 @@
                 <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1.25rem;">Send an Inquiry</h2>
 
                 <form id="lemma-contact-form" novalidate style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Anti-Spam Honeypot Field (Hidden from real users) -->
+                    <div style="position: absolute; left: -9999px; top: -9999px;" aria-hidden="true">
+                        <label for="contact-hp">Do not fill this field</label>
+                        <input type="text" id="contact-hp" name="_lemma_hp" tabindex="-1" autocomplete="off">
+                    </div>
+
                     <div>
                         <label for="contact-name" style="display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px;">Your Name <span style="color: #ef4444;">*</span></label>
                         <input type="text" id="contact-name" class="research-input" placeholder="e.g. Dr. Jane Doe" required style="width: 100%; box-sizing: border-box; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary);">
@@ -228,6 +234,17 @@
             e.preventDefault();
             let valid = true;
             generalError.style.display = 'none';
+
+            // Anti-Spam Honeypot Verification
+            const hpInput = document.getElementById('contact-hp');
+            if (hpInput && hpInput.value.trim() !== '') {
+                // Silently drop automated bot submissions
+                submitBtn.disabled = true;
+                setTimeout(function() {
+                    window.location.href = 'thank-you.html';
+                }, 300);
+                return;
+            }
 
             // Validate name
             if (!nameInput.value.trim()) {

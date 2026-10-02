@@ -37,6 +37,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/research", tags=["Research Paper"])
 
 
+def _enforce_paper_access(paper_id: str, current_user: dict, write: bool = False) -> ResearchPaper:
+    """Validate existence and ownership of a paper before returning it."""
+    is_admin = current_user.get("role") in ("super_admin", "institution_admin", "admin")
+    has_access, paper = PaperStore.check_access(paper_id, current_user.get("sub"), is_admin=is_admin)
+    if not paper:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Paper '{paper_id}' not found.")
+    if not has_access:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: you do not have permission to access this paper."
+        )
+    return paper
+
+
 # ---------------------------------------------------------------------------
 # Helper to get Celery result
 # ---------------------------------------------------------------------------
@@ -94,12 +108,14 @@ async def generate_research_paper(
         )
 
     paper_id = str(uuid.uuid4())
+    user_id = current_user.get("sub")
 
     format_style_str = payload.format_style.value if hasattr(payload.format_style, 'value') else str(payload.format_style or "ieee")
 
     from app.schemas.research import ResearchPaper, PaperStatus, PaperType
     init_paper = ResearchPaper(
         paper_id=paper_id,
+        user_id=user_id,
         title=f"Research Paper on {validation.refined_topic or payload.topic}",
         status=PaperStatus.processing,
         paper_type=PaperType.generated,
@@ -179,7 +195,10 @@ async def restructure_paper(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided.")
 
-    file_ext = file.filename.rsplit(".", 1)[-1].lower()
+    import re, os
+    safe_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', os.path.basename(file.filename))
+
+    file_ext = safe_filename.rsplit(".", 1)[-1].lower()
     if file_ext not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
@@ -187,10 +206,21 @@ async def restructure_paper(
         )
 
     paper_id = str(uuid.uuid4())
-    temp_filename = f"{paper_id}_{file.filename}"
+    user_id = current_user.get("sub")
+    temp_filename = f"{paper_id}_{safe_filename}"
     temp_filepath = settings.UPLOAD_DIR / temp_filename
     max_bytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
     content_size = 0
+
+    init_paper = ResearchPaper(
+        paper_id=paper_id,
+        user_id=user_id,
+        title=f"Restructured Paper from {safe_filename}",
+        status=PaperStatus.processing,
+        paper_type=PaperType.restructured,
+        format_style=target_format,
+    )
+    PaperStore.save(init_paper)
 
     try:
         with open(temp_filepath, "wb") as f_out:
@@ -350,7 +380,8 @@ async def list_papers(
     current_user: dict = Depends(get_current_user),
 ):
     user_id = current_user.get("sub")
-    papers = PaperStore.list_papers(user_id=user_id, limit=limit)
+    is_admin = current_user.get("role") in ("super_admin", "institution_admin", "admin")
+    papers = PaperStore.list_papers(user_id=user_id, limit=limit, is_admin=is_admin)
     return papers
 
 
@@ -365,13 +396,20 @@ async def get_similarity_report(
     job_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    report = PaperStore.load_similarity_report(job_id)
-    if not report:
+    report_dict = PaperStore.load_similarity_report(job_id)
+    if not report_dict:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Similarity report for '{job_id}' not found."
         )
-    return {"job_id": job_id, "report": report}
+    is_admin = current_user.get("role") in ("super_admin", "institution_admin", "admin")
+    owner_id = report_dict.get("user_id")
+    if owner_id and not is_admin and str(owner_id) != str(current_user.get("sub")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: you do not have permission to view this similarity report."
+        )
+    return {"job_id": job_id, "report": report_dict}
 
 
 # ---------------------------------------------------------------------------
@@ -385,6 +423,7 @@ async def delete_paper(
     paper_id: str,
     current_user: dict = Depends(get_current_user),
 ):
+    _enforce_paper_access(paper_id, current_user, write=True)
     deleted = PaperStore.delete(paper_id)
     return {"success": True, "paper_id": paper_id, "deleted": deleted}
 
@@ -401,12 +440,7 @@ async def get_paper(
     paper_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    paper = PaperStore.load(paper_id)
-    if not paper:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper '{paper_id}' not found."
-        )
+    paper = _enforce_paper_access(paper_id, current_user)
 
     if paper.status == PaperStatus.failed:
         raise HTTPException(
@@ -430,12 +464,8 @@ async def update_paper(
     payload: PaperUpdateRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    paper = PaperStore.load(paper_id)
-    if not paper:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Paper '{paper_id}' not found."
-        )
+    paper = _enforce_paper_access(paper_id, current_user, write=True)
+
 
     if payload.title is not None:
         paper.title = payload.title.strip()
@@ -488,9 +518,7 @@ async def export_paper(
     format: Literal["pdf", "docx"] = Query("pdf", description="Export format: pdf or docx"),
     current_user: dict = Depends(get_current_user),
 ):
-    paper = PaperStore.load(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail=f"Paper '{paper_id}' not found.")
+    paper = _enforce_paper_access(paper_id, current_user)
 
     if paper.status != PaperStatus.completed:
         raise HTTPException(
@@ -539,9 +567,8 @@ async def improve_paper_section(
     payload: ImproveRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    paper = PaperStore.load(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail=f"Paper '{paper_id}' not found.")
+    paper = _enforce_paper_access(paper_id, current_user, write=True)
+
 
     # Find the target section
     target_section = None
@@ -613,11 +640,10 @@ async def custom_rewrite_paper_section(
     payload: CustomRewriteSectionRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    paper = PaperStore.load(paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail=f"Paper '{paper_id}' not found.")
+    paper = _enforce_paper_access(paper_id, current_user, write=True)
 
     from app.services.llm import LLMService
+
 
     target_sec_num = str(payload.section_number).strip().lower()
     topic_str = paper.topic or paper.title or "Advanced Computational Research"
